@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Imagery Map</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/css/main.css">
+    <script src="https://js.arcgis.com/4.26/"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #viewDiv {
+            height: 100vh; /* Full height */
+            width: 100vw;  /* Full width */
+        }
+    </style>
+</head>
+<body>
+    <div id="viewDiv"></div>
+
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/widgets/Legend",
+            "esri/widgets/ScaleBar",
+            "esri/widgets/Search",
+            "esri/widgets/LayerList",
+            "esri/widgets/BasemapToggle"
+        ], function(Map, MapView, Legend, ScaleBar, Search, LayerList, BasemapToggle) {
+
+            // Create a new Map instance using World Imagery basemap
+            const map = new Map({
+                basemap: "satellite" // Set the basemap to World Imagery
+            });
+
+            // Create the view
+            const view = new MapView({
+                container: "viewDiv",
+                map: map,
+                center: [-98.5795, 39.8283], // Centered on the United States
+                zoom: 4 // Zoom level
+            });
+
+            // Add a legend to the view
+            const legend = new Legend({
+                view: view
+            });
+            view.ui.add(legend, "bottom-left");
+
+            // Add a scale bar to the view
+            const scaleBar = new ScaleBar({
+                view: view,
+                unit: "metric" // Can also be set to "imperial"
+            });
+            view.ui.add(scaleBar, "bottom-right");
+
+            // Add a search widget to the view
+            const search = new Search({
+                view: view
+            });
+            view.ui.add(search, "top-right"); // Position the Search widget in the top-right corner
+
+            // Add a LayerList widget to the view
+            const layerList = new LayerList({
+                view: view
+            });
+            view.ui.add(layerList, "top-left"); // Position the LayerList in the top-left corner
+
+            // Add a BasemapToggle widget to switch between basemaps
+            const basemapToggle = new BasemapToggle({
+                view: view,
+                nextBasemap: "topo-vector" // Basemap to toggle to
+            });
+            view.ui.add(basemapToggle, "top-left"); // Position the BasemapToggle in the top-left corner
+        });
+    </script>
+</body>
+</html>
