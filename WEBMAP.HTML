@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArcGIS Web Map Example - Den Helder</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/css/main.css">
+    <script src="https://js.arcgis.com/4.26/"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #viewDiv {
+            height: 100vh; /* Full height */
+            width: 100vw;  /* Full width */
+        }
+    </style>
+</head>
+<body>
+    <div id="viewDiv"></div>
+
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/WebMap",
+            "esri/widgets/Legend",
+            "esri/widgets/ScaleBar",
+            "esri/widgets/Search",
+            "esri/widgets/LayerList",
+            "esri/widgets/BasemapToggle"
+        ], function(Map, MapView, WebMap, Legend, ScaleBar, Search, LayerList, BasemapToggle) {
+
+            // Create a new Map instance with the initial basemap
+            const map = new Map({
+                basemap: "topo-vector" // Initial basemap
+            });
+
+            // Create the WebMap instance using the web map ID
+            const webMap = new WebMap({
+                portalItem: { // autocasts as new PortalItem()
+                    id: "901de88ad6d44b41803b68839c713064" // Your web map ID here
+                }
+            });
+
+            // Create the view
+            const view = new MapView({
+                container: "viewDiv",
+                map: map, // Use the newly created map instance
+                center: [4.7549, 52.9581], // Centered on Den Helder
+                zoom: 12 // Adjust zoom level to fit the city
+            });
+
+            // Add the layers from the WebMap to the new Map
+            webMap.load().then(() => {
+                webMap.layers.forEach(layer => {
+                    map.add(layer);
+                });
+            });
+
+            // Add a LayerList widget to the view
+            const layerList = new LayerList({
+                view: view
+            });
+            view.ui.add(layerList, "top-right"); // Position the LayerList in the top-right corner
+
+            // Add a BasemapToggle widget to switch between basemaps
+            const basemapToggle = new BasemapToggle({
+                view: view,
+                nextBasemap: "streets-navigation-vector" // Basemap to toggle to
+            });
+            view.ui.add(basemapToggle, "top-left"); // Position the BasemapToggle in the top-left corner
+
+            // Add a legend to the view
+            const legend = new Legend({
+                view: view
+            });
+            view.ui.add(legend, "bottom-left");
+
+            // Add a scale bar to the view
+            const scaleBar = new ScaleBar({
+                view: view,
+                unit: "metric" // Can also be set to "imperial"
+            });
+            view.ui.add(scaleBar, "bottom-right");
+
+            // Add a search widget to the view
+            const search = new Search({
+                view: view
+            });
+            view.ui.add(search, "top-right"); // Position the Search widget in the top-right corner
+        });
+    </script>
+</body>
+</html>
