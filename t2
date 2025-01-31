@@ -14,7 +14,7 @@
         }
         #viewDiv {
             height: 100vh; /* Full height */
-            width: 100vw;  /* Full width */
+            width: 99vw;  /* Full width */
         }
     </style>
 </head>
