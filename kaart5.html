@@ -5,169 +5,144 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kaart</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-<style>
-    #map{
-        height: 100vh;
-        width:100%;
-    }
-</style>
-
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-    
-</body>
-<div id="map"></div>
-</html>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script>
-    var map = L.map('map').setView([52.9563, 4.7608], 14);
+    <div id="map"></div>
 
-    var brtLayer = L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/{style}/EPSG:3857/{z}/{x}/{y}.png', {
-        attribution: 'Kaartgegevens &copy; <a href="https://www.kadaster.nl">Kadaster</a>',
-        style: 'standaard' // Change to 'grijs', 'pastel', or 'water' for different styles
-    });
-    brtLayer.addTo(map);
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        var map = L.map('map').setView([52.9563, 4.7608], 14);
 
-    // GeoJSON Polygon Data
-    var polygon = {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {
-                    "stroke": "#2ac8cb",
-                    "stroke-width": 2,
-                    "stroke-opacity": 1,
-                    "fill": "#0040ff",
-                    "fill-opacity": 0.5,
-                    "name": "Fiets"
-                },
-                "geometry": {
-                    "coordinates": [
-                        [
+        var brtLayer = L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/{style}/EPSG:3857/{z}/{x}/{y}.png', {
+            attribution: 'Kaartgegevens &copy; <a href="https://www.kadaster.nl">Kadaster</a>',
+            style: 'standaard' // Change to 'grijs', 'pastel', or 'water' for different styles
+        });
+        brtLayer.addTo(map);
+
+        // GeoJSON Polygon Data
+        var polygon = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "stroke": "#2ac8cb",
+                        "stroke-width": 2,
+                        "stroke-opacity": 1,
+                        "fill": "#0040ff",
+                        "fill-opacity": 0.5,
+                        "name": "Fiets"
+                    },
+                    "geometry": {
+                        "coordinates": [
                             [
-                                4.7713297907596655,
-                                52.95953819450372
-                            ],
-                            [
-                                4.771313266131074,
-                                52.959428434058964
-                            ],
-                            [
-                                4.771670359082094,
-                                52.95940689330223
-                            ],
-                            [
-                                4.771684803172036,
-                                52.959519929331975
-                            ],
-                            [
-                                4.7713297907596655,
-                                52.95953819450372
+                                [4.7713297907596655, 52.95953819450372],
+                                [4.771313266131074, 52.959428434058964],
+                                [4.771670359082094, 52.95940689330223],
+                                [4.771684803172036, 52.959519929331975],
+                                [4.7713297907596655, 52.95953819450372]
                             ]
-                        ]
-                    ],
-                    "type": "Polygon"
-                }
-            },
-            {
-                "type": "Feature",
-                "properties": {
-                    "stroke": "#555555",
-                    "stroke-width": 2,
-                    "stroke-opacity": 1,
-                    "fill": "#00ffe1",
-                    "fill-opacity": 0.2,
-                    "name": "fiets2"
-                },
-                "geometry": {
-                    "coordinates": [
-                        [
-                            [
-                                4.770448746856346,
-                                52.95865161981229
-                            ],
-                            [
-                                4.770646547102501,
-                                52.95865161981229
-                            ],
-                            [
-                                4.770646547102501,
-                                52.95869133750429
-                            ],
-                            [
-                                4.770448746856346,
-                                52.95869133750429
-                            ],
-                            [
-                                4.770448746856346,
-                                52.95865161981229
-                            ]
-                        ]
-                    ],
-                    "type": "Polygon"
-                },
-                "id": 1
-            }
-        ]
-    }
-
-    // Polygon data with hover effect and popup
-    var polygondata = L.geoJSON(polygon, {
-        onEachFeature: function (feature, layer) {
-            // Binding popup to each polygon
-            if (feature.properties && feature.properties.name) {
-                var popupContent = '<span style="font-weight: bold; color: red;">' + feature.properties.name + '</span>';
-                layer.bindPopup('<b>Dit is</b> ' + popupContent);
-            }
-
-            // Adding hover effects
-            layer.on({
-                mouseover: function(e) {
-                    var layer = e.target;
-                    layer.setStyle({
-                        fillOpacity: 0.8,  // Make fill color more opaque on hover
-                        weight: 10,  // Increase the border weight on hover
-                        color: '#ffcb0f'  // Change the border color on hover
-                    });
-                    if (layer.getPopup()) {
-                        layer.openPopup();  // Open the popup on hover
+                        ],
+                        "type": "Polygon"
                     }
                 },
-                mouseout: function(e) {
-                    var layer = e.target;
-                    layer.setStyle({
-                        fillOpacity: 0.6,  // Revert the fill opacity when not hovered
-                        weight: 2,  // Revert the border weight
-                        color: feature.properties.stroke || '#000000'  // Revert to original stroke color
-                    });
-                    layer.closePopup();  // Close the popup when not hovered
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "stroke": "#555555",
+                        "stroke-width": 2,
+                        "stroke-opacity": 1,
+                        "fill": "#00ffe1",
+                        "fill-opacity": 0.2,
+                        "name": "fiets2"
+                    },
+                    "geometry": {
+                        "coordinates": [
+                            [
+                                [4.770448746856346, 52.95865161981229],
+                                [4.770646547102501, 52.95865161981229],
+                                [4.770646547102501, 52.95869133750429],
+                                [4.770448746856346, 52.95869133750429],
+                                [4.770448746856346, 52.95865161981229]
+                            ]
+                        ],
+                        "type": "Polygon"
+                    },
+                    "id": 1
                 }
-            });
-        },
-
-        // Default polygon style
-        style: function (feature) {
-            return {
-                fillColor: feature.properties.fill || 'green',  // Use feature properties to get custom fill colors
-                fillOpacity: feature.properties['fill-opacity'] || 0.6,  // Default fill-opacity
-                color: feature.properties.stroke || '#000000',  // Default border color
-                weight: feature.properties['stroke-width'] || 2  // Default stroke width
-            };
+            ]
         }
-    }).addTo(map);
 
-    var overlayer = {
-        "polygon": polygondata
-    };
+        // Polygon data with hover effect and popup
+        var polygondata = L.geoJSON(polygon, {
+            onEachFeature: function (feature, layer) {
+                // Binding popup to each polygon
+                if (feature.properties && feature.properties.name) {
+                    var popupContent = '<span style="font-weight: bold; color: red;">' + feature.properties.name + '</span>';
 
-    // Control layers
-    var baseMaps = {
-        "BRT-Achtergrondkaart (NL)": brtLayer
-    };
+                    // Add image in popup based on polygon
+                    if (feature.properties.name === 'Fiets') {
+                        popupContent += '<br><img src="https://vuurtorensinnederland.nl/wp-content/uploads/2015/01/Den-Helder1.jpg" width="200" alt="Fiets Image">';
+                    } else if (feature.properties.name === 'fiets2') {
+                        popupContent += '<br><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Den_Helder%2C_de_watertoren_GM0400_IMG_9504_2019-05-13_11.41.jpg/640px-Den_Helder%2C_de_watertoren_GM0400_IMG_9504_2019-05-13_11.41.jpg" width="200" alt="Watertower Image">';
+                    }
 
-    L.control.layers(baseMaps, overlayer, {collapsed: true}).addTo(map);
+                    layer.bindPopup('<b>Dit is</b> ' + popupContent);
+                }
 
-</script>
+                // Adding hover effects
+                layer.on({
+                    mouseover: function (e) {
+                        var layer = e.target;
+                        layer.setStyle({
+                            fillOpacity: 0.8,  // Make fill color more opaque on hover
+                            weight: 10,  // Increase the border weight on hover
+                            color: '#ffcb0f'  // Change the border color on hover
+                        });
+                        if (layer.getPopup()) {
+                            layer.openPopup();  // Open the popup on hover
+                        }
+                    },
+                    mouseout: function (e) {
+                        var layer = e.target;
+                        layer.setStyle({
+                            fillOpacity: 0.6,  // Revert the fill opacity when not hovered
+                            weight: 2,  // Revert the border weight
+                            color: feature.properties.stroke || '#000000'  // Revert to original stroke color
+                        });
+                        layer.closePopup();  // Close the popup when not hovered
+                    }
+                });
+            },
+
+            // Default polygon style
+            style: function (feature) {
+                return {
+                    fillColor: feature.properties.fill || 'green',  // Use feature properties to get custom fill colors
+                    fillOpacity: feature.properties['fill-opacity'] || 0.6,  // Default fill-opacity
+                    color: feature.properties.stroke || '#000000',  // Default border color
+                    weight: feature.properties['stroke-width'] || 2  // Default stroke width
+                };
+            }
+        }).addTo(map);
+
+        var overlayer = {
+            "polygon": polygondata
+        };
+
+        // Control layers
+        var baseMaps = {
+            "BRT-Achtergrondkaart (NL)": brtLayer
+        };
+
+        L.control.layers(baseMaps, overlayer, {collapsed: true}).addTo(map);
+    </script>
+</body>
+</html>
