@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map with GeoJSON and Clustering</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* Home button styling */
+        .home-button {
+            position: absolute;
+            top: 12%;
+            left: 20px;
+            background: white;
+            padding: 8px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .home-button:hover {
+            background: #ddd;
+        }
+
+        /* Legend styling */
+        .legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            line-height: 18px;
+            color: #555;
+        }
+        .legend h4 {
+            margin: 0;
+            padding: 4px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.8;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <div class="home-button" onclick="resetMap()">🏠</div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
+
+    <script>
+        var map = L.map('map').setView([52.9563, 4.7608], 14);
+
+        // Base Layer
+        var brtLayer = L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/{style}/EPSG:3857/{z}/{x}/{y}.png', {
+            attribution: 'Kaartgegevens &copy; <a href="https://www.kadaster.nl">Kadaster</a>',
+            style: 'standaard'
+        }).addTo(map);
+
+        // GeoJSON Points Data
+        var points = {
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": 1,
+        "marker-color": "#ff0000",
+        "marker-size": "medium",
+        "marker-symbol": "circle"
+      },
+      "geometry": {
+        "coordinates": [
+          4.768856075030413,
+          52.95923949437483
+        ],
+        "type": "Point"
+      },
+      "id": 0
+    },
+    {
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "coordinates": [
+          4.754784767224521,
+          52.95808084559931
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "coordinates": [
+          4.726577949654796,
+          52.948858994366304
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "coordinates": [
+          4.769213788644379,
+          52.948363606139566
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "marker-color": "#a80000",
+        "marker-size": "medium",
+        "marker-symbol": "circle"
+      },
+      "geometry": {
+        "coordinates": [
+          4.755001842314783,
+          52.941073666294955
+        ],
+        "type": "Point"
+      },
+      "id": 4
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": 5454,
+        "marker-color": "#304197",
+        "marker-size": "medium",
+        "marker-symbol": "circle"
+      },
+      "geometry": {
+        "coordinates": [
+          4.776848305268061,
+          52.9441879656483
+        ],
+        "type": "Point"
+      },
+      "id": 5
+    },
+    {
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "coordinates": [
+          4.738323359845083,
+          52.95975610004268
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "marker-color": "#385e12",
+        "marker-size": "medium",
+        "marker-symbol": "circle",
+        "name": 3
+      },
+      "geometry": {
+        "coordinates": [
+          4.769981749200127,
+          52.931507727348304
+        ],
+        "type": "Point"
+      },
+      "id": 7
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "ahmad"
+      },
+      "geometry": {
+        "coordinates": [
+          4.730784638043161,
+          52.93470042243081
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": 2,
+        "marker-color": "#9f2709",
+        "marker-size": "medium",
+        "marker-symbol": "circle"
+      },
+      "geometry": {
+        "coordinates": [
+          4.764331715159983,
+          52.95534083180212
+        ],
+        "type": "Point"
+      },
+      "id": 9
+    },
+    {
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "coordinates": [
+          4.747093041795779,
+          52.894336998036664
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "coordinates": [
+          4.744225329228328,
+          52.89058838737259
+        ],
+        "type": "Point"
+      }
+    }
+  ]
+}
+
+        // Create marker cluster group
+        var markers = L.markerClusterGroup();
+
+        // Loop through GeoJSON and add to cluster group
+        L.geoJSON(points, {
+            pointToLayer: function (feature, latlng) {
+                return L.circleMarker(latlng, {
+                    color: "red",
+                    fillColor: "red",
+                    fillOpacity: 0.6,
+                    radius: 6
+                }).bindPopup('<b>' + feature.properties.name + '</b>');
+            }
+        }).addTo(markers);
+
+        // Add markers cluster group to map
+        markers.addTo(map);
+
+        // Layer control for toggling layers
+        var googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+        });
+
+        // 2. Google Roadmap (Standard)
+        var googleRoadmap = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+        });
+
+        // 3. Google Hybrid (Satellite + Labels)
+        var googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+        });
+
+        // 4. Google Terrain (With Elevation)
+        var googleTerrain = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+            attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+        });
+
+        // ==========================
+        // OTHER BASE MAPS
+        // ==========================
+
+        // 5. OpenStreetMap (OSM)
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+
+        // 6. Esri World Imagery
+        var esriImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        });
+
+        // 7. PDOK BRT-Achtergrondkaart (Netherlands Topo Map)
+        var brtLayer = L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/standaard/EPSG:3857/{z}/{x}/{y}.png', {
+            attribution: 'Kaartgegevens &copy; <a href="https://www.kadaster.nl">Kadaster</a>'
+        });
+        var baseMaps = {
+            "Google Roadmap": googleRoadmap,
+            "Google Satellite": googleSat,
+            "Google Hybrid": googleHybrid,
+            "Google Terrain": googleTerrain,
+            "OpenStreetMap (OSM)": osm,
+            "Esri World Imagery": esriImagery,
+            "BRT-Achtergrondkaart (NL)": brtLayer
+        };
+
+
+        var overlayMaps = {
+            "GeoJSON Points": markers
+        };
+
+        L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+        // Add scale bar
+        L.control.scale({ metric: true, imperial: false }).addTo(map);
+
+        // Add legend
+        var legend = L.control({ position: 'bottomright' });
+
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML += '<h4>Legend</h4>';
+            div.innerHTML += '<i style="background: red"></i> Points<br>';
+            return div;
+        };
+
+        legend.addTo(map);
+
+        // Reset map function for the home button
+        function resetMap() {
+            map.setView([52.9563, 4.7608], 14);
+        }
+    </script>
+
+</body>
+</html>
