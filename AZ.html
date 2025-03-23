@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.3/proj4.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -55,12 +56,17 @@
 <body>
     <div id="map"></div>
     <script>
+        // Define the Proj4js projection for RD
+        proj4.defs('EPSG:28992', '+proj=tmerc +lat_0=52.15517440 +lon_0=5.38720621 +k=1 +x_0=155000 +y_0=463000 +datum=WGS84 +units=m +no_defs');
+
         // Initialize the map and center on Den Helder
         var map = L.map('map').setView([52.9607, 4.7534], 13);  // Coordinates for Den Helder, NL
+
         // Add OpenStreetMap tile layer to the map
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
+
         // Add Geocoder control (search box) to the map using Nominatim geocoding API
         var geocoder = L.Control.Geocoder.nominatim();
         // Add geocoder to the map
@@ -88,19 +94,31 @@
         })
         .on('markgeocode', function(e) {
             var latlng = e.geocode.center;
+            // Convert WGS84 (lat, lon) to RD (X, Y) using Proj4js
+            var rdCoords = proj4('EPSG:28992', [latlng.lng, latlng.lat]);
             // Add marker for the found address
             L.marker(latlng).addTo(map)
-                .bindPopup(e.geocode.name + '<br/>x: ' + latlng.lat.toFixed(4) + '<br/>y: ' + latlng.lng.toFixed(4))
+                .bindPopup(e.geocode.name +
+                            '<br/>x: ' + latlng.lat.toFixed(8) +
+                            '<br/>y: ' + latlng.lng.toFixed(8) +
+                            '<br/>xn: ' + rdCoords[0].toFixed(2) +
+                            '<br/>yn: ' + rdCoords[1].toFixed(2))
                 .openPopup();
             // Zoom into the address found
             map.setView(latlng, 16);
         })
         .addTo(map);
+
         // Optional: Handle clicking on the map to show coordinates in popup
         map.on('click', function(e) {
             var latlng = e.latlng;
-             L.marker(latlng).addTo(map)
-                .bindPopup('x: ' + latlng.lat.toFixed(4) + '<br/>y: ' + latlng.lng.toFixed(4))
+            // Convert WGS84 (lat, lon) to RD (X, Y) using Proj4js
+            var rdCoords = proj4('EPSG:28992', [latlng.lng, latlng.lat]);
+            L.marker(latlng).addTo(map)
+                .bindPopup('x: ' + latlng.lat.toFixed(8) +
+                            '<br/>y: ' + latlng.lng.toFixed(8) +
+                            '<br/>xn: ' + rdCoords[0].toFixed(2) +
+                            '<br/>yn: ' + rdCoords[1].toFixed(2))
                 .openPopup();
         });
     </script>
