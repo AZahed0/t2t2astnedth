@@ -14,7 +14,7 @@
         .map-buttons {
             position: absolute;
             top: 10px;
-            left: 10px;
+            right: 10px;
             z-index: 1000;
             background: white;
             padding: 10px;
@@ -32,19 +32,29 @@
         <button onclick="changeBaseMap('luchtfoto')">Luchtfoto</button>
     </div>
     <script>
-        const map = L.map("map", { minZoom: 2 }).setView([52.9591, 4.7593], 13);
+        const map = L.map("map", {
+            minZoom: 2,
+            maxZoom: 18,
+        }).setView([52.9591, 4.7593], 13);
 
         // Base layers
         const baseMaps = {
             osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 18,
             }),
             osm_light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
+                attribution:
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
+                maxZoom: 18,
             }),
-            luchtfoto: L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: '&copy; <a href="https://www.esri.com">Esri</a>'
-            })
+            luchtfoto: L.tileLayer(
+                'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                {
+                    attribution: '&copy; <a href="https://www.esri.com">Esri</a>',
+                    maxZoom: 18,
+                }
+            ),
         };
 
         let currentBaseLayer = baseMaps.osm;
@@ -58,38 +68,79 @@
             }
         }
 
-        // Initialize draw control
-        const editableFeatures = new L.FeatureGroup();
-        map.addLayer(editableFeatures);
+        // Feature Group for drawn items
+        const drawnItems = new L.FeatureGroup().addTo(map);
 
+        // Initialize draw control
         const drawControl = new L.Control.Draw({
             draw: {
                 polygon: {
                     allowIntersection: false,
-                    drawError: { color: '#b00b00', message: '<strong>Error:</strong> No intersections!' },
-                    shapeOptions: { color: 'blue', fillColor: 'rgba(0, 0, 255, 0.3)', weight: 2 }
+                    drawError: {
+                        color: '#b00b00',
+                        message: '<strong>Error:</strong> No intersections!',
+                    },
+                    shapeOptions: {
+                        color: 'blue',
+                        fillColor: 'rgba(0, 0, 100, 0.7)',
+                        weight: 2,
+                    },
                 },
-                polyline: { color: 'green', weight: 3, lineCap: 'round' },
-                circle: { shapeOptions: { color: 'green', fillColor: 'rgba(0, 255, 0, 0.3)', weight: 2 } },
-                marker: { icon: new L.Icon.Default() },
-                rectangle: { shapeOptions: { color: 'purple', fillColor: 'rgba(128, 0, 128, 0.3)', weight: 2 } }
+                polyline: {
+                    color: 'green',
+                    weight: 3,
+                    lineCap: 'round',
+                },
+                circle: {
+                    shapeOptions: {
+                        color: 'green',
+                        fillColor: 'rgba(0, 100, 0, 0.7)',
+                        weight: 2,
+                    },
+                },
+                marker: {
+                    icon: new L.Icon.Default(),
+                },
+                rectangle: {
+                    shapeOptions: {
+                        color: 'purple',
+                        fillColor: 'rgba(100, 0, 100, 0.7)',
+                        weight: 2,
+                    },
+                },
             },
-            edit: { featureGroup: editableFeatures, remove: true }
+            edit: {
+                featureGroup: drawnItems,
+                remove: true,
+            },
         });
         map.addControl(drawControl);
 
         map.on('draw:created', (e) => {
             const layer = e.layer;
-            editableFeatures.addLayer(layer);
-            console.log('Feature created:', layer.toGeoJSON());
+            drawnItems.addLayer(layer);
+
+             // Get the GeoJSON representation of the drawn feature
+            const geojson = layer.toGeoJSON();
+            console.log("Feature created:", geojson);
+
+            // You can now send this GeoJSON data to a server, store it, etc.
+            // Example:
+            // sendDataToServer(geojson);
         });
 
         map.on('draw:edited', (e) => {
-            e.layers.eachLayer((layer) => console.log('Feature edited:', layer.toGeoJSON()));
+            e.layers.eachLayer((layer) => {
+                const geojson = layer.toGeoJSON();
+                console.log("Feature edited:", geojson);
+            });
         });
 
         map.on('draw:deleted', (e) => {
-            e.layers.eachLayer((layer) => console.log('Feature deleted:', layer.toGeoJSON()));
+            e.layers.eachLayer((layer) => {
+                const geojson = layer.toGeoJSON();
+                console.log("Feature deleted:", geojson);
+            });
         });
     </script>
 </body>
