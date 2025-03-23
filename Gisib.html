@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GISIB - Excel naar SQL Converter</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .icon-space {
+            margin-right: 8px;
+        }
+        .colorful-title {
+            color: #014b6b;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: ['Inter', 'sans-serif'],
+                    colors: {
+                        'primary': '#014b6b',
+                        'primary-dark': '#013249',
+                        'secondary': '#6b7280',
+                        'success': '#16a34a',
+                        'warning': '#d97706',
+                        'error': '#dc2626',
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-primary flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-semibold mb-6 text-center colorful-title" style="color:green">GISIB - Excel naar SQL Converter</h1>
+        <button id="convertButton" class="bg-success text-black font-bold py-2 px-4 rounded border-2 border-green-500 focus:outline-none focus:shadow-outline w-full mb-4">
+            <i class="fas fa-database icon-space"></i>Klik hier om het resultaat te tonen
+        </button>
+        <div class="mb-4">
+            <label for="columnName" class="block text-gray-700 text-sm font-bold mb-2">
+                <i class="fas fa-table icon-space"></i>Kolomnaam:
+            </label>
+            <input type="text" id="columnName" placeholder="bijv. ID" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+        <div class="mb-4">
+            <label for="fileInput" class="block text-gray-700 text-sm font-bold mb-2">
+                <i class="fas fa-file-excel icon-space"></i>Selecteer Excel Bestand:
+            </label>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+
+        <div id="feedback" class="mt-4 text-yellow-600 font-semibold text-center">
+        </div>
+        <div id="sqlOutput" class="mt-6 p-4 bg-gray-200 rounded-md text-gray-800 font-mono text-sm overflow-auto max-h-40">
+        </div>
+    </div>
+    <footer class="mt-4 text-center text-gray-300 text-sm">
+        Door Ahmad & Bjorn<br>
+        Mij - SQL Generator voor GISIB
+        <p class="text-gray-500 text-xs">
+            Beschrijving:<br>
+            Deze tool helpt gebruikers om snel en eenvoudig een SQL-query te genereren op basis van gegevens uit een Excel-bestand. Dit is vooral handig voor GISIB-gebruikers die ID’s uit een Excel-kolom willen omzetten in een "ID IN (...)" query, zonder handmatig te formatteren.
+        </p>
+        <p class="text-gray-500 text-xs">
+            Met deze tool kun je:
+        </p>
+        <ul class="list-disc list-inside text-gray-500 text-xs">
+            <li>Een Excel-bestand selecteren.</li>
+            <li>Een kolomnaam invoeren waarin de ID’s staan.</li>
+            <li>Automatisch een SQL-query genereren in het juiste formaat.</li>
+            <li>De query automatisch laten kopiëren naar het klembord.</li>
+            <li>De gegenereerde SQL-query direct in GISIB gebruiken.</li>
+        </ul>
+    </footer>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const columnNameInput = document.getElementById('columnName');
+        const convertButton = document.getElementById('convertButton');
+        const feedback = document.getElementById('feedback');
+        const sqlOutput = document.getElementById('sqlOutput');
+
+        function displayMessage(message, type = 'warning') {
+            feedback.textContent = message;
+            feedback.className = `mt-4 text-${type === 'error' ? 'red' : 'yellow'}-600 font-semibold text-center`;
+            if (type === 'success') {
+                feedback.className = `mt-4 text-success font-semibold text-center`;
+                setTimeout(() => {
+                    feedback.textContent = '';
+                }, 3000);
+            }
+            if (type === 'error') {
+                feedback.className = `mt-4 text-error font-semibold text-center`;
+            }
+        }
+
+
+        convertButton.addEventListener('click', () => {
+            const file = fileInput.files[0];
+            const columnName = columnNameInput.value.trim();
+
+            if (!file) {
+                displayMessage('Selecteer een Excel bestand.', 'error');
+                return;
+            }
+
+            if (!columnName) {
+                displayMessage('Voer een kolomnaam in.', 'error');
+                return;
+            }
+
+            const fileExtension = file.name.slice((file.name.lastIndexOf(".") - 1 >>> 0) + 2);
+            if (!['xlsx', 'xls'].includes(fileExtension)) {
+                displayMessage('Ongeldig bestandstype. Upload een Excel bestand (.xlsx of .xls).', 'error');
+                return;
+            }
+
+
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (!jsonData || jsonData.length === 0) {
+                        displayMessage('Het Excel bestand is leeg of bevat geen data.', 'error');
+                        return;
+                    }
+
+                    const headers = Object.keys(jsonData[0]);
+                    if (!headers.includes(columnName)) {
+                        displayMessage(`Kolom '${columnName}' niet gevonden in het Excel bestand. Controleer de kolomnaam.`, 'error');
+                        return;
+                    }
+
+                    const values = jsonData.map(row => row[columnName]).filter(value => value !== undefined && value !== null && value !== '');
+                    if (values.length === 0) {
+                        displayMessage(`Kolom '${columnName}' is leeg of bevat alleen null/undefined waardes.`, 'error');
+                        return;
+                    }
+                    const stringValues = values.map(String);
+                    const sqlQuery = `[ID] In (${stringValues.join(', ')})`;
+                    sqlOutput.textContent = sqlQuery;
+                    sqlOutput.classList.remove('hidden');
+                    displayMessage('SQL Query gegenereerd en gekopieerd naar klembord!', 'success');
+                    navigator.clipboard.writeText(sqlQuery);
+
+                } catch (error) {
+                    displayMessage(`Fout bij verwerken van bestand: ${error.message}`, 'error');
+                    sqlOutput.classList.add('hidden');
+                }
+            };
+
+            reader.onerror = () => {
+                displayMessage('Fout bij lezen van bestand.', 'error');
+            };
+
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
+</body>
+</html>
