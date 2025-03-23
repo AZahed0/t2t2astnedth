@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Leaflet Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; right: 0; left: 0; }
+        .map-buttons {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+        .map-buttons button { margin: 5px; padding: 5px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="map-buttons">
+        <button onclick="changeBaseMap('osm')">OSM</button>
+        <button onclick="changeBaseMap('osm_light')">OSM Light</button>
+        <button onclick="changeBaseMap('luchtfoto')">Luchtfoto</button>
+    </div>
+    <script>
+        const map = L.map("map", { minZoom: 2 }).setView([52.9591, 4.7593], 13);
+
+        // Base layers
+        const baseMaps = {
+            osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }),
+            osm_light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
+            }),
+            luchtfoto: L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '&copy; <a href="https://www.esri.com">Esri</a>'
+            })
+        };
+
+        let currentBaseLayer = baseMaps.osm;
+        currentBaseLayer.addTo(map);
+
+        function changeBaseMap(mapType) {
+            if (baseMaps[mapType]) {
+                map.removeLayer(currentBaseLayer);
+                currentBaseLayer = baseMaps[mapType];
+                currentBaseLayer.addTo(map);
+            }
+        }
+
+        // Initialize draw control
+        const editableFeatures = new L.FeatureGroup();
+        map.addLayer(editableFeatures);
+
+        const drawControl = new L.Control.Draw({
+            draw: {
+                polygon: {
+                    allowIntersection: false,
+                    drawError: { color: '#b00b00', message: '<strong>Error:</strong> No intersections!' },
+                    shapeOptions: { color: 'blue', fillColor: 'rgba(0, 0, 255, 0.3)', weight: 2 }
+                },
+                polyline: { color: 'green', weight: 3, lineCap: 'round' },
+                circle: { shapeOptions: { color: 'green', fillColor: 'rgba(0, 255, 0, 0.3)', weight: 2 } },
+                marker: { icon: new L.Icon.Default() },
+                rectangle: { shapeOptions: { color: 'purple', fillColor: 'rgba(128, 0, 128, 0.3)', weight: 2 } }
+            },
+            edit: { featureGroup: editableFeatures, remove: true }
+        });
+        map.addControl(drawControl);
+
+        map.on('draw:created', (e) => {
+            const layer = e.layer;
+            editableFeatures.addLayer(layer);
+            console.log('Feature created:', layer.toGeoJSON());
+        });
+
+        map.on('draw:edited', (e) => {
+            e.layers.eachLayer((layer) => console.log('Feature edited:', layer.toGeoJSON()));
+        });
+
+        map.on('draw:deleted', (e) => {
+            e.layers.eachLayer((layer) => console.log('Feature deleted:', layer.toGeoJSON()));
+        });
+    </script>
+</body>
+</html>
