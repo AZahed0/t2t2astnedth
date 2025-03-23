@@ -154,7 +154,7 @@
                         return;
                     }
                     const stringValues = values.map(String);
-                    const sqlQuery = `[ID] In (${stringValues.join(',')})`; // Removed spaces
+                    const sqlQuery = `[ID]In(${stringValues.join(',')})`; // Commas, no spaces
                     sqlOutput.textContent = sqlQuery;
                     sqlOutput.classList.remove('hidden');
                     displayMessage('SQL Query gegenereerd en gekopieerd naar klembord!', 'success');
