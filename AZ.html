@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaflet Map with Address Search - Den Helder</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        #map {
+            height: 80%;
+            width: 80%;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        /* Custom style for the Geocoder search input */
+        .leaflet-control-geocoder {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 30px;
+        }
+        .leaflet-control-geocoder input {
+            padding: 10px;
+            font-size: 14px;
+            width: 250px;
+            border: 2px solid #ddd;
+            border-radius: 30px;
+            color: black;
+        }
+        .leaflet-control-geocoder input:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+        /* Remove the search icon */
+        .leaflet-control-geocoder-icon {
+            display: none;
+        }
+        /* Optional: If you want to hide zoom buttons entirely, you can do so with this style */
+        .leaflet-control-zoom {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        // Initialize the map and center on Den Helder
+        var map = L.map('map').setView([52.9607, 4.7534], 13);  // Coordinates for Den Helder, NL
+        // Add OpenStreetMap tile layer to the map
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        // Add Geocoder control (search box) to the map using Nominatim geocoding API
+        var geocoder = L.Control.Geocoder.nominatim();
+        // Add geocoder to the map
+        L.Control.geocoder({
+            collapsed: false,
+            placeholder: 'Zoek naar een adres...',  // Dutch label for "Search for an address"
+            defaultMarkGeocode: false,
+            geocoder: new L.Control.Geocoder.Nominatim({
+                geocode: function(query, cb) {
+                    var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=' + query;
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            var results = data.map(function(item) {
+                                return {
+                                    name: item.display_name,
+                                    center: L.latLng(item.lat, item.lon),
+                                    properties: item
+                                };
+                            });
+                            cb(results);
+                        });
+                }
+            })
+        })
+        .on('markgeocode', function(e) {
+            var latlng = e.geocode.center;
+            // Add marker for the found address
+            L.marker(latlng).addTo(map)
+                .bindPopup(e.geocode.name + '<br/>x: ' + latlng.lat.toFixed(4) + '<br/>y: ' + latlng.lng.toFixed(4))
+                .openPopup();
+            // Zoom into the address found
+            map.setView(latlng, 16);
+        })
+        .addTo(map);
+        // Optional: Handle clicking on the map to show coordinates in popup
+        map.on('click', function(e) {
+            var latlng = e.latlng;
+             L.marker(latlng).addTo(map)
+                .bindPopup('x: ' + latlng.lat.toFixed(4) + '<br/>y: ' + latlng.lng.toFixed(4))
+                .openPopup();
+        });
+    </script>
+</body>
+</html>
