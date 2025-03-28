@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactieve Mindmap van Projectfasen</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/interact.js/1.10.19/interact.min.js"></script>
+    <style>
+        /* Custom CSS voor de Mindmap */
+        #mindmap-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a202c;
+            font-family: 'Roboto', sans-serif;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+            flex-direction: column; /* Stack items vertically by default */
+        }
+
+        #mindmap {
+            position: relative;
+            width: 100%;
+            height: auto; /* Adjust height to content */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        .node {
+            position: relative;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            text-align: center;
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            word-wrap: break-word;
+            max-width: 140px;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            margin-bottom: 2rem;
+        }
+
+        .node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.7);
+        }
+
+        .node h2 {
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-bottom: 0.025rem;
+            color: inherit;
+        }
+
+        .node p {
+            font-size: 0.6rem;
+            margin-bottom: 0.025rem;
+            color: inherit;
+            display: none;
+        }
+
+        .node p.expanded {
+            display: block;
+        }
+
+        .node ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.55rem;
+            color: inherit;
+            display: none;
+        }
+
+        .node ul.expanded {
+            display: block;
+        }
+
+        .node li {
+            margin-bottom: 0.025rem;
+            color: inherit;
+        }
+
+        /* Specifieke node kleuren */
+        .central-node {
+            background-color: #1a202c;
+            color: #5A6FDD;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border: 2px solid #5A6FDD;
+            padding: 0.5rem;
+            max-width: 110px;
+        }
+        .initiatief { background-color: #AFEEEE; /* Lichtblauw */ }
+        .uitvoeren { background-color: #FFD700; /* Geel */ }
+        .afrond { background-color: #90EE90; /* Lichtgroen */ }
+        .archief { background-color: #808080; /* Grijs */ }
+        .idee { background-color: #808080; /* Grijs */ }
+        .voorbereiden { background-color: #4682B4; /* Donkerder blauw */ }
+        .overdragen-on-hold { background-color: #DC143C; /* Rood */ }
+
+        /* Connector lijnen */
+        .connector {
+            position: absolute;
+            pointer-events: none;
+            width: 100%;
+            height: 0;
+            top: 0;
+            left: 0;
+        }
+
+        .connector path {
+            stroke: #6b7280;
+            stroke-width: 2px;
+            fill: none;
+        }
+
+        /* Zoom controls */
+        #zoom-controls {
+            position: fixed;
+            top: 0.1rem;
+            right: 0.1rem;
+            display: flex;
+            gap: 0.05rem;
+            z-index: 10;
+        }
+        #zoom-in, #zoom-out {
+            padding: 0.1rem 0.2rem;
+            border-radius: 0.25rem;
+            background-color: #4a5568;
+            color: white;
+            cursor: pointer;
+            border: 1px solid #718096;
+            font-size: 0.5rem;
+            transition: background-color 0.2s ease-in-out;
+        }
+        #zoom-in:hover, #zoom-out:hover {
+            background-color: #718096;
+        }
+
+        /* Color pickers */
+        .color-pickers {
+            position: fixed;
+            top: 0.1rem;
+            left: 0.1rem;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 0.025rem;
+        }
+        .color-pickers label {
+            font-size: 0.4rem;
+            color: white;
+            margin-bottom: 0.01rem;
+            display: block;
+        }
+        .color-pickers input {
+            width: 18px;
+            height: 18px;
+            border-radius: 0.25rem;
+            border: none;
+            cursor: pointer;
+            margin-right: 0.05rem;
+        }
+
+        /* Mindmap container */
+        #mindmap-container {
+            padding: 0;
+            margin: 0;
+            overflow-x: auto;
+            overflow-y: visible;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-800 p-4">
+    <div id="mindmap-container">
+        <div id="mindmap">
+            <div class="node central-node" id="central-node">Projectfasen</div>
+            <div class="node idee" id="idee">
+                <h2>Idee</h2>
+                <p style="color: black;">In deze fase ontstaat het eerste concept of idee voor het project.</p>
+                <ul>
+                    <li>Brainstormen</li>
+                    <li>Probleemanalyse</li>
+                    <li>Doelstellingen bepalen</li>
+                </ul>
+            </div>
+            <div class="node initiatief" id="initiatief">
+                <h2 style="color: black; font-weight: bold;">Initiatief</h2>
+                <p style="color: black;">In deze fase wordt onderzocht of het project haalbaar en waardevol is.</p>
+                <ul>
+                    <li style="color: black;">Kosten-batenanalyse</li>
+                    <li style="color: black;">Stakeholderanalyse</li>
+                    <li style="color: black;">Projectvoorstel opstellen</li>
+                </ul>
+            </div>
+            <div class="node voorbereiden" id="voorbereiden">
+                <h2>Voorbereiden</h2>
+                <p style="color: black;">In deze fase wordt het project gepland en georganiseerd.</p>
+                <ul>
+                    <li>Planning en budgettering</li>
+                    <li>Team samenstellen</li>
+                    <li>Risicoanalyse</li>
+                </ul>
+            </div>
+            <div class="node uitvoeren" id="uitvoeren">
+                <h2 style="color: black; font-weight: bold;">Uitvoeren</h2>
+                <p style="color: black;">In deze fase wordt het project daadwerkelijk uitgevoerd.</p>
+                <ul>
+                    <li style="color: black;">Taken uitvoeren</li>
+                    <li style="color: black;">Voortgang bewaken</li>
+                    <li style="color: black;">Communicatie met stakeholders</li>
+                </ul>
+            </div>
+            <div class="node overdragen-on-hold" id="overdragen-on-hold">
+                <h2>Overdragen / On Hold</h2>
+                <p style="color: black;">In deze fase wordt het projectresultaat overgedragen of tijdelijk stopgezet.</p>
+                <ul>
+                    <li>Training geven (Overdragen)</li>
+                    <li>Evaluatie en feedback verzamelen (Overdragen)</li>
+                    <li>Nazorg plannen (Overdragen)</li>
+                    <li>Redenen analyseren (On Hold)</li>
+                    <li>Herstartcriteria vaststellen (On Hold)</li>
+                    <li>Documentatie bijwerken (On Hold)</li>
+                </ul>
+            </div>
+            <div class="node afrond" id="afrond">
+                <h2 style="color: black; font-weight: bold;">Afrond</h2>
+                <p style="color: black;">In deze fase wordt het project officieel afgerond en geëvalueerd.</p>
+                <ul>
+                    <li style="color: black;">Eindrapport opstellen</li>
+                    <li style="color: black;">Successen en leerpunten documenteren</li>
+                    <li style="color: black;">Projectteam ontbinden</li>
+                </ul>
+            </div>
+            <div class="node archief" id="archief">
+                <h2>Archief</h2>
+                <p style="color: black;">In deze fase wordt het project definitief afgesloten en opgeslagen.</p>
+                <ul>
+                    <li>Alle documentatie opslaan</li>
+                    <li>Evaluatie rapporteren</li>
+                    <li>Leermomenten verwerken</li>
+                </ul>
+            </div>
+        </div>
+        <div id="zoom-controls">
+            <button id="zoom-in">+</button>
+            <button id="zoom-out">-</button>
+        </div>
+        <div class="color-pickers">
+            <label for="central-color">Central:</label>
+            <input type="color" id="central-color" value="#5A6FDD" data-node="central-node">
+            <label for="initiatief-color">Initiatief:</label>
+            <input type="color" id="initiatief-color" value="#AFEEEE" data-node="initiatief">
+            <label for="uitvoeren-color">Uitvoeren:</label>
+            <input type="color" id="uitvoeren-color" value="#FFD700" data-node="uitvoeren">
+            <label for="afrond-color">Afrond:</label>
+            <input type="color" id="afrond-color" value="#90EE90" data-node="afrond">
+            <label for="archief-color">Archief:</label>
+            <input type="color" id="archief-color" value="#808080" data-node="archief">
+            <label for="idee-color">Idee:</label>
+            <input type="color" id="idee-color" value="#808080" data-node="idee">
+            <label for="voorbereiden-color">Voorbereiden:</label>
+            <input type="color" id="voorbereiden-color" value="#4682B4" data-node="voorbereiden">
+             <label for="overdragen-on-hold-color">Overdragen/On Hold:</label>
+            <input type="color" id="overdragen-on-hold-color" value="#DC143C" data-node="overdragen-on-hold">
+        </div>
+    </div>
+
+    <script>
+        const mindmap = document.getElementById('mindmap');
+        const centralNode = document.getElementById('central-node');
+        const initiatiefNode = document.getElementById('initiatief');
+        const uitvoerenNode = document.getElementById('uitvoeren');
+        const afrondNode = document.getElementById('afrond');
+        const archiefNode = document.getElementById('archief');
+        const ideeNode = document.getElementById('idee');
+        const voorbereidenNode = document.getElementById('voorbereiden');
+        const overdragenOnHoldNode = document.getElementById('overdragen-on-hold');
+        const zoomInButton = document.getElementById('zoom-in');
+        const zoomOutButton = document.getElementById('zoom-out');
+        const colorPickers = document.querySelectorAll('.color-pickers input');
+
+
+        let scale = 1;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+
+        const nodes = [
+            centralNode, initiatiefNode, uitvoerenNode, afrondNode, archiefNode,
+            ideeNode, voorbereidenNode, overdragenOnHoldNode
+        ];
+
+        function redrawConnections() {
+            const connectors = document.querySelectorAll('.connector');
+            connectors.forEach(connector => connector.remove());
+
+        }
+
+        function handleNodeClick(node) {
+            const paragraphs = node.querySelectorAll('p');
+            const lists = node.querySelectorAll('ul');
+            paragraphs.forEach(p => p.classList.toggle('expanded'));
+            lists.forEach(ul => ul.classList.toggle('expanded'));
+        }
+
+        function handleZoom(delta) {
+            scale += delta;
+            scale = Math.max(0.5, Math.min(2, scale));
+            mindmap.style.transform = `scale(${scale})`;
+            redrawConnections();
+        }
+
+        function handleColorChange(event) {
+            const newColor = event.target.value;
+            const targetNodeId = event.target.dataset.node;
+            const targetNode = document.getElementById(targetNodeId);
+
+            if (targetNode) {
+                if (targetNode.classList.contains('central-node')) {
+                    targetNode.style.color = newColor;
+                    targetNode.style.borderColor = newColor;
+                } else {
+                    targetNode.style.backgroundColor = newColor;
+                }
+                redrawConnections();
+            }
+        }
+
+
+        window.onload = () => {
+            redrawConnections();
+
+            nodes.forEach(node => {
+                node.addEventListener('click', () => handleNodeClick(node));
+            });
+
+            zoomInButton.addEventListener('click', () => handleZoom(0.1));
+            zoomOutButton.addEventListener('click', () => handleZoom(-0.1));
+            colorPickers.forEach(picker => {
+                picker.addEventListener('change', handleColorChange);
+            });
+
+
+            interact(mindmap)
+                .on('start', (event) => {
+                    isDragging = true;
+                    startX = event.clientX;
+                    startY = event.clientY;
+                })
+                .on('move', (event) => {
+                    if (isDragging) {
+                        const dx = event.clientX - startX;
+                        const dy = event.clientY - startY;
+                        const matrix = window.getComputedStyle(mindmap).transform;
+                        let translateX = 0;
+                        let translateY = 0;
+
+                        if (matrix !== 'none') {
+                            const matrixValues = matrix.split(',').map(Number);
+                            translateX = matrixValues[4];
+                            translateY = matrixValues[5];
+                        }
+                        mindmap.style.transform = `translate(${translateX + dx}px, ${translateY + dy}) scale(${scale})`;
+                        startX = event.clientX;
+                        startY = event.clientY;
+                    }
+                })
+                .on('end', () => {
+                    isDragging = false;
+                });
+        };
+    </script>
+</body>
+</html>
