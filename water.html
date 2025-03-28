@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactieve Mindmap van Waterdeel en Civiele Kunstwerken</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/interact.js/1.10.19/interact.min.js"></script>
+    <style>
+        /* Custom CSS voor de Mindmap */
+        #mindmap-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a202c;
+            font-family: 'Roboto', sans-serif;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        #mindmap {
+            position: relative;
+            width: 100%;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        .node {
+            position: relative;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            color: #000;
+            text-align: center;
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            word-wrap: break-word;
+            max-width: 140px;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            margin-bottom: 2rem;
+        }
+
+        .node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.7);
+        }
+
+        .node h2 {
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-bottom: 0.025rem;
+            color: inherit;
+        }
+
+        .node p {
+            font-size: 0.6rem;
+            margin-bottom: 0.025rem;
+            color: inherit;
+            display: none;
+        }
+
+        .node p.expanded {
+            display: block;
+        }
+
+        .node ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.55rem;
+            color: inherit;
+            display: none;
+        }
+
+        .node ul.expanded {
+            display: block;
+        }
+
+        .node li {
+            margin-bottom: 0.025rem;
+            color: inherit;
+        }
+
+        /* Specifieke node kleuren */
+        .central-node {
+            background-color: #5D2481;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border: 2px solid #5A6FDD;
+            padding: 0.5rem;
+            max-width: 110px;
+        }
+        .waterdeel { background-color: #AFEEEE; /* Lichtblauw */ }
+        .civiele-kunstwerken { background-color: #87CEFA; /* Lichtblauw */ }
+        .inspecties { background-color: #FFFFE0; /* Lichtgeel */ }
+        .gebrekswaarden { background-color: #D3D3D3; /* Lichtgrijs */ }
+        .maatregelen { background-color: #FFA500; /* Oranje */ }
+
+        /* Connector lijnen */
+        .connector {
+            position: absolute;
+            pointer-events: none;
+            width: 100%;
+            height: 0;
+            top: 0;
+            left: 0;
+        }
+
+        .connector path {
+            stroke: #6b7280;
+            stroke-width: 2px;
+            fill: none;
+        }
+
+        /* Zoom controls */
+        #zoom-controls {
+            position: fixed;
+            top: 0.1rem;
+            right: 0.1rem;
+            display: flex;
+            gap: 0.05rem;
+            z-index: 10;
+        }
+        #zoom-in, #zoom-out {
+            padding: 0.1rem 0.2rem;
+            border-radius: 0.25rem;
+            background-color: #4a5568;
+            color: white;
+            cursor: pointer;
+            border: 1px solid #718096;
+            font-size: 0.5rem;
+            transition: background-color 0.2s ease-in-out;
+        }
+        #zoom-in:hover, #zoom-out:hover {
+            background-color: #718096;
+        }
+
+        /* Color pickers */
+        .color-pickers {
+            position: fixed;
+            top: 0.1rem;
+            left: 0.1rem;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 0.025rem;
+        }
+        .color-pickers label {
+            font-size: 0.4rem;
+            color: white;
+            margin-bottom: 0.01rem;
+            display: block;
+        }
+        .color-pickers input {
+            width: 18px;
+            height: 18px;
+            border-radius: 0.25rem;
+            border: none;
+            cursor: pointer;
+            margin-right: 0.05rem;
+        }
+
+        /* Mindmap container */
+        #mindmap-container {
+            padding: 0;
+            margin: 0;
+            overflow-x: auto;
+            overflow-y: visible;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 2rem;
+            border: none;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 0.5rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        .close-button {
+            color: #aaa;
+            font-size: 1.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            border: none;
+            background: none;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .close-button:hover {
+            color: #000;
+        }
+
+        .modal-body {
+            padding-bottom: 1.5rem;
+            line-height: 1.6;
+            color: #444;
+        }
+
+        .modal-footer {
+            text-align: right;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .modal-footer button {
+            background-color: #5D2481;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-footer button:hover {
+            background-color: #4c1d70;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .primary-categories {
+                flex-direction: column;
+            }
+
+            .primary-category {
+                margin-bottom: 1.5rem;
+            }
+        }
+
+    </style>
+</head>
+<body class="bg-gray-800 p-4">
+    <div id="mindmap-container">
+        <div id="mindmap">
+            <div class="node central-node" id="central-node">IMGeo Gisib</div>
+            <div class="node waterdeel" id="waterdeel">
+                <h2>🌊 Waterdeel IMGEO</h2>
+                <p>IMGEO Waterdeel Types:</p>
+                <ul>
+                    <li>🌊 Waterloop</li>
+                    <li>🏞️ Greppel</li>
+                    <li>🌋 Watervlak</li>
+                    <li>🌊 Zee</li>
+                </ul>
+                <p>IMGEO Waterdeel Type Plus:</p>
+                <ul>
+                    <li>💧 Bron</li>
+                    <li>🌊 Gracht</li>
+                    <li>🚢 Kanaal</li>
+                    <li>🌊 Rivier</li>
+                    <li>🌱 Sloot</li>
+                </ul>
+                <p>IMGeo Plus Status:</p>
+                <ul>
+                    <li>✅ Bestaand</li>
+                    <li>🕰️ Historisch</li>
+                    <li>📅 Plan</li>
+                </ul>
+                <p>Beheerder: -- ✏️ (Gebruiker invullen)</p>
+                <p>Eigenaar: -- ✏️ (Gebruiker invullen)</p>
+            </div>
+            <div class="node civiele-kunstwerken" id="civiele-kunstwerken">
+                <h2>🏗️ Civiele Kunstwerken</h2>
+                <p>Kunstwerkdeel IMGEO:</p>
+                <ul>
+                    <li>⛵️ Sluis</li>
+                    <li>💧 Gemaal</li>
+                    <li>🚢 Steiger</li>
+                    <li>🚋 Peron</li>
+                    <li>🌊 Stuw</li>
+                </ul>
+                <p>IMGEO Kunstwerkdeel Type Plus:</p>
+                <ul>
+                    <li>🚇 Duiker</li>
+                    <li>🏢 Poton</li>
+                    <li>🏰 Keermuur</li>
+                </ul>
+                <p>IMGeo Plus Status:</p>
+                <ul>
+                    <li>✅ Bestaand</li>
+                    <li>🕰️ Historisch</li>
+                    <li>📅 Plan</li>
+                </ul>
+                <p>Beheerder: -- ✏️ (Gebruiker invullen)</p>
+                <p>Eigenaar: -- ✏️ (Gebruiker invullen)</p>
+            </div>
+            <div class="node inspecties" id="inspecties">
+                <h2>📝 Inspecties</h2>
+                <p>Inspectie Waterwerken:</p>
+                <ul>
+                    <li>🛠 Beschoeiing Inspectie</li>
+                    <li>🔍 Algemene Inspectie</li>
+                    <li>❌ Slecht</li>
+                    <li>⚠️ Matig</li>
+                    <li>✅ Goed</li>
+                    <li>🌟 Zeer Goed</li>
+                </ul>
+            </div>
+            <div class="node gebrekswaarden" id="gebrekswaarden">
+                <h2>Gebrekswaarden & Basis Objecten:</h2>
+                <ul>
+                    <li>Gebrek: Ja / Nee</li>
+                </ul>
+                <p>Gebreksklasse:</p>
+                <ul>
+                    <li>🔍 Algemeen</li>
+                    <li>⚙️ Mechanisch</li>
+                    <li>🌱 Ziekte</li>
+                    <li>🍄 Schimmel</li>
+                </ul>
+                <p>Voorbeelden van Objectgebrek:</p>
+                <ul>
+                    <li>🌳 Boomgebrek</li>
+                    <li>🌱 Afgegraven Maaiveld</li>
+                    <li>🌲 Afgestorven Boom</li>
+                    <li>🪲 Bacterievuur</li>
+                    <li>🍄 Berkenzwam</li>
+                    <li>⚡ Blikseminslag</li>
+                    <li>💉 Bloeding</li>
+                </ul>
+            </div>
+            <div class="node maatregelen" id="maatregelen">
+                <h2>🛠 Maatregelen & Beschoeiing</h2>
+                <p>Mogelijke Maatregelen:</p>
+                <ul>
+                    <li>❌ Geen Maatregelen Treffen</li>
+                    <li>🌱 Gras- en Groene Overgroei Verwijderen</li>
+                    <li>🌿 Vervangen Oeverconstructie</li>
+                    <li>🌿 Vervangen of Natuurlijk Maken</li>
+                    <li>🛠 Beschoeiing Plaatsen</li>
+                    <li>🧱 Palen Vervangen/ Plaatsen</li>
+                    <li>🧱 Herstel Steenblokken</li>
+                    <li>🧱 Aanvullen met Grond</li>
+                    <li> Planken Vervangen/ Plaatsen</li>
+                    <li>🧑‍💼 Anders (zie opmerking)</li>
+                </ul>
+            </div>
+        </div>
+        <div id="zoom-controls">
+            <button id="zoom-in">+</button>
+            <button id="zoom-out">-</button>
+        </div>
+        <div class="color-pickers">
+            <label for="central-color">Central:</label>
+            <input type="color" id="central-color" value="#5D2481" data-node="central-node">
+            <label for="waterdeel-color">Waterdeel:</label>
+            <input type="color" id="waterdeel-color" value="#AFEEEE" data-node="waterdeel">
+            <label for="civiele-kunstwerken-color">Civiele Kunstwerken:</label>
+            <input type="color" id="civiele-kunstwerken-color" value="#87CEFA" data-node="civiele-kunstwerken">
+            <label for="inspecties-color">Inspecties:</label>
+            <input type="color" id="inspecties-color" value="#FFFFE0" data-node="inspecties">
+            <label for="gebrekswaarden-color">Gebrekswaarden:</label>
+            <input type="color" id="gebrekswaarden-color" value="#D3D3D3" data-node="gebrekswaarden">
+             <label for="maatregelen-color">Maatregelen:</label>
+            <input type="color" id="maatregelen-color" value="#FFA500" data-node="maatregelen">
+        </div>
+    </div>
+
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Informatie</h2>
+                <button class="close-button">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-info-content">
+                <p>Hier komt de gedetailleerde informatie.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-close-button">Sluiten</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mindmap = document.getElementById('mindmap');
+        const centralNode = document.getElementById('central-node');
+        const waterdeelNode = document.getElementById('waterdeel');
+        const civieleKunstwerkenNode = document.getElementById('civiele-kunstwerken');
+        const inspectiesNode = document.getElementById('inspecties');
+        const gebrekswaardenNode = document.getElementById('gebrekswaarden');
+        const maatregelenNode = document.getElementById('maatregelen');
+        const zoomInButton = document.getElementById('zoom-in');
+        const zoomOutButton = document.getElementById('zoom-out');
+        const colorPickers = document.querySelectorAll('.color-pickers input');
+        const modal = document.getElementById("info-modal");
+        const closeButtons = [
+            document.querySelector('.close-button'),
+            document.getElementById('modal-close-button')
+        ];
+
+        let scale = 1;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+
+        const nodes = [
+            centralNode, waterdeelNode, civieleKunstwerkenNode, inspectiesNode, gebrekswaardenNode, maatregelenNode
+        ];
+
+        const nodeInfo = {
+            'waterdeel': `
+                <h2>🌊 Waterdeel IMGEO</h2>
+                <p>IMGEO Waterdeel Types:</p>
+                <ul>
+                    <li>🌊 Waterloop</li>
+                    <li>🏞️ Greppel</li>
+                    <li>🌋 Watervlak</li>
+                    <li>🌊 Zee</li>
+                </ul>
+                <p>IMGEO Waterdeel Type Plus:</p>
+                <ul>
+                    <li>💧 Bron</li>
+                    <li>🌊 Gracht</li>
+                    <li>🚢 Kanaal</li>
+                    <li>🌊 Rivier</li>
+                    <li>🌱 Sloot</li>
+                </ul>
+                <p>IMGeo Plus Status:</p>
+                <ul>
+                    <li>✅ Bestaand</li>
+                    <li>🕰️ Historisch</li>
+                    <li>📅 Plan</li>
+                </ul>
+                <p>Beheerder: -- ✏️ (Gebruiker invullen)</p>
+                <p>Eigenaar: -- ✏️ (Gebruiker invullen)</p>
+            `,
+            'civiele-kunstwerken': `
+                <h2>🏗️ Civiele Kunstwerken</h2>
+                <p>Kunstwerkdeel IMGEO:</p>
+                <ul>
+                    <li>⛵️ Sluis</li>
+                    <li>💧 Gemaal</li>
+                    <li>🚢 Steiger</li>
+                     <li>🚋 Peron</li>
+                    <li>🌊 Stuw</li>
+                </ul>
+                <p>IMGEO Kunstwerkdeel Type Plus:</p>
+                <ul>
+                    <li> 지하철 Duiker</li>
+                    <li>🏢 Poton</li>
+                    <li>🏰 Keermuur</li>
+                </ul>
+                <p>IMGeo Plus Status:</p>
+                <ul>
+                    <li>✅ Bestaand</li>
+                    <li>🕰️ Historisch</li>
+                    <li>📅 Plan</li>
+                </ul>
+                <p>Beheerder: -- ✏️ (Gebruiker invullen)</p>
+                <p>Eigenaar: -- ✏️ (Gebruiker invullen)</p>
+            `,
+            'inspecties': `
+                <h2>📝 Inspecties</h2>
+                <p>Inspectie Waterwerken:</p>
+                <ul>
+                    <li>🛠 Beschoeiing Inspectie</li>
+                    <li>🔍 Algemene Inspectie</li>
+                    <li>❌ Slecht</li>
+                    <li>⚠️ Matig</li>
+                    <li>✅ Goed</li>
+                    <li>🌟 Zeer Goed</li>
+                </ul>
+            `,
+            'gebrekswaarden': `
+               <h2>Gebrekswaarden & Basis Objecten:</h2>
+                <ul>
+                    <li>Gebrek: Ja / Nee</li>
+                </ul>
+                <p>Gebreksklasse:</p>
+                <ul>
+                    <li>🔍 Algemeen</li>
+                    <li>⚙️ Mechanisch</li>
+                    <li>🌱 Ziekte</li>
+                    <li>🍄 Schimmel</li>
+                </ul>
+                <p>Voorbeelden van Objectgebrek:</p>
+                <ul>
+                    <li>🌳 Boomgebrek</li>
+                    <li>🌱 Afgegraven Maaiveld</li>
+                    <li>🌲 Afgestorven Boom</li>
+                    <li>🪲 Bacterievuur</li>
+                    <li>🍄 Berkenzwam</li>
+                    <li>⚡ Blikseminslag</li>
+                    <li>💉 Bloeding</li>
+                </ul>
+            `,
+            'maatregelen': `
+                <h2>🛠 Maatregelen & Beschoeiing</h2>
+                <p>Mogelijke Maatregelen:</p>
+                <ul>
+                    <li>❌ Geen Maatregelen Treffen</li>
+                    <li>🌱 Gras- en Groene Overgroei Verwijderen</li>
+                    <li>🌿 Vervangen Oeverconstructie</li>
+                    <li>🌿 Vervangen of Natuurlijk Maken</li>
+                    <li>🛠 Beschoeiing Plaatsen</li>
+                    <li>🧱 Palen Vervangen/ Plaatsen</li>
+                    <li>🧱 Herstel Steenblokken</li>
+                    <li>🧱 Aanvullen met Grond</li>
+                    <li> Planken Vervangen/ Plaatsen</li>
+                    <li>🧑‍💼 Anders (zie opmerking)</li>
+                </ul>
+            `,
+        };
+
+        function redrawConnections() {
+            const connectors = document.querySelectorAll('.connector');
+            connectors.forEach(connector => connector.remove());
+
+        }
+
+        function handleNodeClick(node) {
+            const paragraphs = node.querySelectorAll('p');
+            const lists = node.querySelectorAll('ul');
+            paragraphs.forEach(p => p.classList.toggle('expanded'));
+            lists.forEach(ul => ul.classList.toggle('expanded'));
+
+            // Show modal with info
+            const nodeId = node.id;
+            const info = nodeInfo[nodeId];
+            if (info) {
+                document.getElementById('modal-info-content').innerHTML =  info;
+                modal.style.display = "block";
+            }
+        }
+
+        function handleZoom(delta) {
+            scale += delta;
+            scale = Math.max(0.5, Math.min(2, scale));
+            mindmap.style.transform = `scale(${scale})`;
+            redrawConnections();
+        }
+
+        function handleColorChange(event) {
+            const newColor = event.target.value;
+            const targetNodeId = event.target.dataset.node;
+            const targetNode = document.getElementById(targetNodeId);
+
+            if (targetNode) {
+                if (targetNode.classList.contains('central-node')) {
+                    targetNode.style.color = newColor;
+                    targetNode.style.borderColor = newColor;
+                } else {
+                    targetNode.style.backgroundColor = newColor;
+                }
+                redrawConnections();
+            }
+        }
+
+        // Close modal functionality
+        closeButtons.forEach(btn => {
+            if (btn) {
+                btn.onclick = function() {
+                    modal.style.display = "none";
+                }
+            }
+        });
+
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        }
+
+
+        window.onload = () => {
+            redrawConnections();
+
+            nodes.forEach(node => {
+                node.addEventListener('click', () => handleNodeClick(node));
+            });
+
+            zoomInButton.addEventListener('click', () => handleZoom(0.1));
+            zoomOutButton.addEventListener('click', () => handleZoom(-0.1));
+            colorPickers.forEach(picker => {
+                picker.addEventListener('change', handleColorChange);
+            });
+
+
+            interact(mindmap)
+                .on('start', (event) => {
+                    isDragging = true;
+                    startX = event.clientX;
+                    startY = event.clientY;
+                })
+                .on('move', (event) => {
+                    if (isDragging) {
+                        const dx = event.clientX - startX;
+                        const dy = event.clientY - startY;
+                        const matrix = window.getComputedStyle(mindmap).transform;
+                        let translateX = 0;
+                        let translateY = 0;
+
+                        if (matrix !== 'none') {
+                            const matrixValues = matrix.split(',').map(Number);
+                            translateX = matrixValues[4];
+                            translateY = matrixValues[5];
+                        }
+                        mindmap.style.transform = `translate(${translateX + dx}px, ${translateY + dy}) scale(${scale})`;
+                        startX = event.clientX;
+                        startY = event.clientY;
+                    }
+                })
+                .on('end', () => {
+                    isDragging = false;
+                });
+        };
+    </script>
+</body>
+</html>
