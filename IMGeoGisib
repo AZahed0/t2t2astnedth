@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMGEO Water & Inspecties Overzicht</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #mindmap-container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            overflow-x: auto;
+            overflow-y: auto;
+            background-color: #f7fafc;
+            position: relative;
+        }
+        .mindmap {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            padding: 0;
+            border-radius: 0.5rem;
+            width: 100%;
+            max-width: 2000px;
+            margin-top: 2rem;
+        }
+        .header {
+            background-color: #5D2481;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            width: 100%;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .header:hover {
+            background-color: #4c1d70;
+        }
+        .primary-categories {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 2rem;
+        }
+        .primary-category {
+            flex: 1;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            margin: 0 1rem;
+            box-sizing: border-box;
+            position: relative;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+        .primary-category:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 8px -2px rgba(0, 0, 0, 0.15), 0 3px 7px -3px rgba(0, 0, 0, 0.07);
+        }
+        #water-category {
+            background-color: #A1C2E6;
+            color: #1F4E79;
+        }
+        #kunstwerken-category {
+            background-color: #A1C2E6;
+            color: #1F4E79;
+        }
+        .sub-node {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+        }
+        .sub-node:hover {
+            background-color: #f0f0f0;
+            transform: scale(1.02);
+        }
+        .leaf-node {
+            font-size: 1rem;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+        .inspecties {
+            background-color: #F7D60C;
+            color: black;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            width: 100%;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .inspecties:hover {
+            background-color: #e6c008;
+            transform: scale(1.02);
+        }
+        .gebrekswaarden {
+            background-color: #D8A7E0;
+            color: black;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            width: 100%;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .gebrekswaarden:hover {
+            background-color: #c693cd;
+            transform: scale(1.02);
+        }
+        .maatregelen {
+            background-color: #F4B400;
+            color: black;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            width: 100%;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .maatregelen:hover {
+            background-color: #e0a100;
+            transform: scale(1.02);
+        }
+        .sub-box {
+            padding: 1rem;
+            border: 1px solid black;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+            text-align: center;
+            background-color: white;
+            position: relative;
+            transition: background-color 0.3s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+        .sub-box:hover {
+            background-color: #f8f8f8;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .arrow {
+            stroke-width: 2px;
+            fill: none;
+            position: absolute;
+        }
+        .green-highlight {
+            background-color: #C8E6C9;
+            padding: 0.2rem;
+            border-radius: 0.3rem;
+        }
+        .red-highlight {
+            background-color: #FFDDC1;
+            padding: 0.2rem;
+            border-radius: 0.3rem;
+        }
+        #waterdeel-imgeo {
+            color: #065e75;
+        }
+        #ondersteunende-elementen {
+            color: #047857;
+        }
+        #civiele-kunstwerken {
+            color: #854d0e;
+        }
+        #scheidingen-grenzen {
+            color: #991b1b;
+        }
+        #metadata-beheer {
+            color: #4b5563;
+        }
+        .plus {
+            font-size: 0.8rem;
+            margin-left: 0.25rem;
+            color: #4a5568;
+        }
+        .hidden {
+            display: none;
+            opacity: 0;
+            height: 0;
+            overflow: hidden;
+            transition: opacity 0.3s ease, height 0.3s ease;
+            margin-top: 0;
+            margin-bottom: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .expanded {
+            display: flex;
+            flex-direction: column;
+            opacity: 1;
+            height: auto;
+            overflow: visible;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 2rem;
+            border: 1px solid #888;
+            width: 80%;
+            border-radius: 0.5rem;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: #aaa;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            border: none;
+            background: none;
+            padding: 0;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #000;
+            text-decoration: none;
+        }
+
+        .modal-body {
+            padding-bottom: 1rem;
+            line-height: 1.6;
+            color: #444;
+        }
+
+        .modal-footer {
+            text-align: right;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .modal-footer button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-footer button:hover {
+            background-color: #367c39;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-6">
+    <div id="mindmap-container">
+        <div class="mindmap" id="imgeo-water-mindmap">
+            <div class="header" data-target="header-content">IMGeo Gisib</div>
+            <div class="primary-categories">
+                <div class="primary-category" id="water-category" data-target="waterdeel-imgeo-content">
+                    🌊 Waterdeel IMGEO
+                    <svg class="arrow" id="arrow-1"></svg>
+                    <div class="sub-node hidden" id="waterdeel-imgeo-content">
+                        <div class="leaf-node" id="imgeo-waterdeel-type" data-info="Type van het waterdeel in IMGeo">
+                            IMGEO waterdeel type
+                            <div class="leaf-node" id="waterloop" data-info="Een natuurlijk of kunstmatig open water met een duidelijke stroming.">🌊 Waterloop</div>
+                            <div class="leaf-node" id="greppel" data-info="Een smalle, ondiepe waterloop, vaak langs een weg of perceelgrens.">🏞️ Greppel</div>
+                            <div class="leaf-node" id="watervlak" data-info="Een oppervlakte van open water, zoals een meer of vijver.">🌋 Watervlak</div>
+                            <div class="leaf-node" id="zee" data-info="Een grote massa zout water die een groot deel van het aardoppervlak bedekt.">🌊 Zee</div>
+                        </div>
+                         <div class="leaf-node" id="imgeo-waterdeel-type-plus" data-info="Extra types van waterdelen in IMGeo">
+                            IMGEO waterdeel type plus
+                            <div class="leaf-node" id="bron" data-info="Punt waar water uit de grond komt.">💧 Bron</div>
+                            <div class="leaf-node" id="gracht" data-info="Een gegraven waterweg in een stedelijke omgeving.">🌊 Gracht</div>
+                            <div class="leaf-node" id="kanaal" data-info="Een door mensen gegraven waterweg voor scheepvaart of irrigatie.">🚢 Kanaal</div>
+                            <div class="leaf-node" id="rivier" data-info="Een natuurlijke waterloop die uitmondt in een zee, meer of andere rivier.">🌊 Rivier</div>
+                            <div class="leaf-node" id="sloot" data-info="Een smalle, gegraven waterweg voor drainage of irrigatie.">🌱 Sloot</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="primary-category" id="kunstwerken-category" data-target="civiele-kunstwerken-content">
+                    🏗️ Civiele Kunstwerken
+                    <svg class="arrow" id="arrow-4"></svg>
+                    <div class="sub-node hidden" id="civiele-kunstwerken-content">
+                        <div class="leaf-node" id="kunstwerkdeel-imgeo" data-info="Onderdeel van een civiel kunstwerk in IMGeo">
+                            Kunstwerkdeel IMGEO
+                            <div class="leaf-node" id="sluis" data-info="Een constructie met sluisdeuren om het waterniveau te regelen voor scheepvaart.">⛵️ Sluis</div>
+                            <div class="leaf-node" id="gemaal" data-info="Een pompinstallatie om water te verplaatsen, vaak om wateroverlast te voorkomen.">💧 Gemaal</div>
+                            <div class="leaf-node" id="steiger" data-info="Een platform aan de waterkant voor het aanleggen van boten.">🚢 Steiger</div>
+                            <div class="leaf-node" id="peron" data-info="Een verhoogd platform langs een spoorweg of tramlijn.">🚋 Peron</div>
+                            <div class="leaf-node" id="stuw" data-info="Een dam of constructie om het waterniveau in een rivier of kanaal te regelen.">🌊 Stuw</div>
+                        </div>
+                        <div class="leaf-node" id="imgeo-kunstwerkdeel-type-plus" data-info="Extra types van kunstwerkdelen in IMGeo">
+                            IMGeo kunstwerkdeel type plus
+                            <div class="leaf-node" id="duiker" data-info="Een ondergrondse buis of tunnel waardoor water kan stromen.">🚇 Duiker</div>
+                            <div class="leaf-node" id="poton" data-info="Een drijvend dok">🏢 Poton</div>
+                            <div class="leaf-node" id="keermuur" data-info="Een muur die water tegenhoudt.">🏰 Keermuur</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="inspecties" data-target="inspecties-content">
+                📝 Inspecties
+                 <svg class="arrow" id="arrow-6"></svg>
+                <div class="sub-box hidden" id="inspecties-content">
+                    Inspectie waterwerken
+                    <div class="leaf-node" id="beschoeiing-inspectie" data-info="Inspectie van de beschermende constructie langs de waterkant.">🛠 Beschoeiing Inspectie</div>
+                    <div class="leaf-node" id="algemene-inspectie" data-info="Algemene beoordeling van de staat van het object.">
+                        🔍 Algemene inspectie
+                        <div class="leaf-node" id="slecht" data-info="Zeer slechte staat, direct ingrijpen vereist.">❌ Slecht</div>
+                        <div class="leaf-node" id="matig" data-info="Matige staat, reparatie op termijn nodig.">⚠️ Matig</div>
+                        <div class="leaf-node" id="goed" data-info="Goede staat, geen direct ingrijpen nodig.">✅ Goed</div>
+                        <div class="leaf-node" id="zeer-goed" data-info="Uitstekende staat, geen gebreken.">🌟 Zeer goed</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gebrekswaarden" data-target="gebrekswaarden-content">
+                📊 Gebrekswaarden & Basis Objecten
+                 <svg class="arrow" id="arrow-7"></svg>
+                <div class="sub-box hidden" id="gebrekswaarden-content">
+                    Gebrek: <span class="red-highlight">Ja</span> / <span class="green-highlight">Nee</span>
+                    <div class="leaf-node" id="gebreksklasse" data-info="Classificatie van het type gebrek.">
+                        Gebreksklasse
+                        <div class="leaf-node" id="algemeen-gebrek" data-info="Algemene schade of slijtage.">🔍 Algemeen</div>
+                        <div class="leaf-node" id="mechanisch-gebrek" data-info="Defect aan bewegende delen.">⚙️ Mechanisch</div>
+                        <div class="leaf-node" id="ziekte-gebrek" data-info="Aantasting door een organisme.">🌱 Ziekte</div>
+                        <div class="leaf-node" id="schimmel-gebrek" data-info="Aantasting door schimmels.">🍄 Schimmel</div>
+                    </div>
+                    <div class="leaf-node" id="objectgebrek-voorbeelden" data-info="Specifieke voorbeelden van gebreken aan objecten.">
+                        Voorbeelden van objectgebrek
+                        <div class="leaf-node" id="boomgebrek" data-info="Gebreken aan bomen, zoals dode takken of ziekte.">🌳 Boomgebrek</div>
+                        <div class="leaf-node" id="afgegraven-maaiveld" data-info="Verlaagd maaiveld door erosie of graafwerkzaamheden.">🌱 Afgegraven maaiveld</div>
+                        <div class="leaf-node" id="afgestorven-boom" data-info="Een dode boom.">🌲 Afgestorven boom</div>
+                        <div class="leaf-node" id="bacterievuur" data-info="Bacterieziekte die planten aantast.">🪲 Bacterievuur</div>
+                        <div class="leaf-node" id="berkenzwam" data-info="Schimmel die op berken groeit.">🍄 Berkenzwam</div>
+                         <div class="leaf-node" id="blikseminslag" data-info="Schade veroorzaakt door bliksem.">⚡ Blikseminslag</div>
+                        <div class="leaf-node" id="bloeding" data-info="Het vrijkomen van sap uit een boom.">💉 Bloeding</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="maatregelen" data-target="maatregelen-content">
+                🛠 Maatregelen & Beschoeiing
+                 <svg class="arrow" id="arrow-8"></svg>
+                <div class="sub-box hidden" id="maatregelen-content">
+                    Mogelijke maatregelen
+                    <div class="leaf-node" id="geen-maatregelen" data-info="Geen actie ondernemen.">❌ Geen maatregelen treffen</div>
+                    <div class="leaf-node" id="gras-verwijderen" data-info="Verwijderen van gras en andere begroeiing.">🌱 Gras- en groeneovergroei verwijderen</div>
+                    <div class="leaf-node" id="vervangen-oeverconstructie" data-info="Vervangen van de constructie langs de waterkant.">🌿 Vervangen oeverconstructie</div>
+                    <div class="leaf-node" id="natuurlijk-maken" data-info="De oever meer natuurlijk inrichten.">🌿 Vervangen of natuurlijk maken</div>
+                    <div class="leaf-node" id="beschoeiing-plaatsen" data-info="Aanleggen van een beschermende constructie langs de waterkant.">🛠 Beschoeiing plaatsen</div>
+                    <div class="leaf-node" id="palen-vervangen" data-info="Vervangen of plaatsen van palen.">🧱 Palen vervangen/plaatsen</div>
+                    <div class="leaf-node" id="planken-vervangen" data-info="Vervangen van planken.">🧱 Planken vervangen/plaatsen</div>
+                    <div class="leaf-node" id="anders" data-info="Andere maatregelen (zie opmerkingen).">🧑‍💼 Anders (zie opmerking)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Informatie</h2>
+                <button id="close-modal" class="close-button">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-info-content">
+                <p>Hier komt de gedetailleerde informatie.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-close-button">Sluiten</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+       const mindmapContainer = document.getElementById('imgeo-water-mindmap');
+        const nodes = [
+            { id: 'waterdeel-imgeo', x: 100, y: 200, width: 250, height: 100 },
+            { id: 'imgeo-waterdeel-type', x: 100, y: 350, width: 250, height: 120 },
+            { id: 'imgeo-waterdeel-type-plus', x: 100, y: 500, width: 250, height: 150 },
+            { id: 'waterloop', x: 20, y: 400, width: 200, height: 50 },
+            { id: 'greppel', x: 20, y: 450, width: 200, height: 50 },
+            { id: 'watervlak', x: 20, y: 500, width: 200, height: 50 },
+            { id: 'zee', x: 20, y: 550, width: 200, height: 50 },
+            { id: 'bron', x: 220, y: 550, width: 200, height: 50 },
+            { id: 'gracht', x: 220, y: 600, width: 200, height: 50 },
+            { id: 'kanaal', x: 220, y: 650, width: 200, height: 50 },
+            { id: 'rivier', x: 220, y: 700, width: 200, height: 50 },
+            { id: 'sloot', x: 220, y: 750, width: 200, height: 50 },
+
+            { id: 'ondersteunend-waterdeel-imgeo', x: 450, y: 200, width: 300, height: 100 },
+            { id: 'imgeo-ondersteunend-waterdeel-type', x: 450, y: 350, width: 300, height: 100 },
+            { id: 'oever-slootkant', x: 400, y: 450, width: 250, height: 50 },
+            { id: 'slik', x: 550, y: 450, width: 250, height: 50 },
+            { id: 'imgeo-ondersteunend-waterdeel-type-plus', x: 450, y: 500, width: 300, height: 50 },
+
+            { id: 'water-inrichtingselement-imgeo', x: 800, y: 200, width: 300, height: 100 },
+            { id: 'imgeo-waterinrichtingselement-type-plus', x: 800, y: 350, width: 300, height: 150 },
+            { id: 'remming', x: 750, y: 450, width: 200, height: 50 },
+            { id: 'bettoning', x: 750, y: 500, width: 200, height: 50 },
+            { id: 'geleidewerk', x: 950, y: 450, width: 200, height: 50 },
+            { id: 'vuilvang', x: 950, y: 500, width: 200, height: 50 },
+            { id: 'meerpaal', x: 750, y: 550, width: 200, height: 50 },
+            { id: 'hoogtemerk', x: 950, y: 550, width: 200, height: 50 },
+
+            { id: 'civiele-kunstwerken', x: 1150, y: 200, width: 300, height: 100 },
+            { id: 'kunstwerkdeel-imgeo', x: 1150, y: 350, width: 300, height: 150 },
+            { id: 'imgeo-kunstwerkdeel-type-plus', x: 1150, y: 550, width: 300, height: 100 },
+            { id: 'sluis', x: 1100, y: 450, width: 200, height: 50 },
+            { id: 'gemaal', x: 1300, y: 450, width: 200, height: 50 },
+            { id: 'steiger', x: 1100, y: 500, width: 200, height: 50 },
+            { id: 'peron', x: 1300, y: 500, width: 200, height: 50 },
+            { id: 'stuw', x: 1100, y: 550, width: 200, height: 50 },
+            { id: 'duiker', x: 1200, y: 650, width: 200, height: 50 },
+            { id: 'poton', x: 1300, y: 650, width: 200, height: 50 },
+            { id: 'keermuur', x: 1400, y: 650, width: 200, height: 50 },
+
+            { id: 'scheidingen-grenzen', x: 1550, y: 200, width: 300, height: 100 },
+            { id: 'scheiding-imgeo', x: 1550, y: 350, width: 300, height: 150 },
+            { id: 'imgeo-scheiding-type-plus', x: 1550, y: 550, width: 300, height: 100 },
+            { id: 'kademuur', x: 1500, y: 450, width: 200, height: 50 },
+            { id: 'damwand', x: 1600, y: 450, width: 200, height: 50 },
+            { id: 'muur', x: 1700, y: 450, width: 200, height: 50 },
+            { id: 'hek', x: 1500, y: 500, width: 200, height: 50 },
+            { id: 'geluidswal', x: 1600, y: 500, width: 200, height: 50 },
+            { id: 'opnieuw-verrijken', x: 1700, y: 500, width: 200, height: 50 },
+
+            { id: 'inspecties', x: 100, y: 850, width: 400, height: 100 },
+            { id: 'gebrekswaarden', x: 550, y: 850, width: 400, height: 100 },
+            { id: 'maatregelen', x: 1000, y: 850, width: 400, height: 100 },
+
+            { id: 'beschoeiing-inspectie', x: 120, y: 980, width: 300, height: 50 },
+            { id: 'algemene-inspectie', x: 120, y: 1050, width: 300, height: 100 },
+            { id: 'slecht', x: 20, y: 1100, width: 100, height: 50 },
+            { id: 'matig', x: 140, y: 1100, width: 100, height: 50 },
+            { id: 'goed', x: 260, y: 1100, width: 100, height: 50 },
+            { id: 'zeer-goed', x: 380, y: 1100, width: 100, height: 50 },
+
+            { id: 'gebreksklasse', x: 570, y: 980, width: 300, height: 100 },
+            { id: 'algemeen-gebrek', x: 560, y: 1080, width: 200, height: 50 },
+            { id: 'mechanisch-gebrek', x: 780, y: 1080, width: 200, height: 50 },
+            { id: 'ziekte-gebrek', x: 560, y: 1130, width: 200, height: 50 },
+            { id: 'schimmel-gebrek', x: 780, y: 1130, width: 200, height: 50 },
+
+             { id: 'objectgebrek-voorbeelden', x: 570, y: 1210, width: 300, height: 150 },
+            { id: 'boomgebrek', x: 560, y: 1260, width: 200, height: 50 },
+            { id: 'afgegraven-maaiveld', x: 780, y: 1260, width: 200, height: 50 },
+            { id: 'afgestorven-boom', x: 560, y: 1310, width: 200, height: 50 },
+            { id: 'bacterievuur', x: 780, y: 1310, width: 200, height: 50 },
+            { id: 'berkenzwam', x: 560, y: 1360, width: 200, height: 50 },
+            { id: 'blikseminslag', x: 780, y: 1360, width: 200, height: 50 },
+            { id: 'bloeding', x: 560, y: 1410, width: 200, height: 50 },
+
+            { id: 'geen-maatregelen', x: 1020, y: 980, width: 300, height: 50 },
+            { id: 'gras-verwijderen', x: 1020, y: 1030, width: 300, height: 50 },
+            { id: 'vervangen-oeverconstructie', x: 1020, y: 1080, width: 300, height: 50 },
+            { id: 'natuurlijk-maken', x: 1020, y: 1130, width: 300, height: 50 },
+            { id: 'beschoeiing-plaatsen', x: 1020, y: 1180, width: 300, height: 50 },
+            { id: 'palen-vervangen', x: 1020, y: 1230, width: 300, height: 50 },
+            { id: 'planken-vervangen', x: 1020, y: 1280, width: 300, height: 50 },
+            { id: 'anders', x: 1020, y: 1330, width: 300, height: 50 },
+        ];
+
+        const arrows = [
+            { id: 'arrow-1', from: 'waterdeel-imgeo', to: 'imgeo-waterdeel-type' },
+            { id: 'arrow-2', from: 'ondersteunend-waterdeel-imgeo', to: 'imgeo-ondersteunend-waterdeel-type' },
+            { id: 'arrow-3', from: 'water-inrichtingselement-imgeo', to: 'imgeo-waterinrichtingselement-type-plus' },
+            { id: 'arrow-4', from: 'civiele-kunstwerken', to: 'kunstwerkdeel-imgeo' },
+             { id: 'arrow-5', from: 'scheidingen-grenzen', to: 'scheiding-imgeo' },
+            { id: 'arrow-6', from: 'inspecties', to: 'beschoeiing-inspectie' },
+            { id: 'arrow-7', from: 'gebrekswaarden', to: 'gebreksklasse' },
+            { id: 'arrow-8', from: 'maatregelen', to: 'geen-maatregelen' },
+        ];
+
+        const modal = document.getElementById('info-modal');
+        const modalCloseBtn = document.getElementById('close-modal');
+        const modalInfoContent = document.getElementById('modal-info-content');
+        const modalCloseButton = document.getElementById('modal-close-button');
+
+        function drawArrow(container, fromNodeId, toNodeId, arrowId) {
+            const fromNode = document.getElementById(fromNodeId);
+            const toNode = document.getElementById(toNodeId);
+
+            if (!fromNode || !toNode) return;
+
+            const fromRect = fromNode.getBoundingClientRect();
+            const toRect = toNode.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            const startX = fromRect.right - containerRect.left;
+            const startY = fromRect.bottom - containerRect.top - fromRect.height / 2;
+            const endX = toRect.left - containerRect.left;
+            const endY = toRect.bottom - containerRect.top - toRect.height / 2;
+
+            let svg = document.getElementById(arrowId);
+            if (!svg) {
+                svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.id = arrowId;
+                svg.classList.add('arrow');
+                container.appendChild(svg);
+            }
+             svg.setAttribute('style', `position: absolute; top: 0; left: 0; width: ${containerRect.width}px; height: ${containerRect.height}px; overflow: visible;`);
+
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute('x1', startX);
+            line.setAttribute('y1', startY);
+            line.setAttribute('x2', endX);
+            line.setAttribute('y2', endY);
+            line.setAttribute('stroke', '#6b7280');
+            line.setAttribute('marker-end', 'url(#arrowhead)');
+            svg.appendChild(line);
+
+            const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+            svg.appendChild(defs);
+
+            const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+            marker.setAttribute('id', 'arrowhead');
+            marker.setAttribute('viewBox', '0 -5 10 10');
+            marker.setAttribute('refX', 8);
+            marker.setAttribute('refY', 0);
+            marker.setAttribute('markerWidth', 6);
+            marker.setAttribute('markerHeight', 6);
+            marker.setAttribute('orient', 'auto');
+            defs.appendChild(marker);
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute('d', 'M0,-5L10,0L0,5');
+            path.setAttribute('fill', '#6b7280');
+            marker.appendChild(path);
+        }
+
+        nodes.forEach(nodeData => {
+            const node = document.getElementById(nodeData.id);
+            if (node) {
+                node.addEventListener('click', () => {
+                    let info = node.getAttribute('data-info') || `Informatie over ${nodeData.id}.`;
+                    modalInfoContent.innerHTML = `<p>${info}</p>`;
+                    modal.style.display = "block";
+                });
+            }
+        });
+
+        document.querySelectorAll('[data-target]').forEach(element => {
+            element.addEventListener('click', () => {
+                const targetId = element.getAttribute('data-target');
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    targetElement.classList.toggle('hidden');
+                    targetElement.classList.toggle('expanded');
+                }
+            });
+        });
+
+        modalCloseBtn.addEventListener('click', () => {
+            modal.style.display = "none";
+        });
+
+        modalCloseButton.addEventListener('click', () => {
+            modal.style.display = "none";
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        });
+
+        arrows.forEach(arrow => {
+            drawArrow(mindmapContainer, arrow.from, arrow.to, arrow.id);
+        });
+
+        function updateArrows() {
+            arrows.forEach(arrow => {
+                drawArrow(mindmapContainer, arrow.from, arrow.to, arrow.id);
+            });
+        }
+
+        window.addEventListener('resize', updateArrows);
+    </script>
+</body>
+</html>
