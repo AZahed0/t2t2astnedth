@@ -11,7 +11,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #fffde7; /* Light yellow background */
+            background-color: #fffde7;
             font-family: 'Press Start 2P', cursive;
             margin: 0;
         }
@@ -24,14 +24,48 @@
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
             max-width: 90%;
             width: 450px;
-            border: 2px solid #f0e68c; /* Light yellow border */
+            border: 2px solid #f0e68c;
         }
 
         h1 {
             margin-bottom: 25px;
-            color: #d4ac0d; /* Darker yellow title */
+            color: #d4ac0d;
             font-size: 2.2em;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        #initial-selection {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        #initial-selection .player-select {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #initial-selection .player-select:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #initial-selection .player-select img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #d4ac0d;
+            margin-bottom: 10px;
+            object-fit: cover;
+        }
+
+        #initial-selection .player-select.selected img {
+            border: 5px solid #ffc107;
+            box-shadow: 0 0 10px #ffc107;
         }
 
         #gameboard {
@@ -42,6 +76,7 @@
             margin-bottom: 25px;
             margin-left: auto;
             margin-right: auto;
+            display: none;
         }
 
         .cell {
@@ -52,17 +87,17 @@
             align-items: center;
             font-size: 3em;
             cursor: pointer;
-            border: 3px solid #d4ac0d; /* Darker yellow border */
+            border: 3px solid #d4ac0d;
             border-radius: 12px;
-            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s; /* Added box-shadow */
-            background-color: #fff8e1; /* Very light yellow */
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+            background-color: #fff8e1;
             overflow: hidden;
         }
 
         .cell:hover {
-            background-color: #ffe082; /* Slightly brighter yellow on hover */
+            background-color: #ffe082;
             transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Add shadow on hover */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
         .cell.ahmad {
@@ -78,25 +113,26 @@
             max-height: 85%;
             display: block;
             margin: auto;
-            filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.2)); /* Add a subtle shadow to the images */
+            filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.2));
         }
 
         #reset-button {
             padding: 12px 25px;
             font-size: 1.1em;
-            background-color: #ffc107; /* Amber button */
-            color: #212121; /* Dark grey text */
+            background-color: #ffc107;
+            color: #212121;
             border: none;
             border-radius: 10px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s; /* Added box-shadow */
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
             font-family: 'Press Start 2P', cursive;
             margin-top: 20px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: none;
         }
 
         #reset-button:hover {
-            background-color: #ffb300; /* Darker amber on hover */
+            background-color: #ffb300;
             transform: scale(1.03);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
@@ -105,7 +141,7 @@
             font-size: 1.5em;
             margin-bottom: 25px;
             min-height: 1.5em;
-            color: #f57f17; /* Darker orange message */
+            color: #f57f17;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
         }
 
@@ -138,12 +174,26 @@
             #message-container {
                 font-size: 1.25em;
             }
+             #initial-selection .player-select img {
+                width: 80px;
+                height: 80px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Ahmad vs Mahmoud</h1>
+        <div id="initial-selection">
+            <div class="player-select" data-player="Ahmad">
+                <img src="https://i1.rgstatic.net/ii/profile.image/1137911323987968-1648310609081_Q512/Ahmad-Zahed.jpg" alt="Ahmad">
+                <p>Ahmad</p>
+            </div>
+            <div class="player-select" data-player="Mahmoud">
+                <img src="https://media.licdn.com/dms/image/v2/C4D03AQE0EOawPqyY_g/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1560066050971?e=2147483647&v=beta&t=2mhWqed0-064p11K05FouryMxMsWxwOyuS_WLRzp5qU" alt="Mahmoud">
+                <p>Mahmoud</p>
+            </div>
+        </div>
         <div id="message-container"></div>
         <div id="gameboard">
             <div class="cell" data-cell-index="0"></div>
@@ -163,15 +213,30 @@
         const cells = document.querySelectorAll('.cell');
         const messageContainer = document.getElementById('message-container');
         const resetButton = document.getElementById('reset-button');
+        const initialSelection = document.getElementById('initial-selection');
+        const playerSelects = document.querySelectorAll('.player-select');
 
-        let currentPlayer = 'Ahmad';
+        let currentPlayer = '';
         let board = ['', '', '', '', '', '', '', '', ''];
         let gameOver = false;
         const ahmadImageSrc = 'https://i1.rgstatic.net/ii/profile.image/1137911323987968-1648310609081_Q512/Ahmad-Zahed.jpg';
         const mahmoudImageSrc = 'https://media.licdn.com/dms/image/v2/C4D03AQE0EOawPqyY_g/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1560066050971?e=2147483647&v=beta&t=2mhWqed0-064p11K05FouryMxMsWxwOyuS_WLRzp5qU';
 
+        playerSelects.forEach(playerSelect => {
+            playerSelect.addEventListener('click', () => {
+                const selectedPlayer = playerSelect.dataset.player;
+                currentPlayer = selectedPlayer;
+                playerSelects.forEach(ps => ps.classList.remove('selected'));
+                playerSelect.classList.add('selected');
+                initialSelection.style.display = 'none';
+                gameboard.style.display = 'grid';
+                resetButton.style.display = 'block';
+                messageContainer.textContent = `Player ${currentPlayer} starts!`;
+            });
+        });
+
         function handleCellClick(event) {
-            if (gameOver) return;
+            if (gameOver || currentPlayer === '') return;
 
             const cellIndex = event.target.dataset.cellIndex;
 
@@ -225,7 +290,7 @@
         function resetGame() {
             board = ['', '', '', '', '', '', '', '', ''];
             gameOver = false;
-            currentPlayer = 'Ahmad';
+            currentPlayer = '';
             messageContainer.textContent = '';
             cells.forEach(cell => {
                 cell.textContent = '';
@@ -234,6 +299,10 @@
                     cell.removeChild(cell.firstChild);
                 }
             });
+            initialSelection.style.display = 'flex';
+            gameboard.style.display = 'none';
+            resetButton.style.display = 'none';
+            playerSelects.forEach(ps => ps.classList.remove('selected'));
         }
 
         cells.forEach(cell => {
