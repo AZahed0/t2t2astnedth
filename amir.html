@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أمير ⚔️ محمود</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f4c3; /* لون أصفر فاتح */
+            font-family: 'Amiri', serif; /* استخدام خط عربي جميل */
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            max-width: 90%;
+            width: 450px;
+            border: 2px solid #e65100; /* لون برتقالي غامق */
+        }
+
+        h1 {
+            margin-bottom: 25px;
+            color: #d84315; /* لون برتقالي أحمر */
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            font-family: 'Amiri', serif; /* استخدام خط عربي جميل */
+        }
+
+        #initial-selection {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        #initial-selection .player-select {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #initial-selection .player-select:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #initial-selection .player-select img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #d84315; /* لون برتقالي أحمر */
+            margin-bottom: 10px;
+            object-fit: cover;
+        }
+
+        #initial-selection .player-select.selected img {
+            border: 5px solid #ff5722; /* لون برتقالي زاهي */
+            box-shadow: 0 0 10px #ff5722;
+        }
+
+        #gameboard {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 12px;
+            margin-bottom: 25px;
+            margin-left: auto;
+            margin-right: auto;
+            display: none;
+        }
+
+        .cell {
+            width: 120px;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3em;
+            cursor: pointer;
+            border: 3px solid #d84315; /* لون برتقالي أحمر */
+            border-radius: 12px;
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+            background-color: #fff3e0; /* لون أصفر فاتح جداً */
+            overflow: hidden;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        .cell:hover {
+            background-color: #ffb74d; /* لون برتقالي أفتح */
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .cell.amir {
+            /*color: #e74c3c; !* Removed text color *!*/
+        }
+
+        .cell.mahmoud {
+            /*color: #3498db; !* Removed text color *!*/
+        }
+
+        .cell img {
+            max-width: 85%;
+            max-height: 85%;
+            display: block;
+            margin: auto;
+            filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.2));
+        }
+
+        #reset-button {
+            padding: 12px 25px;
+            font-size: 1.1em;
+            background-color: #ff5722; /* لون برتقالي زاهي */
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+            font-family: 'Press Start 2P', cursive;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #reset-button:hover {
+            background-color: #e64a19; /* لون برتقالي أحمر داكن */
+            transform: scale(1.03);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #message-container {
+            font-size: 1.5em;
+            margin-bottom: 25px;
+            min-height: 1.5em;
+            color: #d84315; /* لون برتقالي أحمر */
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            font-family: 'Amiri', serif; /* استخدام خط عربي جميل */
+        }
+
+        @media (max-width: 450px) {
+            .container {
+                padding: 20px;
+            }
+
+            #gameboard {
+                grid-template-columns: repeat(3, 100px);
+                grid-template-rows: repeat(3, 100px);
+                gap: 10px;
+            }
+
+            .cell {
+                width: 100px;
+                height: 100px;
+                font-size: 2.5em;
+            }
+
+            #reset-button {
+                font-size: 0.9em;
+                padding: 10px 20px;
+            }
+
+            h1 {
+                font-size: 1.75em;
+            }
+
+            #message-container {
+                font-size: 1.25em;
+            }
+             #initial-selection .player-select img {
+                width: 80px;
+                height: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>أمير ⚔️ محمود</h1>
+        <div id="initial-selection">
+            <div class="player-select" data-player="Amir">
+                <img src="https://mario.wiki.gallery/images/thumb/1/12/Tokyo2020triviasonic.png/250px-Tokyo2020triviasonic.png" alt="أمير">
+                <p>أمير</p>
+            </div>
+            <div class="player-select" data-player="Mahmoud">
+                <img src="https://media.licdn.com/dms/image/v2/C4D03AQE0EOawPqyY_g/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1560066050971?e=2147483647&v=beta&t=2mhWqed0-064p11K05FouryMxMsWxwOyuS_WLRzp5qU" alt="محمود">
+                <p>محمود</p>
+            </div>
+        </div>
+        <div id="message-container"></div>
+        <div id="gameboard">
+            <div class="cell" data-cell-index="0"></div>
+            <div class="cell" data-cell-index="1"></div>
+            <div class="cell" data-cell-index="2"></div>
+            <div class="cell" data-cell-index="3"></div>
+            <div class="cell" data-cell-index="4"></div>
+            <div class="cell" data-cell-index="5"></div>
+            <div class="cell" data-cell-index="6"></div>
+            <div class="cell" data-cell-index="7"></div>
+            <div class="cell" data-cell-index="8"></div>
+        </div>
+        <button id="reset-button">إعادة المباراة</button>
+    </div>
+    <script>
+        const gameboard = document.getElementById('gameboard');
+        const cells = document.querySelectorAll('.cell');
+        const messageContainer = document.getElementById('message-container');
+        const resetButton = document.getElementById('reset-button');
+        const initialSelection = document.getElementById('initial-selection');
+        const playerSelects = document.querySelectorAll('.player-select');
+
+        let currentPlayer = '';
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let gameOver = false;
+        const amirImageSrc = 'https://mario.wiki.gallery/images/thumb/1/12/Tokyo2020triviasonic.png/250px-Tokyo2020triviasonic.png';
+        const mahmoudImageSrc = 'https://media.licdn.com/dms/image/v2/C4D03AQE0EOawPqyY_g/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1560066050971?e=2147483647&v=beta&t=2mhWqed0-064p11K05FouryMxMsWxwOyuS_WLRzp5qU';
+
+        playerSelects.forEach(playerSelect => {
+            playerSelect.addEventListener('click', () => {
+                const selectedPlayer = playerSelect.dataset.player;
+                currentPlayer = selectedPlayer;
+                playerSelects.forEach(ps => ps.classList.remove('selected'));
+                playerSelect.classList.add('selected');
+                initialSelection.style.display = 'none';
+                gameboard.style.display = 'grid';
+                resetButton.style.display = 'block';
+                messageContainer.textContent = `اللاعب ${currentPlayer} يبدأ!`;
+            });
+        });
+
+        function handleCellClick(event) {
+            if (gameOver || currentPlayer === '') return;
+
+            const cellIndex = event.target.dataset.cellIndex;
+
+            if (board[cellIndex] !== '') {
+                return;
+            }
+
+            board[cellIndex] = currentPlayer;
+            const img = document.createElement('img');
+            img.src = currentPlayer === 'Amir' ? amirImageSrc : mahmoudImageSrc;
+            img.alt = currentPlayer;
+            event.target.appendChild(img);
+            event.target.classList.add(currentPlayer.toLowerCase());
+
+            const winner = checkWinner();
+            if (winner) {
+                gameOver = true;
+                messageContainer.textContent = `اللاعب ${winner} يفوز!`;
+            } else if (isBoardFull()) {
+                gameOver = true;
+                messageContainer.textContent = "تعادل!";
+            } else {
+                switchPlayer();
+            }
+        }
+
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 'Amir' ? 'Mahmoud' : 'Amir';
+        }
+
+        function checkWinner() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+
+            for (const pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return board[a];
+                }
+            }
+            return null;
+        }
+
+        function isBoardFull() {
+            return board.every(cell => cell !== '');
+        }
+
+        function resetGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            gameOver = false;
+            currentPlayer = '';
+            messageContainer.textContent = '';
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('amir', 'mahmoud');
+                while (cell.firstChild) {
+                    cell.removeChild(cell.firstChild);
+                }
+            });
+            initialSelection.style.display = 'flex';
+            gameboard.style.display = 'none';
+            resetButton.style.display = 'none';
+            playerSelects.forEach(ps => ps.classList.remove('selected'));
+        }
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', handleCellClick);
+        });
+        resetButton.addEventListener('click', resetGame);
+    </script>
+</body>
+</html>
