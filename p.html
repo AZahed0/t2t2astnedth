@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projectfases Mindmap</title>
+    <style>
+        body {
+            background-color: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .mindmap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .node {
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Add shadow */
+            transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth transition */
+            cursor: pointer; /* Add a pointer cursor on hover */
+        }
+        .node:hover {
+            transform: scale(1.05); /* Enlarge on hover */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.7); /* Increase shadow on hover*/
+        }
+        .main-node {
+            background-color: #0044cc;
+            color: white;
+            border: 2px solid #0077ff;
+        }
+        .left-node {
+            background-color: #333;
+            color: #ffcc00;
+            border: 2px solid #ff9900;
+        }
+        .right-node {
+            background-color: #333;
+            color: #00ffcc;
+            border: 2px solid #00cc99;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            width: 80vw;
+        }
+        .column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .description {
+            font-size: 0.9em;
+            margin-top: 5px;
+            color: #bbb;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const nodes = document.querySelectorAll('.node');
+            nodes.forEach(node => {
+                node.addEventListener('click', () => {
+                    // Simple example: You can add more complex interaction here
+                    alert(`Je hebt geklikt op: ${node.textContent.trim()}`);
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="mindmap">
+        <div class="node main-node">Projectfases</div>
+        <div class="container">
+            <div class="column">
+                <div class="node left-node">Initiatief
+                    <div class="description">Er wordt onderzocht of het project haalbaar en waardevol is.</div>
+                </div>
+                <div class="node left-node">Uitvoeren
+                    <div class="description">De daadwerkelijke uitvoering van het project vindt plaats.</div>
+                </div>
+                <div class="node left-node">Afgerond
+                    <div class="description">Het project wordt officieel afgerond en geëvalueerd.</div>
+                </div>
+                <div class="node left-node">Archief
+                    <div class="description">Het project wordt definitief afgesloten en opgeslagen voor toekomstige referentie.</div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="node right-node">Idee
+                    <div class="description">In deze fase ontstaat het eerste concept of idee voor het project.</div>
+                </div>
+                <div class="node right-node">Voorbereiden
+                    <div class="description">Het project wordt gepland en georganiseerd.</div>
+                </div>
+                <div class="node right-node">Overdragen
+                    <div class="description">Het projectresultaat wordt overgedragen aan de eindgebruikers of klanten.</div>
+                </div>
+                <div class="node right-node">On Hold
+                    <div class="description">Het project wordt tijdelijk stopgezet.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
