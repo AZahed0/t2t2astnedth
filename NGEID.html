@@ -72,10 +72,10 @@
 
         /* Extra styling voor de resultaat tekst */
         #result strong {
-            color: #4CAF50; /* Groene kleur voor de gevonden IDs */
+            color: #4CAF50;
         }
         #result em {
-            color: #f44336; /* Rode kleur voor de "Geen IDs gevonden" boodschap */
+            color: #f44336;
         }
 
     </style>
@@ -96,19 +96,21 @@
 
             if (matches) {
                 const result = matches.join(' OR ');
-                resultElement.innerHTML = `<strong>${result}</strong>`; // Gebruik innerHTML voor styling
+                resultElement.innerHTML = `<strong>${result}</strong>`;
             } else {
-                resultElement.innerHTML = "<em>Geen VG IDs gevonden.</em>"; // Gebruik innerHTML voor styling
+                resultElement.innerHTML = "<em>Geen VG IDs gevonden.</em>";
             }
         }
 
         function copyToClipboard() {
             const resultText = document.getElementById('result').innerText;
-             if (resultText.includes("Gevonden VG IDs:") || resultText.includes("Geen VG IDs gevonden.")) { // Check of er iets te kopieren is.
-                navigator.clipboard.writeText(resultText).then(() => {
+            if (resultText) { // Vereenvoudigde controle
+                navigator.clipboard.writeText(resultText)
+                .then(() => {
                     alert('Gekopieerd naar klembord!');
-                }).catch(err => {
-                    alert('Fout bij kopiëren: ' + err); // Concateneer de error message.
+                })
+                .catch(err => {
+                    alert('Fout bij kopiëren: ' + err);
                 });
             } else {
                 alert('Er is niets om te kopiëren. Extraheer eerst de IDs.');
