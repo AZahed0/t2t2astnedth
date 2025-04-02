@@ -7,75 +7,107 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-            color: #333;
+            margin: 0;
+            background-color: #f0f4f8;
+            color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding-top: 20px;
+            box-sizing: border-box;
         }
         h1 {
-            color: #4CAF50;
+            color: #3498db;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            letter-spacing: 1px;
         }
         textarea, input, button {
             margin: 10px 0;
-            padding: 12px;
-            width: 100%;
-            border: 1px solid #ccc;
-            border-radius: 8px;
+            padding: 15px;
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid #bdc3c7;
+            border-radius: 10px;
             box-sizing: border-box;
-            transition: border-color 0.3s ease;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            font-size: 1.1em;
         }
         textarea:focus, input:focus {
-            border-color: #4CAF50;
+            border-color: #3498db;
             outline: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         textarea {
             resize: vertical;
-            min-height: 100px;
+            min-height: 120px;
         }
         button {
-            background-color: #4CAF50;
+            background-color: #3498db;
             color: white;
             border: none;
             cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
+            font-size: 1.2em;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         button:hover {
-            background-color: #45a049;
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 7px rgba(0, 0, 0, 0.15);
+        }
+        button:active {
+            background-color: #21618c;
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
         #result {
-            background-color: #e3e3e3;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            font-size: 16px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            font-size: 1.1em;
             word-wrap: break-word;
-            border: 1px solid #ccc;
+            border: 1px solid #d3d3d3;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
         }
         #copyButton {
-            background-color: #008CBA;
+            background-color: #8e44ad;
             color: white;
             border: none;
             cursor: pointer;
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            width: 90%;
+            max-width: 600px;
             box-sizing: border-box;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         #copyButton:hover {
-            background-color: #007B95;
+            background-color: #7a2896;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 7px rgba(0, 0, 0, 0.15);
+        }
+         #copyButton:active {
+            background-color: #661a82;
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         /* Extra styling voor de resultaat tekst */
         #result strong {
-            color: #4CAF50;
+            color: #27ae60;
         }
         #result em {
-            color: #f44336;
+            color: #e74c3c;
         }
 
     </style>
@@ -83,7 +115,7 @@
 <body>
     <h1>VG ID Extractor</h1>
     <textarea id="input" rows="10" placeholder="Plak hier je tekst..."></textarea>
-    <button onclick="extractVGIDs()">Extraheer VG IDs</button>
+    <button onclick="extractVGIDs()">Extract VG IDs</button>
     <div id="result"></div>
     <button id="copyButton" onclick="copyToClipboard()">Kopieer naar klembord</button>
 
@@ -104,7 +136,7 @@
 
         function copyToClipboard() {
             const resultText = document.getElementById('result').innerText;
-            if (resultText) { // Vereenvoudigde controle
+            if (resultText) {
                 navigator.clipboard.writeText(resultText)
                 .then(() => {
                     alert('Gekopieerd naar klembord!');
@@ -113,7 +145,7 @@
                     alert('Fout bij kopiëren: ' + err);
                 });
             } else {
-                alert('Er is niets om te kopiëren. Extraheer eerst de IDs.');
+                alert('Er is niets om te kopiëren. Extract eerst de IDs.');
             }
         }
     </script>
