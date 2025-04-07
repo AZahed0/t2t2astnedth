@@ -76,7 +76,7 @@
             max-width: 600px;
             text-align: center;
         }
-        #copyButton {
+        #copyButton, #copyFactsheetButton {
             background-color: #8e44ad;
             color: white;
             border: none;
@@ -91,15 +91,21 @@
             box-sizing: border-box;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        #copyButton:hover {
+        #copyButton:hover, #copyFactsheetButton:hover {
             background-color: #7a2896;
             transform: translateY(-2px);
             box-shadow: 0 4px 7px rgba(0, 0, 0, 0.15);
         }
-         #copyButton:active {
+        #copyButton:active, #copyFactsheetButton:active {
             background-color: #661a82;
             transform: translateY(0);
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        #copyFactsheetButton {
+            background-color: #2ecc71; /* Green for Factsheet button */
+        }
+        #copyFactsheetButton:hover {
+            background-color: #27ae60; /* Darker green on hover */
         }
 
         /* Extra styling voor de resultaat tekst */
@@ -116,10 +122,392 @@
     <h1>VG ID Extractor</h1>
     <textarea id="input" rows="10" placeholder="Plak hier je tekst..."></textarea>
     <button onclick="extractVGIDs()">Extract VG IDs</button>
+    <button onclick="extractFactsheets()">Extract Factsheets</button>
     <div id="result"></div>
-    <button id="copyButton" onclick="copyToClipboard()">Kopieer naar klembord</button>
+    <button id="copyButton" onclick="copyToClipboard()">Kopieer IDs</button>
+    <button id="copyFactsheetButton" onclick="copyFactsheetsToClipboard()">Kopieer Factsheets</button>
 
     <script>
+        const factSheetData = {
+            "VG1": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG2": "\\Factsheets PDF\\Factsheet_3.1.14.pdf",
+            "VG3": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG4": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG5": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG6": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG7": "\\Factsheets PDF\\Factsheet_3.1.16.pdf",
+            "VG8": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG9": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG10": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG11": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG12": "\\Factsheets PDF\\Factsheet_3.1.2.pdf",
+            "VG13": "\\Factsheets PDF\\Factsheet_3.1.11.pdf",
+            "VG14": "\\Factsheets PDF\\Factsheet_3.2.4.pdf",
+            "VG15": "\\Factsheets PDF\\Factsheet_3.3.2.pdf",
+            "VG16": "\\Factsheets PDF\\Factsheet_3.1.2.pdf",
+            "VG17": "\\Factsheets PDF\\Factsheet_5.2.3.pdf",
+            "VG18": "\\Factsheets PDF\\Factsheet_5.2.5.pdf",
+            "VG19": "\\Factsheets PDF\\Factsheet_5.2.7.pdf",
+            "VG20": "\\Factsheets PDF\\Factsheet_5.2.11.pdf",
+            "VG21": "\\Factsheets PDF\\Factsheet_5.2.14.pdf",
+            "VG22": "\\Factsheets PDF\\Factsheet_5.2.14.pdf",
+            "VG23": "\\Factsheets PDF\\Factsheet_5.2.14.pdf",
+            "VG24": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG25": "\\Factsheets PDF\\Factsheet_5.2.19.pdf",
+            "VG26": "\\Factsheets PDF\\Factsheet_4.1.1.pdf",
+            "VG27": "\\Factsheets PDF\\Factsheet_4.1.2.pdf",
+            "VG28": "\\Factsheets PDF\\Factsheet_4.1.4.pdf",
+            "VG29": "\\Factsheets PDF\\Factsheet_4.1.6.pdf",
+            "VG30": "\\Factsheets PDF\\Factsheet_4.1.13.pdf",
+            "VG31": "\\Factsheets PDF\\Factsheet_4.1.15.pdf",
+            "VG32": "\\Factsheets PDF\\Factsheet_4.2.7.pdf",
+            "VG33": "\\Factsheets PDF\\Factsheet_4.4.3.pdf",
+            "VG34": "\\Factsheets PDF\\Factsheet_4.8.1.pdf",
+            "VG35": "\\Factsheets PDF\\Factsheet_4.8.3.pdf",
+            "VG36": "\\Factsheets PDF\\Factsheet_4.8.5.pdf",
+            "VG37": "\\Factsheets PDF\\Factsheet_6.4.pdf",
+            "VG38": "\\Factsheets PDF\\Factsheet_8.5.pdf",
+            "VG39": "\\Factsheets PDF\\Factsheet_8.5.pdf",
+            "VG40": "\\Factsheets PDF\\Factsheet_8.5.pdf",
+            "VG41": "\\Factsheets PDF\\Factsheet_8.5.pdf",
+            "VG42": "\\Factsheets PDF\\Factsheet_8.5.pdf",
+            "VG43": "\\Factsheets PDF\\Factsheet_9.1.pdf",
+            "VG44": "\\Factsheets PDF\\Factsheet_4.6.pdf",
+            "VG45": "\\Factsheets PDF\\Factsheet_4.7.pdf",
+            "VG46": "\\Factsheets PDF\\Factsheet_4.8.2.pdf",
+            "VG47": "\\Factsheets PDF\\Factsheet_8.4.4.pdf",
+            "VG48": "\\Factsheets PDF\\Factsheet_8.4.10.pdf",
+            "VG49": "\\Factsheets PDF\\Factsheet_8.3.1.pdf",
+            "VG50": "\\Factsheets PDF\\Factsheet_8.3.3.pdf",
+            "VG51": "\\Factsheets PDF\\Factsheet_8.3.4.pdf",
+            "VG52": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG53": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG54": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG55": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG56": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG57": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG58": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG59": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG60": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG61": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG62": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG63": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG64": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG65": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG66": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG67": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG68": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG69": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG70": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG71": "\\Factsheets PDF\\Factsheet_5.2.9.pdf",
+            "VG72": "\\Factsheets PDF\\Factsheet_5.2.9.pdf",
+            "VG73": "\\Factsheets PDF\\Factsheet_5.2.9.pdf",
+            "VG74": "\\Factsheets PDF\\Factsheet_5.2.9.pdf",
+            "VG75": "\\Factsheets PDF\\Factsheet_5.2.12.pdf",
+            "VG76": "\\Factsheets PDF\\Factsheet_5.2.12.pdf",
+            "VG77": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG78": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG79": "\\Factsheets PDF\\Factsheet_5.2.17.pdf",
+            "VG80": "\\Factsheets PDF\\Factsheet_5.2.17.pdf",
+            "VG81": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG82": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG83": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG84": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG85": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG86": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG87": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG88": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG89": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG90": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG91": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG92": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG93": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG94": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG95": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG96": "\\Factsheets PDF\\Factsheet_8.4.3.pdf",
+            "VG97": "\\Factsheets PDF\\Factsheet_8.4.3.pdf",
+            "VG98": "\\Factsheets PDF\\Factsheet_8.4.3.pdf",
+            "VG99": "\\Factsheets PDF\\Factsheet_8.4.6.pdf",
+            "VG100": "\\Factsheets PDF\\Factsheet_8.4.6.pdf",
+            "VG101": "\\Factsheets PDF\\Factsheet_8.4.6.pdf",
+            "VG102": "\\Factsheets PDF\\Factsheet_8.4.6.pdf",
+            "VG103": "\\Factsheets PDF\\Factsheet_8.4.6.pdf",
+            "VG104": "\\Factsheets PDF\\Factsheet_8.4.6.pdf",
+            "VG105": "\\Factsheets PDF\\Factsheet_8.4.6.pdf",
+            "VG106": "\\Factsheets PDF\\Factsheet_8.4.6.pdf",
+            "VG107": "\\Factsheets PDF\\Factsheet_8.4.7.pdf",
+            "VG108": "\\Factsheets PDF\\Factsheet_8.4.7.pdf",
+            "VG109": "\\Factsheets PDF\\Factsheet_8.4.7.pdf",
+            "VG110": "\\Factsheets PDF\\Factsheet_8.3.2.pdf",
+            "VG111": "\\Factsheets PDF\\Factsheet_8.3.2.pdf",
+            "VG112": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG113": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG114": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG115": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG116": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG117": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG118": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG119": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG120": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG121": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG122": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG123": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG124": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG125": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG126": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG127": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG128": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG129": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG130": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG131": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG132": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG133": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG134": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG135": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG136": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG137": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG138": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG139": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG140": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG141": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG142": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG143": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG144": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG145": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG146": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG147": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG148": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG149": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG150": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG151": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG152": "\\Factsheets PDF\\Factsheet_8.6.2.pdf",
+            "VG153": "\\Factsheets PDF\\Factsheet_8.1.pdf",
+            "VG154": "\\Factsheets PDF\\Factsheet_8.1.pdf",
+            "VG155": "\\Factsheets PDF\\Factsheet_8.1.pdf",
+            "VG156": "\\Factsheets PDF\\Factsheet_8.1.pdf",
+            "VG157": "\\Factsheets PDF\\Factsheet_8.1.pdf",
+            "VG158": "\\Factsheets PDF\\Factsheet_3.6.pdf",
+            "VG159": "\\Factsheets PDF\\Factsheet_3.6.pdf",
+            "VG160": "\\Factsheets PDF\\Factsheet_3.6.pdf",
+            "VG161": "\\Factsheets PDF\\Factsheet_3.6.pdf",
+            "VG162": "\\Factsheets PDF\\Factsheet_9.2.pdf",
+            "VG163": "\\Factsheets PDF\\Factsheet_9.2.pdf",
+            "VG164": "\\Factsheets PDF\\Factsheet_9.2.pdf",
+            "VG165": "\\Factsheets PDF\\Factsheet_9.2.pdf",
+            "VG166": "\\Factsheets PDF\\Factsheet_9.2.pdf",
+            "VG167": "\\Factsheets PDF\\Factsheet_9.2.pdf",
+            "VG168": "\\Factsheets PDF\\Factsheet_9.2.pdf",
+            "VG169": "\\Factsheets PDF\\Factsheet_9.2.pdf",
+            "VG170": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG171": "\\Factsheets PDF\\Factsheet_3.1.14.pdf",
+            "VG172": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG173": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG174": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG175": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG176": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG177": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG178": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG179": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG180": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG181": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG182": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG183": "\\Factsheets PDF\\Factsheet_3.1.16.pdf",
+            "VG184": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG185": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG186": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG187": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG188": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG189": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG190": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG191": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG192": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG193": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG194": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG195": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG196": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG197": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG198": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG199": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG200": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG201": "\\Factsheets PDF\\Factsheet_3.2.2.pdf",
+            "VG202": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG203": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG204": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG205": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG206": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG207": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG208": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG209": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG210": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG211": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG212": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG213": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG214": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG215": "\\Factsheets PDF\\Factsheet_3.3.3.pdf",
+            "VG216": "\\Factsheets PDF\\Factsheet_3.1.2.pdf",
+            "VG217": "\\Factsheets PDF\\Factsheet_3.1.2.pdf",
+            "VG218": "\\Factsheets PDF\\Factsheet_3.1.2.pdf",
+            "VG219": "\\Factsheets PDF\\Factsheet_3.1.2.pdf",
+            "VG220": "\\Factsheets PDF\\Factsheet_3.1.11.pdf",
+            "VG221": "\\Factsheets PDF\\Factsheet_3.1.11.pdf",
+            "VG222": "\\Factsheets PDF\\Factsheet_3.1.11.pdf",
+            "VG223": "\\Factsheets PDF\\Factsheet_3.1.11.pdf",
+            "VG224": "\\Factsheets PDF\\Factsheet_3.1.11.pdf",
+            "VG225": "\\Factsheets PDF\\Factsheet_3.1.11.pdf",
+            "VG226": "\\Factsheets PDF\\Factsheet_3.3.2.pdf",
+            "VG227": "\\Factsheets PDF\\Factsheet_3.3.2.pdf",
+            "VG228": "\\Factsheets PDF\\Factsheet_3.3.2.pdf",
+            "VG229": "\\Factsheets PDF\\Factsheet_3.3.2.pdf",
+            "VG230": "\\Factsheets PDF\\Factsheet_3.3.2.pdf",
+            "VG231": "\\Factsheets PDF\\Factsheet_3.3.2.pdf",
+            "VG232": "\\Factsheets PDF\\Factsheet_3.3.2.pdf",
+            "VG233": "\\Factsheets PDF\\Factsheet_5.2.3.pdf",
+            "VG234": "\\Factsheets PDF\\Factsheet_5.2.3.pdf",
+            "VG235": "\\Factsheets PDF\\Factsheet_5.2.3.pdf",
+            "VG236": "\\Factsheets PDF\\Factsheet_5.2.3.pdf",
+            "VG237": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG238": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG239": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG240": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG241": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG242": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG243": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG244": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG245": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG246": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG247": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG248": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG249": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG250": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG251": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG252": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG253": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG254": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG255": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG256": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG257": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG258": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG259": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG260": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG261": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG262": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG263": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG264": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG265": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG266": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG267": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG268": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG269": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG270": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG271": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG272": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG273": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG274": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG275": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG276": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG277": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG278": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG279": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG280": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG281": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG282": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG283": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG284": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG285": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG286": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG287": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG288": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG289": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG290": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG291": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG292": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG293": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG294": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG295": "\\Factsheets PDF\\Factsheet_5.2.9.pdf",
+            "VG296": "\\Factsheets PDF\\Factsheet_5.2.9.pdf",
+            "VG297": "\\Factsheets PDF\\Factsheet_5.2.9.pdf",
+            "VG298": "\\Factsheets PDF\\Factsheet_5.2.9.pdf",
+            "VG299": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG300": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG301": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG302": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG303": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG304": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG305": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG306": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG307": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG308": "\\Factsheets PDF\\Factsheet_3.1.3.pdf",
+            "VG309": "\\Factsheets PDF\\Factsheet_5.2.3.pdf",
+            "VG310": "\\Factsheets PDF\\Factsheet_5.2.3.pdf",
+            "VG311": "\\Factsheets PDF\\Factsheet_5.2.5.pdf",
+            "VG312": "\\Factsheets PDF\\Factsheet_5.2.11.pdf",
+            "VG313": "\\Factsheets PDF\\Factsheet_5.2.14.pdf",
+            "VG314": "\\Factsheets PDF\\Factsheet_5.2.14.pdf",
+            "VG315": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG316": "\\Factsheets PDF\\Factsheet_5.2.16.pdf",
+            "VG317": "\\Factsheets PDF\\Factsheet_5.2.19.pdf",
+            "VG318": "\\Factsheets PDF\\Factsheet_5.2.19.pdf",
+            "VG319": "\\Factsheets PDF\\Factsheet_4.1.1.pdf",
+            "VG320": "\\Factsheets PDF\\Factsheet_4.1.4.pdf",
+            "VG321": "\\Factsheets PDF\\Factsheet_6.4.pdf",
+            "VG322": "\\Factsheets PDF\\Factsheet_6.4.pdf",
+            "VG323": "\\Factsheets PDF\\Factsheet_6.4.pdf",
+            "VG324": "\\Factsheets PDF\\Factsheet_4.6.pdf",
+            "VG325": "\\Factsheets PDF\\Factsheet_4.6.pdf",
+            "VG326": "\\Factsheets PDF\\Factsheet_4.7.pdf",
+            "VG327": "\\Factsheets PDF\\Factsheet_4.7.pdf",
+            "VG328": "\\Factsheets PDF\\Factsheet_4.7.pdf",
+            "VG329": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG330": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG331": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG332": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG333": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG334": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG335": "\\Factsheets PDF\\Factsheet_5.2.1.pdf",
+            "VG336": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG337": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG338": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG339": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG340": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG341": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG342": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG343": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG344": "\\Factsheets PDF\\Factsheet_5.2.2.pdf",
+            "VG345": "\\Factsheets PDF\\Factsheet_5.2.9.pdf",
+            "VG346": "\\Factsheets PDF\\Factsheet_5.2.9.pdf",
+            "VG347": "\\Factsheets PDF\\Factsheet_5.2.9.pdf",
+            "VG348": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG349": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG350": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG351": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG352": "\\Factsheets PDF\\Factsheet_5.2.15.pdf",
+            "VG353": "\\Factsheets PDF\\Factsheet_5.2.17.pdf",
+            "VG354": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG355": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG356": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG357": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG358": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG359": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG360": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG361": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG362": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG363": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG364": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG365": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG366": "\\Factsheets PDF\\Factsheet_5.3.1.pdf",
+            "VG367": "\\Factsheets PDF\\Factsheet_8.1.pdf",
+            "VG368": "\\Factsheets PDF\\Factsheet_3.6.pdf",
+            "VG369": "\\Factsheets PDF\\Factsheet_3.6.pdf",
+            "VG370": "\\Factsheets PDF\\Factsheet_3.6.pdf",
+            "VG371": "\\Factsheets PDF\\Factsheet_3.6.pdf",
+            "VG372": "\\Factsheets PDF\\Factsheet_3.6.pdf",
+            "VG373": "\\Factsheets PDF\\Factsheet_3.6.pdf",
+            "VG374": "\\Factsheets PDF\\Factsheet_3.6.pdf",
+            "VG375": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG376": "\\Factsheets PDF\\Factsheet_3.5.2.pdf",
+            "VG377": "\\Factsheets PDF\\Factsheet_5.3.1.pdf"
+        };
+
         function extractVGIDs() {
             const input = document.getElementById('input').value;
             const regex = /VG\d+/g;
@@ -127,7 +515,30 @@
             const resultElement = document.getElementById('result');
 
             if (matches) {
-                const result = matches.join(' OR ');
+                const uniqueVGIDs = [...new Set(matches)];
+                const result = uniqueVGIDs.join(' OR ');
+                resultElement.innerHTML = `<strong>${result}</strong>`;
+            } else {
+                resultElement.innerHTML = "<em>Geen VG IDs gevonden.</em>";
+            }
+        }
+
+        function extractFactsheets() {
+            const input = document.getElementById('input').value;
+            const regex = /VG\d+/g;
+            const matches = input.match(regex);
+            const resultElement = document.getElementById('result');
+
+            if (matches) {
+                const uniqueFactsheets = new Set();
+                matches.forEach(vgId => {
+                    const factSheetPath = factSheetData[vgId];
+                    if (factSheetPath) {
+                        const factSheetName = factSheetPath.split('\\').pop().replace('.pdf', '');
+                        uniqueFactsheets.add(factSheetName);
+                    }
+                });
+                const result = Array.from(uniqueFactsheets).join('<br>');
                 resultElement.innerHTML = `<strong>${result}</strong>`;
             } else {
                 resultElement.innerHTML = "<em>Geen VG IDs gevonden.</em>";
@@ -146,6 +557,22 @@
                 });
             } else {
                 alert('Er is niets om te kopiëren. Extract eerst de IDs.');
+            }
+        }
+
+        function copyFactsheetsToClipboard() {
+            const resultText = document.getElementById('result').innerHTML; // Use innerHTML to get <br>
+            const textToCopy = resultText.replace(/<br>/g, '\n'); // Replace <br> with newline for clipboard
+            if (textToCopy) {
+                navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    alert('Factsheets gekopieerd naar klembord!');
+                })
+                .catch(err => {
+                    alert('Fout bij kopiëren: ' + err);
+                });
+            } else {
+                alert('Er is niets om te kopiëren. Extract eerst de Factsheets.');
             }
         }
     </script>
