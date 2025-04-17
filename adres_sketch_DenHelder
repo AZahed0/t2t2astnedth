@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Den Helder kaart</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-search@3.0.9/dist/leaflet-search.min.css" />
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+
+        .home-button {
+            position: absolute;
+            top: 12%;
+            left: 20px;
+            background: white;
+            padding: 8px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .home-button:hover {
+            background: #ddd;
+        }
+
+        .legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            line-height: 18px;
+            color: #555;
+        }
+        .legend h4 {
+            margin: 0;
+            padding: 4px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .legend i {
+            width: 16px;
+            height: 16px;
+            float: left;
+            margin-right: 6px;
+            opacity: 0.8;
+            display: inline-block;
+            border-radius: 50%;
+            border: 2px solid;
+            box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        .legend i.circle {
+            border-radius: 50%;
+        }
+
+        .leaflet-draw-toolbar {
+            top: 50px;
+        }
+
+        #opacity-slider {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        #opacity-slider input {
+            width: 150px;
+        }
+        #opacity-slider label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        #color-selector {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        #color-selector label {
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+        #color-selector input[type="color"] {
+            width: 40px;
+            height: 40px;
+            border: none;
+            cursor: pointer;
+            border-radius: 50%;
+            padding: 3px;
+        }
+        #color-selector input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        #color-selector input[type="color"]::-webkit-color-swatch {
+            border: 2px solid #fff;
+            border-radius: 50%;
+        }
+
+        .leaflet-search-bar {
+            position: absolute;
+            bottom: 10px;
+            right: 10px; /* Changed from left to right */
+            z-index: 1000;
+            background-color: white;
+            border-radius: 5px;
+            padding: 5px 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-direction: column; /* Added to stack input and results */
+            align-items: flex-start; /* Align items to the start (left in column direction) */
+        }
+
+        .leaflet-search-input {
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 14px;
+        }
+
+        .leaflet-search-button {
+            background-color: #0078d7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .leaflet-search-button:hover {
+            background-color: #005a9e;
+        }
+        .leaflet-search-cancel {
+            display: none;
+            background-color: #ddd;
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .leaflet-search-cancel:hover {
+            background-color: #ccc;
+        }
+        .leaflet-search-bar.searching .leaflet-search-cancel{
+            display: block;
+        }
+
+        #search-results {
+            position: absolute;
+            top: 100%; /* Position below the search bar */
+            left: 0;
+            right: auto; /* Ensure the results are positioned relative to the search bar */
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1001; /* Ensure the results are above other map elements */
+            max-height: 200px; /* Limit the height of the results box */
+            overflow-y: auto; /* Add a scrollbar if the results exceed the height */
+            padding: 0;
+            margin-top: 2px;
+            display: none; /* Initially hide the results */
+            width: 100%; /* Match the width of the input */
+        }
+
+        #search-results ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #search-results li {
+            padding: 8px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 1px solid #eee; /* Add a separator between results */
+        }
+
+        #search-results li:hover {
+            background-color: #f0f0f0; /* Highlight on hover */
+        }
+
+        #search-results li:last-child {
+            border-bottom: none; /* Remove the border from the last item */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+    <div id="color-selector">
+        
+        <input type="color" id="draw-color" value="#0000FF">
+    </div>
+    <div class="leaflet-search-bar" id="search-bar">
+        <input type="text" class="leaflet-search-input" placeholder="Zoeken..." id="search-input">
+        <button class="leaflet-search-button" id="search-button">Zoek</button>
+        <button class="leaflet-search-cancel" id="search-cancel">Annuleren</button>
+        <div id="search-results">
+            <ul></ul>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-search@3.0.9/dist/leaflet-search.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.3/proj4.js"></script>
+
+    <script>
+        // Define the Proj4js projection for RD (Dutch coordinate system)
+        proj4.defs('EPSG:28992', '+proj=tmerc +lat_0=52.15517440 +lon_0=5.38720621 +k=1 +x_0=155000 +y_0=463000 +datum=WGS84 +units=m +no_defs');
+
+        var map = L.map('map', {
+            zoomControl: false
+        }).setView([52.9563, 4.7608], 14);
+
+        var brtLayer = L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/{style}/EPSG:3857/{z}/{x}/{y}.png', {
+            attribution: 'Kaartgegevens © <a href="https://www.kadaster.nl">Kadaster</a>',
+            style: 'standaard'
+        }).addTo(map);
+
+        var googleRoadmap = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            attribution: '© <a href="https://www.google.com/maps">Google Maps</a>'
+        });
+
+
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+
+        var esriImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        });
+
+
+        var brtLayer = L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/standaard/EPSG:3857/{z}/{x}/{y}.png', {
+            attribution: 'Kaartgegevens © <a href="https://www.kadaster.nl">Kadaster</a>',
+            style: 'standaard'
+        }).addTo(map);
+
+        var baseMaps = {
+            "Esri World Imagery": esriImagery,
+            "Google Roadmap": googleRoadmap,
+            "OpenStreetMap (OSM)": osm,
+            "BRT-Achtergrondkaart (NL)": brtLayer
+        };
+
+        var overlayMaps = {
+           // "GeoJSON Points": markers
+        };
+
+        var layerControl = L.control.layers(baseMaps, overlayMaps, { position: 'topright' }).addTo(map);
+        L.control.zoom({ position: 'topright' }).addTo(map);
+
+        L.control.scale({ metric: true, imperial: false }).addTo(map);
+
+        const drawnItems = new L.FeatureGroup().addTo(map);
+
+        const drawControl = new L.Control.Draw({
+            draw: {
+                polygon: {
+                    allowIntersection: false,
+                    drawError: {
+                        color: '#b00b00',
+                        message: '<strong>Error:</strong> No intersections!',
+                    },
+                    shapeOptions: {
+                        color: '#0000FF',
+                        fillColor: 'rgba(0, 0, 255, 0.7)',
+                        weight: 2,
+                    },
+                },
+                polyline: {
+                    color: '#0000FF',
+                    weight: 3,
+                    lineCap: 'round',
+                },
+                circle: {
+                    shapeOptions: {
+                        color: '#0000FF',
+                        fillColor: 'rgba(0, 0, 255, 0.7)',
+                        weight: 2,
+                    },
+                },
+                marker: {
+                    icon: new L.Icon.Default(),
+                },
+                rectangle: {
+                    shapeOptions: {
+                        color: '#0000FF',
+                        fillColor: 'rgba(0, 0, 255, 0.7)',
+                        weight: 2,
+                    },
+                },
+            },
+            edit: {
+                featureGroup: drawnItems,
+                remove: true,
+            },
+        });
+        map.addControl(drawControl);
+
+        const colorPicker = document.getElementById('draw-color');
+        colorPicker.addEventListener('change', function() {
+            const color = this.value;
+            drawControl.setDrawingOptions({
+                polygon: {
+                    shapeOptions: {
+                        color: color,
+                        fillColor: color.replace(/[^,]+(?=\))/, '0.7'),
+                        weight: 2,
+                    },
+                },
+                polyline: {
+                    color: color,
+                    weight: 3,
+                    lineCap: 'round',
+                },
+                circle: {
+                    shapeOptions: {
+                        color: color,
+                        fillColor: color.replace(/[^,]+(?=\))/, '0.7'),
+                        weight: 2,
+                    },
+                },
+                rectangle: {
+                    shapeOptions: {
+                        color: color,
+                        fillColor: color.replace(/[^,]+(?=\))/, '0.7'),
+                        weight: 2,
+                    },
+                },
+            });
+
+            drawnItems.eachLayer(function (layer) {
+                if (layer instanceof L.Polyline || layer instanceof L.Polygon || layer instanceof L.Circle || layer instanceof L.Rectangle) {
+                    layer.setStyle({ color: color });
+                    if(layer instanceof L.Polygon || layer instanceof L.Circle || layer instanceof L.Rectangle){
+                        layer.setStyle({fillColor: color.replace(/[^,]+(?=\))/, '0.7')});
+                    }
+                }
+            });
+        });
+
+        map.on('draw:created', (e) => {
+            const layer = e.layer;
+            drawnItems.addLayer(layer);
+            const geojson = layer.toGeoJSON();
+            console.log("Feature created:", geojson);
+        });
+
+        map.on('draw:edited', (e) => {
+            e.layers.eachLayer((layer) => {
+                const geojson = layer.toGeoJSON();
+                console.log("Feature edited:", geojson);
+            });
+        });
+
+        map.on('draw:deleted', (e) => {
+            e.layers.eachLayer((layer) => {
+                const geojson = layer.toGeoJSON();
+                console.log("Feature deleted:", geojson);
+            });
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.querySelector('.leaflet-search-button');
+        const searchCancel = document.querySelector('.leaflet-search-cancel');
+        const searchBar = document.getElementById('search-bar');
+        const searchResultsContainer = document.getElementById('search-results');
+        const searchResultsList = document.querySelector('#search-results ul');
+
+        let currentSearch = null; // To store the current search request
+
+        searchInput.addEventListener('input', () => {
+            const searchTerm = searchInput.value.trim();
+            searchCancel.style.display = searchTerm ? 'block' : 'none';
+            searchResultsContainer.style.display = searchTerm ? 'block' : 'none';
+
+
+            if (searchTerm.length < 3) {
+                // Clear results if the search term is too short
+                searchResultsList.innerHTML = '';
+                return;
+            }
+
+            if (currentSearch) {
+                // Cancel any pending search request
+                clearTimeout(currentSearch);
+            }
+
+            currentSearch = setTimeout(() => {
+                // Use Nominatim geocoding service for autocomplete
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(searchTerm)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            const results = data.map(item => ({
+                                name: item.display_name,
+                                center: L.latLng(item.lat, item.lon),
+                                properties: item
+                            }));
+                            displaySearchResults(results);
+                        } else {
+                            searchResultsList.innerHTML = '<li>Geen resultaten gevonden</li>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        searchResultsList.innerHTML = '<li>Er is een fout opgetreden</li>';
+                    });
+            }, 300); // 300ms delay for typing debounce
+        });
+
+        function displaySearchResults(results) {
+            searchResultsList.innerHTML = ''; // Clear previous results
+            results.forEach(result => {
+                const li = document.createElement('li');
+                li.textContent = result.name;
+                li.addEventListener('click', () => {
+                    searchInput.value = result.name; // Set the input value
+                    searchResultsContainer.style.display = 'none'; // Hide the results
+                     var rdCoords = proj4('EPSG:28992', [result.center.lng, result.center.lat]);
+                    L.marker(result.center).addTo(map)
+                        .bindPopup(result.name + '<br/>RD X: ' + rdCoords[0].toFixed(2) + '<br/>RD Y: ' + rdCoords[1].toFixed(2))
+                        .openPopup();
+                    map.setView(result.center, 16);
+                });
+                searchResultsList.appendChild(li);
+            });
+            searchResultsContainer.style.display = 'block';
+        }
+
+        searchButton.addEventListener('click', () => {
+            const searchTerm = searchInput.value.trim();
+            if (searchTerm) {
+                searchBar.classList.add('searching');
+                fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=' + searchTerm)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                             const result = data.map(item => ({
+                                name: item.display_name,
+                                center: L.latLng(item.lat, item.lon),
+                                properties: item
+                            }))[0];
+                            const latlng = result.center;
+                            var rdCoords = proj4('EPSG:28992', [latlng.lng, latlng.lat]);
+                            L.marker(latlng).addTo(map)
+                                .bindPopup(result.name + '<br/>RD X: ' + rdCoords[0].toFixed(2) + '<br/>RD Y: ' + rdCoords[1].toFixed(2))
+                                .openPopup();
+                            map.setView(latlng, 16);
+                        } else {
+                            alert('Locatie niet gevonden');
+                        }
+                        searchBar.classList.remove('searching');
+                        searchCancel.style.display = 'none';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Er is een fout opgetreden tijdens het zoeken');
+                        searchBar.classList.remove('searching');
+                        searchCancel.style.display = 'none';
+                    });
+            }
+        });
+
+        searchCancel.addEventListener('click', () => {
+            searchInput.value = '';
+            searchBar.classList.remove('searching');
+            searchCancel.style.display = 'none';
+            searchResultsContainer.style.display = 'none';
+            searchResultsList.innerHTML = '';
+        });
+
+        searchInput.addEventListener('input', () => {
+            searchCancel.style.display = searchInput.value.trim() ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>
