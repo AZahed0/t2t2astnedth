@@ -126,17 +126,15 @@
         .leaflet-search-bar {
             position: absolute;
             bottom: 10px;
-            right: 10px; /* Changed from left to right */
+            right: 10px;
             z-index: 1000;
             background-color: white;
             border-radius: 5px;
             padding: 5px 10px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-direction: column; /* Added to stack input and results */
-            align-items: flex-start; /* Align items to the start (left in column direction) */
+            flex-direction: column;
+            align-items: flex-start;
         }
 
         .leaflet-search-input {
@@ -182,19 +180,20 @@
 
         #search-results {
             position: absolute;
-            top: 100%; /* Position below the search bar */
+            top: auto;
+            bottom: 100%;
             left: 0;
-            right: auto; /* Ensure the results are positioned relative to the search bar */
+            right: auto;
             background-color: white;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            z-index: 1001; /* Ensure the results are above other map elements */
-            max-height: 200px; /* Limit the height of the results box */
-            overflow-y: auto; /* Add a scrollbar if the results exceed the height */
+            z-index: 1001;
+            max-height: 200px;
+            overflow-y: auto;
             padding: 0;
-            margin-top: 2px;
-            display: none; /* Initially hide the results */
-            width: 100%; /* Match the width of the input */
+            margin-bottom: 2px;
+            display: none;
+            width: 100%;
         }
 
         #search-results ul {
@@ -207,15 +206,15 @@
             padding: 8px 10px;
             cursor: pointer;
             font-size: 14px;
-            border-bottom: 1px solid #eee; /* Add a separator between results */
+            border-bottom: 1px solid #eee;
         }
 
         #search-results li:hover {
-            background-color: #f0f0f0; /* Highlight on hover */
+            background-color: #f0f0f0;
         }
 
         #search-results li:last-child {
-            border-bottom: none; /* Remove the border from the last item */
+            border-bottom: none;
         }
 
     </style>
@@ -228,12 +227,12 @@
         <input type="color" id="draw-color" value="#0000FF">
     </div>
     <div class="leaflet-search-bar" id="search-bar">
-        <input type="text" class="leaflet-search-input" placeholder="Zoeken..." id="search-input">
-        <button class="leaflet-search-button" id="search-button">Zoek</button>
-        <button class="leaflet-search-cancel" id="search-cancel">Annuleren</button>
         <div id="search-results">
             <ul></ul>
         </div>
+        <input type="text" class="leaflet-search-input" placeholder="Zoeken..." id="search-input">
+        <button class="leaflet-search-button" id="search-button">Zoek</button>
+        <button class="leaflet-search-cancel" id="search-cancel">Annuleren</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -407,27 +406,23 @@
         const searchResultsContainer = document.getElementById('search-results');
         const searchResultsList = document.querySelector('#search-results ul');
 
-        let currentSearch = null; // To store the current search request
+        let currentSearch = null;
 
         searchInput.addEventListener('input', () => {
             const searchTerm = searchInput.value.trim();
             searchCancel.style.display = searchTerm ? 'block' : 'none';
             searchResultsContainer.style.display = searchTerm ? 'block' : 'none';
 
-
             if (searchTerm.length < 3) {
-                // Clear results if the search term is too short
                 searchResultsList.innerHTML = '';
                 return;
             }
 
             if (currentSearch) {
-                // Cancel any pending search request
                 clearTimeout(currentSearch);
             }
 
             currentSearch = setTimeout(() => {
-                // Use Nominatim geocoding service for autocomplete
                 fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(searchTerm)}`)
                     .then(response => response.json())
                     .then(data => {
@@ -446,18 +441,18 @@
                         console.error('Error:', error);
                         searchResultsList.innerHTML = '<li>Er is een fout opgetreden</li>';
                     });
-            }, 300); // 300ms delay for typing debounce
+            }, 300);
         });
 
         function displaySearchResults(results) {
-            searchResultsList.innerHTML = ''; // Clear previous results
+            searchResultsList.innerHTML = '';
             results.forEach(result => {
                 const li = document.createElement('li');
                 li.textContent = result.name;
                 li.addEventListener('click', () => {
-                    searchInput.value = result.name; // Set the input value
-                    searchResultsContainer.style.display = 'none'; // Hide the results
-                     var rdCoords = proj4('EPSG:28992', [result.center.lng, result.center.lat]);
+                    searchInput.value = result.name;
+                    searchResultsContainer.style.display = 'none';
+                    var rdCoords = proj4('EPSG:28992', [result.center.lng, result.center.lat]);
                     L.marker(result.center).addTo(map)
                         .bindPopup(result.name + '<br/>RD X: ' + rdCoords[0].toFixed(2) + '<br/>RD Y: ' + rdCoords[1].toFixed(2))
                         .openPopup();
