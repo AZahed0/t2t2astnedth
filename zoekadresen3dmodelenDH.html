@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title> upload 3D modellen Den Helder </title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.32/"></script>
+    <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+    <style>
+        html,
+        body,
+        #view-div {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #view-div:not(.esri-view) * {
+            display: none;
+        }
+
+        calcite-notice {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        calcite-notice[open] {
+            animation-duration: 0.2s;
+            animation-name: slidein;
+        }
+
+        @keyframes slidein {
+            from {
+                opacity: 0;
+                transform: translateY(-30%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0%);
+            }
+        }
+
+        #drop-zone {
+            position: relative;
+            display: flex;
+            aspect-ratio: 1;
+            height: 250px;
+            background-color: var(--calcite-color-foreground-1);
+            padding: 12px;
+            cursor: pointer;
+        }
+
+        #drop-zone div {
+            display: flex;
+            flex-direction: column;
+            place-content: center;
+            place-items: center;
+            flex: 1;
+            border: 1px dashed gray;
+            padding-top: 12px;
+        }
+
+        #drop-zone h1 {
+            color: var(--calcite-ui-text-1);
+            font-size: var(--calcite-font-size-1);
+            font-weight: var(--calcite-font-weight-medium);
+            margin: 0;
+        }
+
+        #drop-zone section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            place-content: center;
+            place-items: center;
+        }
+
+        #drop-zone label {
+            opacity: 0;
+            position: absolute;
+            inset: 0;
+        }
+
+        #downloads {
+            display: flex;
+            background: white;
+            gap: 10px;
+            padding: 10px;
+        }
+        #downloads a {
+            display: flex;
+            width: 200px;
+            height: 200px;
+        }
+
+        calcite-loader {
+            padding: 0;
+        }
+
+        .expand-button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+        }
+
+    </style>
+    <script>
+        require([
+            "esri/core/reactiveUtils",
+            "esri/layers/SceneLayer",
+            "esri/geometry/SpatialReference",
+            "esri/WebScene",
+            "esri/views/SceneView",
+            "esri/widgets/Sketch/SketchViewModel",
+            "esri/layers/GraphicsLayer",
+            "esri/geometry/Mesh",
+            "esri/Graphic",
+            "esri/widgets/Expand",
+            "esri/widgets/Daylight",
+            "esri/widgets/Weather",
+            "esri/geometry/Extent",
+            "esri/geometry/Point",
+            "esri/widgets/Search"  // <- Added Search
+        ], (
+            reactiveUtils,
+            SceneLayer,
+            SpatialReference,
+            WebScene,
+            SceneView,
+            SketchViewModel,
+            GraphicsLayer,
+            Mesh,
+            Graphic,
+            Expand,
+            Daylight,
+            Weather,
+            Extent,
+            Point,
+            Search    // <- Added Search
+        ) => {
+            const MAX_FILESIZE_MB = 50;
+            let isUploading = false;
+            let isUpdating = false;
+
+            let deviceId = localStorage.getItem("deviceId");
+            if (deviceId === null) {
+                deviceId = crypto.randomUUID();
+                localStorage.setItem("deviceId", deviceId);
+            }
+
+            const webscene = new WebScene({
+                portalItem: { id: "48a900de3c124a47993de5fe9090671d" }
+            });
+
+            const view = new SceneView({
+                container: "view-div",
+                map: webscene,
+                camera: {
+                    position: {
+                        x: 4.7589,
+                        y: 52.9551,
+                        z: 150,
+                        spatialReference: { wkid: 4326 }
+                    },
+                    heading: 0,
+                    tilt: 65
+                }
+            });
+
+            view.popup.defaultPopupTemplateEnabled = true;
+
+            const sketchLayer = new GraphicsLayer();
+            view.map.add(sketchLayer);
+
+            const sketchVM = new SketchViewModel({
+                layer: sketchLayer,
+                view: view
+            });
+
+            view.when(async () => {
+                const siteLayer = view.map.layers
+                    .filter((layer) => layer.title === "EditableFeatures3DObjectProjectSite")
+                    .getItemAt(0);
+                sketchVM.snappingOptions = {
+                    enabled: true,
+                    featureSources: [{ layer: siteLayer, enabled: true }],
+                    snappingDistance: 50
+                };
+            });
+
+            let sceneLayer;
+            view.when(async () => {
+                sceneLayer ??= view.map.layers.filter((layer) => layer.title === "EditableFeatures3DObject").getItemAt(0);
+                sceneLayer.popupEnabled = false;
+                sceneLayer.definitionExpression = `deviceId = '${deviceId}' OR deviceId = 'initial-model'`;
+
+                const dropZone = document.getElementById("drop-zone");
+                dropZone.addEventListener("dragover", (event) => event.preventDefault());
+                dropZone.addEventListener("drop", async (event) => {
+                    event.preventDefault();
+                    const files = event.dataTransfer.items
+                        ? Array.from(event.dataTransfer.items)
+                            .filter((item) => item.kind === "file")
+                            .map((item) => item.getAsFile())
+                        : Array.from(event.dataTransfer.files);
+                    const [file] = files;
+
+                    if (file) await disableUI(uploadModel(sceneLayer, file));
+                });
+
+                const input = dropZone.querySelector("input");
+                input.addEventListener("change", async (event) => {
+                    const input = event.target;
+                    const [file] = Array.from(input.files);
+                    try {
+                        if (file) await disableUI(uploadModel(sceneLayer, file));
+                    } finally {
+                        input.value = "";
+                    }
+                });
+
+                dropZone.querySelector("calcite-button").addEventListener("click", () => input.click());
+            });
+
+            async function uploadModel(sceneLayer, file) {
+                if (isUploading) return;
+                const mb = file.size / (1024 * 1024);
+                if (mb > MAX_FILESIZE_MB) {
+                    showSizeWarning();
+                } else {
+                    try {
+                        isUploading = true;
+                        if (!sceneLayer.loaded) await sceneLayer.load();
+                        const mesh = await sceneLayer.convertMesh([file]);
+                        await mesh.load();
+                        sketchVM.place(mesh, {
+                            graphicProperties: {
+                                layer: sketchLayer,
+                                attributes: { deviceId: deviceId }
+                            }
+                        });
+                    } finally {
+                        isUploading = false;
+                    }
+                }
+            }
+
+            view.when(async () => {
+                loader.hidden = true;
+            });
+
+            const expand = new Expand({
+                expandIcon: "download",
+                content: document.querySelector("#downloads"),
+                expanded: false,
+                view: view
+            });
+            view.ui.add(expand, "bottom-left");
+
+            const daylightExpand = new Expand({
+                expandIcon: "sun",
+                content: new Daylight({ view: view }),
+                expanded: false,
+                view: view
+            });
+            view.ui.add(daylightExpand, "top-right");
+
+            const weatherExpand = new Expand({
+                expandIcon: "weather",
+                content: new Weather({ view: view }),
+                expanded: false,
+                view: view
+            });
+            view.ui.add(weatherExpand, "top-left");
+
+            // 🔍 ADDING SEARCH WIDGET
+            const searchExpand = new Expand({
+                view: view,
+                content: new Search({
+                    view: view,
+                    allPlaceholder: "Zoek een adres",
+                    includeDefaultSources: true
+                }),
+                expandIcon: "search",
+                expanded: false
+            });
+            view.ui.add(searchExpand, "top-right"); // Moved to top-right
+
+            const loader = document.getElementById("loader");
+            const sizeWarning = document.getElementById("size-warning");
+
+            async function disableUI(action) {
+                document.body.style.cursor = "progress";
+                loader.hidden = false;
+                isUpdating = true;
+
+                action.finally(() => {
+                    document.body.style.cursor = "pointer";
+                    loader.hidden = true;
+                    isUpdating = false;
+                });
+            }
+
+            function showSizeWarning() {
+                sizeWarning.open = true;
+            }
+        });
+    </script>
+</head>
+<body>
+    <div id="view-div">
+        <calcite-panel id="panel">
+            <calcite-scrim id="loader" loading></calcite-scrim>
+
+            <div id="drop-zone">
+                <div>
+                    <h1>Voeg je eigen model toe</h1>
+                    <label>
+                        Blader door bestanden
+                        <input type="file" />
+                    </label>
+                    <section aria-hidden="true">
+                        <calcite-button id="upload-model-button" icon-end="files" label="Blader door bestanden" alignment="icon-start-space-between">
+                            <calcite-icon icon="upload" slot="start"></calcite-icon>
+                            Bladeren
+                        </calcite-button>
+                        <p>of sleep een bestand hierheen</p>
+                    </section>
+                </div>
+            </div>
+        </calcite-panel>
+
+        <div id="downloads">
+            <a download href="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/Tower.glb">
+                <calcite-card>
+                    <img slot="thumbnail" alt="" src="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/Tower.png" />
+                    <div slot="title">
+                        <span slot="title">Torens</span>
+                        <calcite-icon scale="s" icon="arrow-bold-down"></calcite-icon>
+                    </div>
+                </calcite-card>
+            </a>
+            <a download href="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/GreenBuilding.fbx">
+                <calcite-card>
+                    <img slot="thumbnail" alt="" src="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/GreenBuilding.png" />
+                    <div slot="title">
+                        <span slot="title">Gebouw</span>
+                        <calcite-icon scale="s" icon="arrow-bold-down"></calcite-icon>
+                    </div>
+                </calcite-card>
+            </a>
+        </div>
+    </div>
+
+    <calcite-notice id="size-warning" kind="danger" icon closable>
+        <div slot="title">Bestand te groot</div>
+        <div slot="message">Het geüploade bestand mag maximaal 50 MB zijn</div>
+    </calcite-notice>
+</body>
+</html>
