@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>3D Scene met modellen</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+  <style>
+    html, body, #view-div {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    #drop-zone {
+      width: 250px;
+      padding: 12px;
+      background-color: white;
+    }
+
+    #drop-zone h1 {
+      font-size: 16px;
+      margin-top: 0;
+    }
+
+    #drop-zone section {
+      margin-top: 10px;
+    }
+
+    #downloads {
+      display: flex;
+      background: white;
+      gap: 10px;
+      padding: 10px;
+    }
+
+    #downloads a {
+      display: flex;
+      width: 200px;
+      height: 200px;
+    }
+
+    calcite-notice {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    calcite-notice[open] {
+      animation-duration: 0.2s;
+      animation-name: slidein;
+    }
+
+    @keyframes slidein {
+      from { opacity: 0; transform: translateY(-30%); }
+      to { opacity: 1; transform: translateY(0%); }
+    }
+  </style>
+
+  <script>
+    require([
+      "esri/core/reactiveUtils",
+      "esri/layers/SceneLayer",
+      "esri/WebScene",
+      "esri/views/SceneView",
+      "esri/widgets/Sketch/SketchViewModel",
+      "esri/layers/GraphicsLayer",
+      "esri/widgets/Expand",
+      "esri/widgets/Daylight",
+      "esri/widgets/Weather",
+      "esri/widgets/Search",
+      "esri/widgets/Fullscreen"
+    ], function (
+      reactiveUtils,
+      SceneLayer,
+      WebScene,
+      SceneView,
+      SketchViewModel,
+      GraphicsLayer,
+      Expand,
+      Daylight,
+      Weather,
+      Search,
+      Fullscreen
+    ) {
+      const deviceId = localStorage.getItem("deviceId") || (crypto.randomUUID() && localStorage.setItem("deviceId", crypto.randomUUID()));
+
+      const webscene = new WebScene({
+        portalItem: { id: "48a900de3c124a47993de5fe9090671d" }
+      });
+
+      const view = new SceneView({
+        container: "view-div",
+        map: webscene,
+        camera: {
+          position: {
+            x: 4.7589,  // Longitude for Den Helder
+            y: 52.9551,  // Latitude for Den Helder
+            z: 150,       // Altitude,  changed altitude
+            spatialReference: { wkid: 4326 }
+          },
+          heading: 0,     // Direction the camera is pointing (0 is North)
+          tilt: 65      // Angle of the camera relative to the ground
+        },
+        background: { // Set a background color for the scene
+          type: "color",
+          color: [100, 149, 237, 1] // Cornflower Blue (RGBA)
+        }
+      });
+
+      const sketchLayer = new GraphicsLayer();
+      view.map.add(sketchLayer);
+
+      const sketchVM = new SketchViewModel({
+        layer: sketchLayer,
+        view: view
+      });
+
+      let sceneLayer;
+      view.when(() => {
+        sceneLayer = view.map.layers.find((layer) => layer.title === "EditableFeatures3DObject");
+        sceneLayer.definitionExpression = `deviceId = '${deviceId}' OR deviceId = 'initial-model'`;
+
+        // Model upload event
+        const input = document.querySelector("#model-input");
+        input.addEventListener("change", async (e) => {
+          const file = e.target.files[0];
+          if (file && file.size / (1024 * 1024) <= 50) {
+            const mesh = await sceneLayer.convertMesh([file]);
+            await mesh.load();
+            sketchVM.place(mesh, {
+              graphicProperties: {
+                layer: sketchLayer,
+                attributes: { deviceId: deviceId }
+              }
+            });
+          } else {
+            document.querySelector("#size-warning").open = true;
+          }
+          input.value = ""; // reset
+        });
+
+        // Drop zone
+        const dropZone = document.getElementById("drop-zone");
+        dropZone.addEventListener("dragover", (e) => e.preventDefault());
+        dropZone.addEventListener("drop", async (e) => {
+          e.preventDefault();
+          const file = e.dataTransfer.files[0];
+          if (file && file.size / (1024 * 1024) <= 50) {
+            const mesh = await sceneLayer.convertMesh([file]);
+            await mesh.load();
+            sketchVM.place(mesh, {
+              graphicProperties: {
+                layer: sketchLayer,
+                attributes: { deviceId: deviceId }
+              }
+            });
+          } else {
+            document.querySelector("#size-warning").open = true;
+          }
+        });
+      });
+
+      // Widgets
+      const searchExpand = new Expand({
+        view: view,
+        content: new Search({ view }),
+        expandIcon: "search",
+        expanded: false
+      });
+      view.ui.add(searchExpand, "top-left");
+
+      const downloadsExpand = new Expand({
+        view: view,
+        content: document.getElementById("downloads"),
+        expandIcon: "download",
+        expanded: false
+      });
+      view.ui.add(downloadsExpand, "bottom-left");
+
+      const daylightExpand = new Expand({
+        view: view,
+        content: new Daylight({ view }),
+        expandIcon: "sun",
+        expanded: false
+      });
+      view.ui.add(daylightExpand, "top-right");
+
+      const weatherExpand = new Expand({
+        view: view,
+        content: new Weather({ view }),
+        expandIcon: "cloudy",
+        expanded: false
+      });
+      view.ui.add(weatherExpand, "top-right");
+
+      const fullscreen = new Fullscreen({ view: view });
+      view.ui.add(fullscreen, "top-left");
+
+      const uploadExpand = new Expand({
+        view: view,
+        expandIcon: "upload-to-cloud",
+        expanded: false,
+        content: document.getElementById("drop-zone")
+      });
+      view.ui.add(uploadExpand, "top-left");
+    });
+  </script>
+</head>
+<body>
+  <div id="view-div"></div>
+
+  <div id="drop-zone">
+    <h1>Voeg je eigen model toe</h1>
+    <input id="model-input" type="file" />
+    <section>
+      <p>Sleep een bestand hierheen of klik om te uploaden.</p>
+    </section>
+  </div>
+
+  <div id="downloads">
+    <a download href="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/Tower.glb">
+      <calcite-card>
+        <img slot="thumbnail" alt="Torens" src="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/Tower.png" />
+        <div slot="title">Torens</div>
+      </calcite-card>
+    </a>
+    <a download href="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/GreenBuilding.fbx">
+      <calcite-card>
+        <img slot="thumbnail" alt="Gebouw" src="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/GreenBuilding.png" />
+        <div slot="title">Gebouw</div>
+      </calcite-card>
+    </a>
+  </div>
+
+  <calcite-notice id="size-warning" kind="danger" icon closable>
+    <div slot="title">Bestand te groot</div>
+    <div slot="message">Het bestand mag maximaal 50 MB zijn</div>
+  </calcite-notice>
+</body>
+</html>
