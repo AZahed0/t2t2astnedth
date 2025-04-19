@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-    <title>3D Den Helder sketch met metingen </title>
+    <title>3D Scene met modellen en widgets</title>
     <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
     <script src="https://js.arcgis.com/4.32/"></script>
     <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
@@ -75,6 +75,22 @@
       .symbol-item.selected {
         border-color: #0078d4;
       }
+
+      #logo-container {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        padding: 5px;
+        border-radius: 4px;
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      #logo-container img {
+        height: 40px;
+      }
     </style>
   </head>
   <body>
@@ -98,6 +114,9 @@
       <button id="directLineMeasurement" class="measurement-button">Afstand meten</button>
       <button id="areaMeasurement" class="measurement-button">Oppervlakte meten</button>
       <button id="clearMeasurements" class="measurement-button">Metingen wissen</button>
+    </div>
+    <div id="logo-container">
+      <img src="https://www.denhelder.nl/dsresource?objectid=571c93e2-71c1-4168-a4ae-21c0970c48d8" alt="Den Helder Logo" />
     </div>
     <script>
       require([
