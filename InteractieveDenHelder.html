@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-search@3.0.9/dist/leaflet-search.min.css" />
     <style>
         #map {
             height: 100vh;
@@ -49,18 +50,18 @@
             font-weight: bold;
         }
         .legend i {
-            width: 16px; /* Smaller icon */
-            height: 16px; /* Smaller icon */
+            width: 16px;
+            height: 16px;
             float: left;
-            margin-right: 6px; /* Adjusted spacing */
+            margin-right: 6px;
             opacity: 0.8;
             display: inline-block;
-            border-radius: 50%; /* Make it a circle */
-            border: 2px solid; /* Add a border */
-            box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
+            border-radius: 50%;
+            border: 2px solid;
+            box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
         .legend i.circle {
-             border-radius: 50%;
+            border-radius: 50%;
         }
 
         .leaflet-draw-toolbar {
@@ -87,12 +88,11 @@
             color: #555;
         }
 
-        /* Color Picker Positioned Top Middle */
         #color-selector {
             position: absolute;
             top: 10px;
-            left: 50%; /* Center horizontally initially */
-            transform: translateX(-50%); /* Precise centering */
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 1000;
             padding: 10px;
             background-color: white;
@@ -112,15 +112,161 @@
             height: 40px;
             border: none;
             cursor: pointer;
-            border-radius: 50%; /* Make the color input a circle */
+            border-radius: 50%;
             padding: 3px;
         }
         #color-selector input[type="color"]::-webkit-color-swatch-wrapper {
             padding: 0;
         }
         #color-selector input[type="color"]::-webkit-color-swatch {
-            border: 2px solid #fff; /* Add a white border to the color swatch */
+            border: 2px solid #fff;
             border-radius: 50%;
+        }
+
+        .leaflet-search-bar {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 1000;
+            background-color: white;
+            border-radius: 5px;
+            padding: 5px 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .leaflet-search-input {
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 14px;
+        }
+
+        .leaflet-search-button {
+            background-color: #0078d7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .leaflet-search-button:hover {
+            background-color: #005a9e;
+        }
+        .leaflet-search-cancel {
+            display: none;
+            background-color: #ddd;
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .leaflet-search-cancel:hover {
+            background-color: #ccc;
+        }
+        .leaflet-search-bar.searching .leaflet-search-cancel{
+            display: block;
+        }
+
+        #search-results {
+            position: absolute;
+            top: auto;
+            bottom: 100%;
+            left: 0;
+            right: auto;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 0;
+            margin-bottom: 2px;
+            display: none;
+            width: 100%;
+        }
+
+        #search-results ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #search-results li {
+            padding: 8px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+        }
+
+        #search-results li:hover {
+            background-color: #f0f0f0;
+        }
+
+        #search-results li:last-child {
+            border-bottom: none;
+        }
+
+        #logo-container {
+            position: absolute;
+            bottom: 20px; /* Increased from 10px to move it up */
+            left: 10px;
+            z-index: 1000;
+            background-color: white;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+        }
+
+        #logo-container img {
+            height: 75px;
+        }
+
+        .leaflet-control-zoom {
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out {
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            font-size: 24px;
+            cursor: pointer;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px 5px 0 0;
+            display: block;
+            color: #555;
+        }
+
+        .leaflet-control-zoom-out {
+            border-radius: 0 0 5px 5px;
+            border-top: none;
+        }
+
+        .leaflet-control-zoom-in:hover,
+        .leaflet-control-zoom-out:hover {
+            background-color: #f0f0f0;
+        }
+        .leaflet-control-layers {
+             border-radius: 5px;
+             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+             background-color: white;
         }
 
     </style>
@@ -129,17 +275,33 @@
 
     <div id="map"></div>
     <div id="color-selector">
-        <label for="draw-color"> </label>
+        
         <input type="color" id="draw-color" value="#0000FF">
+    </div>
+    <div class="leaflet-search-bar" id="search-bar">
+        <div id="search-results">
+            <ul></ul>
+        </div>
+        <input type="text" class="leaflet-search-input" placeholder="Zoek een adres..." id="search-input">
+        <button class="leaflet-search-button" id="search-button">Zoeken</button>
+        <button class="leaflet-search-cancel" id="search-cancel">Annuleren</button>
+    </div>
+    <div id="logo-container">
+        <img src="https://www.denhelder.nl/dsresource?objectid=571c93e2-71c1-4168-a4ae-21c0970c48d8" alt="Den Helder Logo">
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-search@3.0.9/dist/leaflet-search.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.3/proj4.js"></script>
 
     <script>
+        // Define the Proj4js projection for RD (Dutch coordinate system)
+        proj4.defs('EPSG:28992', '+proj=tmerc +lat_0=52.15517440 +lon_0=5.38720621 +k=1 +x_0=155000 +y_0=463000 +datum=WGS84 +units=m +no_defs');
+
         var map = L.map('map', {
-            zoomControl: false
+            zoomControl: true // Enable zoom control
         }).setView([52.9563, 4.7608], 14);
 
         var brtLayer = L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/{style}/EPSG:3857/{z}/{x}/{y}.png', {
@@ -289,6 +451,117 @@
                 const geojson = layer.toGeoJSON();
                 console.log("Feature deleted:", geojson);
             });
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.querySelector('.leaflet-search-button');
+        const searchCancel = document.querySelector('.leaflet-search-cancel');
+        const searchBar = document.getElementById('search-bar');
+        const searchResultsContainer = document.getElementById('search-results');
+        const searchResultsList = document.querySelector('#search-results ul');
+
+        let currentSearch = null;
+
+        searchInput.addEventListener('input', () => {
+            const searchTerm = searchInput.value.trim();
+            searchCancel.style.display = searchTerm ? 'block' : 'none';
+            searchResultsContainer.style.display = searchTerm ? 'block' : 'none';
+
+            if (searchTerm.length < 3) {
+                searchResultsList.innerHTML = '';
+                return;
+            }
+
+            if (currentSearch) {
+                clearTimeout(currentSearch);
+            }
+
+            currentSearch = setTimeout(() => {
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(searchTerm)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            const results = data.map(item => ({
+                                name: item.display_name,
+                                center: L.latLng(item.lat, item.lon),
+                                properties: item
+                            }));
+                            displaySearchResults(results);
+                        } else {
+                            searchResultsList.innerHTML = '<li>Geen resultaten gevonden</li>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        searchResultsList.innerHTML = '<li>Er is een fout opgetreden</li>';
+                    });
+            }, 300);
+        });
+
+        function displaySearchResults(results) {
+            searchResultsList.innerHTML = '';
+            results.forEach(result => {
+                const li = document.createElement('li');
+                li.textContent = result.name;
+                li.addEventListener('click', () => {
+                    searchInput.value = result.name;
+                    searchResultsContainer.style.display = 'none';
+                    var rdCoords = proj4('EPSG:28992', [result.center.lng, result.center.lat]);
+                    L.marker(result.center).addTo(map)
+                        .bindPopup(result.name + '<br/>RD X: ' + rdCoords[0].toFixed(2) + '<br/>RD Y: ' + rdCoords[1].toFixed(2))
+                        .openPopup();
+                    map.setView(result.center, 16);
+                });
+                searchResultsList.appendChild(li);
+            });
+            searchResultsContainer.style.display = 'block';
+        }
+
+        searchButton.addEventListener('click', () => {
+            const searchTerm = searchInput.value.trim();
+            if (searchTerm) {
+                searchBar.classList.add('searching');
+                fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=' + searchTerm)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            const result = data.map(item => ({
+                                name: item.display_name,
+                                center: L.latLng(item.lat, item.lon),
+                                properties: item
+                            }))[0];
+                            const latlng = result.center;
+                            var rdCoords = proj4('EPSG:28992', [latlng.lng, latlng.lat]);
+                            L.marker(latlng).addTo(map)
+                                .bindPopup(result.name + '<br/>RD X: ' + rdCoords[0].toFixed(2) + '<br/>RD Y: ' + rdCoords[1].toFixed(2))
+                                .openPopup();
+                            map.setView(latlng, 16);
+                        } else {
+                            alert('Locatie niet gevonden');
+                        }
+                        searchBar.classList.remove('searching');
+                        searchCancel.style.display = 'none';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Er is een fout opgetreden tijdens het zoeken');
+                        searchBar.classList.remove('searching');
+                        searchCancel.style.display = 'none';
+                    });
+            }
+        });
+
+        searchCancel.addEventListener('click', () => {
+            searchInput.value = '';
+            searchBar.classList.remove('searching');
+            searchCancel.style.display = 'none';
+            searchResultsContainer.style.display = 'none';
+            searchResultsList.innerHTML = '';
+        });
+
+        searchInput.addEventListener('input', () => {
+            searchCancel.style.display = searchInput.value.trim() ? 'block' : 'none';
         });
     </script>
 </body>
