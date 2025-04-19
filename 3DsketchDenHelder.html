@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>3D sketch Den Helder</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+  <style>
+    html, body, #view-div {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    #sketchPanel {
+      background: white;
+      padding: 10px;
+      position: absolute;
+      top: 20px;
+      right: 15px;
+      z-index: 99;
+    }
+  </style>
+</head>
+<body>
+  <div id="view-div"></div>
+  <div id="sketchPanel" class="esri-widget">
+    <label for="heightInput">Hoogte (meter):</label>
+    <input type="number" id="heightInput" value="3" step="1" min="1" max="100" style="width: 60px; margin-bottom: 10px;" />
+    <br />
+    <label for="colorInput">Kleur:</label>
+    <input type="color" id="colorInput" value="#964B00" style="margin-bottom: 10px;" />
+    <div id="sketchWidget"></div>
+  </div>
+
+  <script>
+    require([
+      "esri/WebScene",
+      "esri/views/SceneView",
+      "esri/layers/GraphicsLayer",
+      "esri/widgets/Sketch",
+      "esri/widgets/Expand",
+      "esri/widgets/Search",
+      "esri/widgets/Daylight",
+      "esri/widgets/Weather",
+      "esri/widgets/Fullscreen",
+      "esri/Graphic"
+    ], function(WebScene, SceneView, GraphicsLayer, Sketch, Expand, Search, Daylight, Weather, Fullscreen, Graphic) {
+
+      const webscene = new WebScene({
+        portalItem: { id: "48a900de3c124a47993de5fe9090671d" }
+      });
+
+      const view = new SceneView({
+        container: "view-div",
+        map: webscene,
+        camera: {
+          position: {
+            x: 4.7589,
+            y: 52.9551,
+            z: 150,
+            spatialReference: { wkid: 4326 }
+          },
+          heading: 0,
+          tilt: 65
+        },
+        background: {
+          type: "color",
+          color: [100, 149, 237, 1]
+        }
+      });
+
+      const sketchLayer = new GraphicsLayer({
+        elevationInfo: { mode: "absolute-height" },
+        title: "Schetslaag"
+      });
+      view.map.add(sketchLayer);
+
+      const sketch = new Sketch({
+        view: view,
+        layer: sketchLayer,
+        container: "sketchWidget",
+        creationMode: "update"
+      });
+
+      const sketchVM = sketch.viewModel;
+
+      const heightInput = document.getElementById("heightInput");
+      const colorInput = document.getElementById("colorInput");
+
+      function updateSymbols(height, color) {
+        sketchVM.pointSymbol = {
+          type: "point-3d",
+          symbolLayers: [{
+            type: "object",
+            resource: { primitive: "cone" },
+            material: { color: color },
+            height: height,
+            width: 1,
+            depth: 1,
+            anchor: "bottom"
+          }]
+        };
+
+        sketchVM.polylineSymbol = {
+          type: "line-3d",
+          symbolLayers: [{
+            type: "path",
+            material: { color: color },
+            width: 0.2,
+            profile: "tube",
+            height: height
+          }]
+        };
+
+        sketchVM.polygonSymbol = {
+          type: "polygon-3d",
+          symbolLayers: [{
+            type: "extrude",
+            material: { color: color },
+            size: height
+          }]
+        };
+      }
+
+      updateSymbols(parseFloat(heightInput.value), colorInput.value);
+
+      function refreshSymbols() {
+        const height = parseFloat(heightInput.value);
+        const color = colorInput.value;
+        updateSymbols(height, color);
+      }
+
+      heightInput.addEventListener("change", refreshSymbols);
+      colorInput.addEventListener("input", refreshSymbols);
+
+      sketchVM.snappingOptions = {
+        enabled: true,
+        featureSources: [{ layer: sketchLayer }]
+      };
+
+      sketchVM.tooltipOptions = { enabled: true };
+      sketchVM.labelOptions = { enabled: true };
+
+      const searchExpand = new Expand({
+        view: view,
+        content: new Search({ view }),
+        expandIcon: "search",
+        expanded: false
+      });
+      view.ui.add(searchExpand, "top-left");
+
+      const fullscreen = new Fullscreen({ view });
+      view.ui.add(fullscreen, "top-left");
+
+      const daylightExpand = new Expand({
+        view: view,
+        content: new Daylight({ view }),
+        expandIcon: "sun",
+        expanded: false
+      });
+      view.ui.add(daylightExpand, "top-right");
+
+      const weatherExpand = new Expand({
+        view: view,
+        content: new Weather({ view }),
+        expandIcon: "cloudy",
+        expanded: false
+      });
+      view.ui.add(weatherExpand, "top-right");
+
+      const sketchExpand = new Expand({
+        view: view,
+        content: document.getElementById("sketchPanel"),
+        expandIcon: "pencil",
+        expanded: false
+      });
+      view.ui.add(sketchExpand, "top-right");
+
+    });
+  </script>
+</body>
+</html>
