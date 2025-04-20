@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable-no" />
   <title>3D Scene met modellen en widgets</title>
   <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
   <script src="https://js.arcgis.com/4.32/"></script>
@@ -202,8 +202,13 @@
       const input = document.querySelector("#model-input");
       input.addEventListener("change", async (e) => {
         const file = e.target.files[0];
-        const validTypes = ["model/gltf-binary", "application/octet-stream"];
-        if (file && file.size / (1024 * 1024) <= 50 && validTypes.includes(file.type)) {
+        const fileName = file.name.toLowerCase();
+        const fileExtension = fileName.split('.').pop();
+
+        const validExtensions = ["glb", "gltf"];
+        const isValidExtension = validExtensions.includes(fileExtension);
+
+        if (file && file.size / (1024 * 1024) <= 50 && isValidExtension) {
           const mesh = await sceneLayer.convertMesh([file]);
           await mesh.load();
           sketchVM.place(mesh, {
@@ -226,6 +231,13 @@
           setTimeout(() => notice.remove(), 4000);
 
         } else {
+          let message = "Het bestand mag maximaal 50 MB zijn";
+          if (file && file.size / (1024 * 1024) > 50) {
+            message = `Bestand te groot (${(file.size / (1024 * 1024)).toFixed(2)} MB). Het bestand mag maximaal 50 MB zijn.`;
+          } else if (file && !isValidExtension) {
+            message = `Ongeldig bestandstype.  Alleen .glb en .gltf bestanden zijn toegestaan.`;
+          }
+          document.querySelector("#size-warning").innerHTML = `<div slot="title">Fout bij bestandsupload</div><div slot="message">${message}</div>`;
           document.querySelector("#size-warning").open = true;
         }
         input.value = "";
@@ -242,8 +254,13 @@
         e.preventDefault();
         dropZone.classList.remove("dragover");
         const file = e.dataTransfer.files[0];
-        const validTypes = ["model/gltf-binary", "application/octet-stream"];
-        if (file && file.size / (1024 * 1024) <= 50 && validTypes.includes(file.type)) {
+        const fileName = file.name.toLowerCase();
+        const fileExtension = fileName.split('.').pop();
+
+        const validExtensions = ["glb", "gltf"];
+        const isValidExtension = validExtensions.includes(fileExtension);
+
+        if (file && file.size / (1024 * 1024) <= 50 && isValidExtension) {
           const mesh = await sceneLayer.convertMesh([file]);
           await mesh.load();
           sketchVM.place(mesh, {
@@ -264,6 +281,13 @@
           document.body.appendChild(notice);
           setTimeout(() => notice.remove(), 4000);
         } else {
+          let message = "Het bestand mag maximaal 50 MB zijn";
+          if (file && file.size / (1024 * 1024) > 50) {
+            message = `Bestand te groot (${(file.size / (1024 * 1024)).toFixed(2)} MB). Het bestand mag maximaal 50 MB zijn.`;
+          } else if (file && !isValidExtension) {
+            message = `Ongeldig bestandstype.  Alleen .glb en .gltf bestanden zijn toegestaan.`;
+          }
+          document.querySelector("#size-warning").innerHTML = `<div slot="title">Fout bij bestandsupload</div><div slot="message">${message}</div>`;
           document.querySelector("#size-warning").open = true;
         }
       });
