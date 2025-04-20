@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Den Helder 3D Viewer | Tent</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.32/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #paneDiv {
+        padding: 10px;
+        max-width: 200px;
+        background-color: rgba(255, 255, 255, 0.8);
+        font-size: 1.1em;
+        overflow-y: scroll;
+      }
+
+      #credits {
+        font-size: 0.7em;
+        line-height: 1.1em;
+      }
+
+      /* Optional: Add some custom styling for the button container */
+      .button-container {
+        padding: 10px;
+      }
+
+      .esri-button {
+        margin: 5px;
+      }
+
+      #logo {
+        position: absolute;
+        bottom: 20px; /* Changed from 10px to 20px */
+        right: 10px;
+        z-index: 100;
+        width: 100px;
+        height: auto;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/views/SceneView",
+        "esri/WebScene",
+        "esri/layers/GraphicsLayer",
+        "esri/widgets/Sketch/SketchViewModel",
+        "esri/layers/SceneLayer",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/BasemapGallery",
+        "esri/widgets/Expand",
+        "esri/widgets/LayerList"
+      ], (SceneView, WebScene, GraphicsLayer, SketchViewModel, SceneLayer, FeatureLayer, BasemapGallery, Expand, LayerList) => {
+
+        const webScene = new WebScene({
+          portalItem: {
+            id: "414a28cfca7a471180e8e952cf14c60f"
+          }
+        });
+
+        const view = new SceneView({
+          container: "viewDiv",
+          map: webScene
+        });
+
+        const graphicsLayer = new GraphicsLayer({
+          elevationInfo: { mode: "on-the-ground" }
+        });
+        view.map.add(graphicsLayer);
+
+        // ✅ Add 3D BAG Buildings
+        const buildingsLayer = new SceneLayer({
+          url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3DBAG_WGS_EGM_V2/SceneServer",
+          title: "3D Buildings" // Renamed Layer
+        });
+        webScene.add(buildingsLayer);
+
+        // ✅ Add 3D Trees
+        const treesLayer = new SceneLayer({
+          url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3D_Bomen_WGS/SceneServer",
+          title: "3D Trees" // Renamed Layer
+        });
+        webScene.add(treesLayer);
+
+        // ✅ Add 3D Windturbines layer
+        const windturbinesLayer = new SceneLayer({
+          url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3D_Windturbines_WGS/SceneServer",
+          title: "3D Wind Turbines" // Renamed Layer
+        });
+        webScene.add(windturbinesLayer);
+
+        // ✅ Add Basemap Gallery Widget with Collapsible Expand Widget
+        const basemapGallery = new BasemapGallery({
+          view: view
+        });
+
+        const basemapExpand = new Expand({
+          view: view,
+          content: basemapGallery,
+          expanded: false
+        });
+
+        view.ui.add(basemapExpand, "top-left");
+
+        // Add the LayerList widget inside an Expand widget
+        const layerList = new LayerList({
+          view: view,
+          listItemCreatedFunction: function(event) {
+            const item = event.item;
+            if (item.layer.type === "group") {
+              item.open = true;
+            }
+          }
+        });
+        const layerListExpand = new Expand({
+          view: view,
+          content: layerList,
+          expanded: false,  // Make it collapsed by default
+          label: "Lagen" // Dutch label
+        });
+        view.ui.add(layerListExpand, "top-right");
+
+        //  Make the symbol selection widget collapsible
+        const symbolPane = document.getElementById("paneDiv");
+        const symbolPaneExpand = new Expand({
+          view: view,
+          content: symbolPane,
+          expanded: false,
+          label: "Selecteer Symbool" // Label it
+        });
+        view.ui.add(symbolPaneExpand, "top-right");
+
+
+        view.when(() => {
+          // 🧭 Zoom to specific location in Den Helder
+          view.goTo({
+            position: {
+              latitude: 52.9570831199898,
+              longitude: 4.77053184278993,
+              z: 150
+            },
+            tilt: 65,
+            heading: 0
+          });
+
+          const sketchVM = new SketchViewModel({
+            layer: graphicsLayer,
+            view: view
+          });
+
+          // Add tent and canoe buttons
+          const tentBtn = document.getElementById("tent");
+          const canoeBtn = document.getElementById("canoe");
+
+          tentBtn.addEventListener("click", () => {
+            sketchVM.pointSymbol = {
+              type: "point-3d",
+              symbolLayers: [
+                {
+                  type: "object",
+                  resource: {
+                    href: "https://developers.arcgis.com/javascript/latest/sample-code/import-gltf/live/tent.glb"
+                  }
+                }
+              ]
+            };
+            sketchVM.create("point");
+            deactivateButtons();
+            tentBtn.classList.add("esri-button--secondary");
+          });
+
+          canoeBtn.addEventListener("click", () => {
+            sketchVM.pointSymbol = {
+              type: "point-3d",
+              symbolLayers: [
+                {
+                  type: "object",
+                  resource: {
+                    href: "https://developers.arcgis.com/javascript/latest/sample-code/import-gltf/live/canoe.glb"
+                  }
+                }
+              ]
+            };
+            sketchVM.create("point");
+            deactivateButtons();
+            canoeBtn.classList.add("esri-button--secondary");
+          });
+
+          sketchVM.on("create", (event) => {
+            if (event.state === "complete") {
+              sketchVM.update(event.graphic);
+              deactivateButtons();
+            }
+          });
+        });
+
+        function deactivateButtons() {
+          const elements = Array.from(document.getElementsByClassName("esri-button"));
+          elements.forEach((element) => {
+            element.classList.remove("esri-button--secondary");
+          });
+        }
+
+        // view.ui.add("paneDiv", "top-right");  // Removed direct addition
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+    <div id="paneDiv" class="esri-widget">
+      <p>Selecteer een symbool en plaats deze in de scène: </p>
+      <div class="button-container">
+        <button id="tent" class="esri-button">Tent</button><br/>
+        <button id="canoe" class="esri-button">Kano</button>
+      </div>
+      <p id="credits">
+        Tent en kano glTF modellen van <a href="https://www.kenney.nl/assets/" target="_blank">Kenney game assets</a>
+        onder <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank">CC0 1.0 Universal</a>.
+      </p>
+    </div>
+    <img id="logo" src="https://www.multibel.eu/wp-content/uploads/gemeente-den-helder-app-quote-500x383.png" alt="Den Helder Logo" style="width: 80px;" />
+  </body>
+</html>
