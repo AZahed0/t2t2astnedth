@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Den Helder Simulatie van Overstromingen</title>
+  <style>
+    html, body, #viewDiv {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #selection {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70%;
+      max-width: 1000px;
+      z-index: 1;
+    }
+    #menu {
+      padding: 1em;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 2;
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    #waveSlider {
+      height: 50px;
+      margin-top: 2em;
+    }
+
+    .color-btn {
+      border: 1px solid rgb(173, 172, 172);
+      width: 40px;
+      height: 20px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    .color-btn:hover {
+       border: 2px solid #007ac1; /* Highlight on hover */
+    }
+
+    #navy {
+      background-color: #25427c;
+    }
+
+    #green {
+      background-color: #039962;
+    }
+
+    #turqoise {
+      background-color: #a2f9f5;
+    }
+
+    #logo {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      z-index: 3;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 5px;
+      border-radius: 5px;
+    }
+
+  </style>
+  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+  <link rel="stylesheet" href="https://js.arcgis.com/calcite-components/3.0.3/calcite.css" />
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <script>
+    require([
+      "esri/Map",
+      "esri/views/SceneView",
+      "esri/layers/FeatureLayer",
+      "esri/widgets/Expand",
+      "esri/widgets/Weather",
+      "esri/widgets/Daylight",
+      "esri/renderers/SimpleRenderer",
+      "esri/symbols/PolygonSymbol3D",
+      "esri/symbols/ExtrudeSymbol3DLayer",
+      "esri/symbols/WaterSymbol3DLayer",
+      "esri/widgets/Slider",
+      "esri/geometry/Point"
+    ], function(
+      Map, SceneView, FeatureLayer, Expand, Weather, Daylight, SimpleRenderer, PolygonSymbol3D, ExtrudeSymbol3DLayer, WaterSymbol3DLayer, Slider, Point
+    ) {
+
+      const map = new Map({
+        basemap: "topo-3d",
+        ground: "world-elevation"
+      });
+
+      const view = new SceneView({
+        container: "viewDiv",
+        map: map,
+        camera: {
+          position: {
+            x: 4.7589,
+            y: 52.9551,
+            z: 150,
+            spatialReference: { wkid: 4326 }
+          },
+          heading: 0,
+          tilt: 65
+        },
+        environment: {
+          weather: {
+            type: "cloudy",
+            cloudCover: 0.3
+          }
+        }
+      });
+
+      const waterRenderer = new SimpleRenderer({
+        symbol: new PolygonSymbol3D({
+          symbolLayers: [
+            new WaterSymbol3DLayer({
+              waveDirection: 260,
+              color: "#0077be",
+              waveStrength: "moderate",
+              waterbodySize: "medium",
+              size: 4
+            })
+          ]
+        })
+      });
+
+      const denHelderLayer = new FeatureLayer({
+        url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/CBS_Gemeente_actueel/FeatureServer/0",
+        definitionExpression: "statnaam = 'Den Helder'",
+        renderer: waterRenderer,
+        elevationInfo: {
+          mode: "relative-to-ground"
+        },
+        visible: false
+      });
+
+      map.add(denHelderLayer);
+
+      // Add logo
+      const logo = document.createElement("div");
+      logo.id = "logo";
+      logo.innerHTML = '<img src="https://www.denhelder.nl/dsresource?objectid=571c93e2-71c1-4168-a4ae-21c0970c48d8" style="height: 50px;" />';
+      view.ui.add(logo, "bottom-right");
+
+      // Function to get terrain elevation from a given coordinate
+      function getTerrainHeight(longitude, latitude) {
+        return new Promise((resolve, reject) => {
+          const elevationLayer = new FeatureLayer({
+            url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/WorldElevation/Elevation/ImageServer",
+          });
+          const point = new Point({
+            longitude: longitude,
+            latitude: latitude,
+            spatialReference: { wkid: 4326 }
+          });
+
+          elevationLayer.queryElevation(point)
+            .then(result => {
+              const elevation = result.elevation;
+              resolve(elevation);
+            })
+            .catch(error => {
+              console.error("Error fetching elevation:", error);
+              reject(error); // Reject the promise on error
+              resolve(0); //resolve with 0 to prevent breaking
+            });
+        });
+      }
+
+      const weatherExpand = new Expand({
+        view: view,
+        content: new Weather({ view: view }),
+        expanded: false
+      });
+
+      const daylightExpand = new Expand({
+        view: view,
+        content: new Daylight({ view: view })
+      });
+
+      view.ui.add([weatherExpand, daylightExpand], "top-right");
+
+      const selection = document.getElementById("selection");
+      selection.addEventListener("calciteSegmentedControlChange", () => {
+        const selectedValue = selection.selectedItem.value;
+        if (selectedValue === "flooding") {
+          view.environment.weather = {
+            type: "rainy",
+            cloudCover: 0.7,
+            precipitation: 0.3
+          };
+          denHelderLayer.visible = true;
+        } else {
+          view.environment.weather = {
+            type: "cloudy",
+            cloudCover: 0.3
+          };
+          denHelderLayer.visible = false;
+        }
+      });
+
+      // Water effect controls
+      const waveSlider = document.getElementById("waveSlider");
+      waveSlider.addEventListener("input", (event) => { // Changed to 'input' event
+        const value = parseInt(event.target.value);
+        const renderer = denHelderLayer.renderer;
+        if (renderer.symbol && renderer.symbol.symbolLayers) {
+          let waterLayer = renderer.symbol.symbolLayers.find(sl => sl.type === "water");
+          if (waterLayer) {
+            waterLayer.waveDirection = value;
+            denHelderLayer.renderer = renderer;  // Directly update the layer's renderer
+          }
+        }
+      });
+
+      const waveStrengthRadio = document.getElementsByName("waveStrengthRadio");
+      waveStrengthRadio.forEach((element) => {
+        element.addEventListener("change", (event) => {
+          const value = event.target.value;
+          const renderer = denHelderLayer.renderer;
+          if (renderer.symbol && renderer.symbol.symbolLayers) {
+            let waterLayer = renderer.symbol.symbolLayers.find(sl => sl.type === "water");
+            if (waterLayer) {
+              waterLayer.waveStrength = value;
+              denHelderLayer.renderer = renderer;  // Update renderer directly
+            }
+          }
+        });
+      });
+
+      function setWaterColor(color) {
+        const renderer = denHelderLayer.renderer;
+        if (renderer.symbol && renderer.symbol.symbolLayers) {
+          let waterLayer = renderer.symbol.symbolLayers.find(sl => sl.type === "water");
+          if (waterLayer) {
+            waterLayer.color = color;
+            denHelderLayer.renderer = renderer;  // Update renderer directly
+          }
+        }
+      }
+
+      document.getElementById("navy").addEventListener("click", () => {
+        setWaterColor("#25427c");
+      });
+      document.getElementById("green").addEventListener("click", () => {
+        setWaterColor("#039962");
+      });
+      document.getElementById("turqoise").addEventListener("click", () => {
+        setWaterColor("#a2f9f5");
+      });
+
+      // Add the menu for water controls
+      const menu = document.createElement("div");
+      menu.id = "menu";
+      menu.className = "esri-widget";
+      menu.innerHTML = `
+        <h4>Wave direction</h4>
+        <div id="waveSlider"></div>
+        <h4>Wave strength</h4>
+        <input type="radio" name="waveStrengthRadio" value="calm" id="calm"><label for="calm">Calm</label><br>
+        <input type="radio" name="waveStrengthRadio" value="rippled" id="rippled"><label for="rippled">Rippled</label><br>
+        <input type="radio" name="waveStrengthRadio" value="slight" id="slight"><label for="slight">Slight</label><br>
+        <input type="radio" name="waveStrengthRadio" value="moderate" id="moderate" checked><label for="moderate">Moderate</label><br>
+        <h4>Dominant color</h4>
+        <button id="navy" class="color-btn"></button>
+        <button id="green" class="color-btn"></button>
+        <button id="turqoise" class="color-btn"></button>
+      `;
+      view.ui.add(menu, "top-left");
+
+    });
+  </script>
+</head>
+<body>
+  <div id="viewDiv"></div>
+
+  <calcite-segmented-control id="selection" width="full">
+    <calcite-segmented-control-item value="noFlooding" checked>Geen overstroming</calcite-segmented-control-item>
+    <calcite-segmented-control-item value="flooding">Overstroming</calcite-segmented-control-item>
+  </calcite-segmented-control>
+</body>
+</html>
