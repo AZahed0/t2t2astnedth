@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>3D Den Helder</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.32/"></script>
+    <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+    <style>
+      html,
+      body,
+      #view-div {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #sketchPanel {
+        background: white;
+        padding: 10px;
+        position: absolute;
+        top: 20px;
+        right: 15px;
+        z-index: 99;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      #sketchPanel label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+      }
+
+      #sketchPanel input[type="number"] {
+        width: 80px;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+
+      #sketchPanel input[type="color"] {
+        margin-bottom: 10px;
+        height: 36px;
+        width: 36px;
+        border: none;
+        cursor: pointer;
+      }
+
+      #sketchWidget {
+        /* Removed background-color, padding, border-radius */
+      }
+
+      .measurement-button {
+        margin-top: 10px;
+        margin-right: 10px;
+        padding: 8px 14px; /* Reduced padding */
+        border: none;
+        border-radius: 6px;
+        background-color: #0078d4;
+        color: white;
+        cursor: pointer;
+        font-size: 12px; /* Reduced font size */
+        transition: background-color 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .measurement-button:hover {
+        background-color: #005a9e;
+      }
+
+      .measurement-button:active {
+        background-color: #00437a;
+      }
+
+      #clearMeasurements {
+        margin-top: 10px;
+        padding: 8px 14px; /* Reduced padding */
+        border: none;
+        border-radius: 6px;
+        background-color: #dc3545;
+        color: white;
+        cursor: pointer;
+        font-size: 12px; /* Reduced font size */
+        transition: background-color 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      #clearMeasurements:hover {
+        background-color: #c82333;
+      }
+
+      #clearMeasurements:active {
+        background-color: #b2182b;
+      }
+
+      .symbol-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 15px;
+        justify-content: flex-start;
+      }
+
+      .symbol-item {
+        width: 110px;
+        height: 40px;
+        margin: 5px;
+        border: 2px solid #ccc;
+        border-radius: 6px;
+        cursor: pointer;
+        text-align: center;
+        line-height: 40px;
+        font-size: 14px;
+        transition: border-color 0.3s ease, background-color 0.3s ease;
+        color: #333;
+      }
+
+      .symbol-item:hover {
+        border-color: #0078d4;
+        background-color: #f0f8ff;
+      }
+
+      .symbol-item.selected {
+        border-color: #0078d4;
+        background-color: #e0f2fe;
+        font-weight: bold;
+        color: #0078d4;
+      }
+
+      #logo-container {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        padding: 8px;
+        border-radius: 6px;
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+      }
+
+      #logo-container img {
+        height: 60px;
+        margin-right: 15px;
+      }
+
+      #logo-container span {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c3e50;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="view-div"></div>
+    <div id="sketchPanel" class="esri-widget">
+      <label for="heightInput">Hoogte (meter):</label>
+      <input type="number" id="heightInput" value="3" step="1" min="1" max="100" />
+      <br />
+      <label for="colorInput">Kleur:</label>
+      <input type="color" id="colorInput" value="#964B00" />
+      <div id="sketchWidget"></div>
+      <div id="symbolGallery" class="symbol-gallery">
+        <div class="symbol-item" data-symbol="cone">Kegel</div>
+        <div class="symbol-item" data-symbol="cube">Kubus</div>
+        <div class="symbol-item" data-symbol="sphere">Bol</div>
+      </div>
+    </div>
+    <div id="measurementTools" style="position: absolute; bottom: 20px; left: 20px; z-index: 100; display: flex;">
+      <button id="directLineMeasurement" class="measurement-button">Afstand meten</button>
+      <button id="areaMeasurement" class="measurement-button">Oppervlakte meten</button>
+      <button id="clearMeasurements" class="measurement-button">Metingen wissen</button>
+    </div>
+    <div id="logo-container">
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNhWuVCXeqrUWI3pW93uw3_S735nJGX3N2deMVguZj5uYIURC0Xv4hN9_pgl4vi798WVo" alt="Logo" />
+      <span>3D Den Helder</span>
+    </div>
+    <script>
+      require([
+        "esri/WebScene",
+        "esri/views/SceneView",
+        "esri/layers/GraphicsLayer",
+        "esri/widgets/Sketch",
+        "esri/widgets/Expand",
+        "esri/widgets/Search",
+        "esri/widgets/Daylight",
+        "esri/widgets/Weather",
+        "esri/widgets/Fullscreen",
+        "esri/widgets/Measurement",
+        "esri/widgets/DirectLineMeasurement3D",
+        "esri/widgets/AreaMeasurement3D",
+        "esri/Graphic",
+        "esri/widgets/BasemapGallery",
+        "esri/layers/SceneLayer",
+        "esri/widgets/LayerList"
+      ], function(
+        WebScene,
+        SceneView,
+        GraphicsLayer,
+        Sketch,
+        Expand,
+        Search,
+        Daylight,
+        Weather,
+        Fullscreen,
+        Measurement,
+        DirectLineMeasurement3D,
+        AreaMeasurement3D,
+        Graphic,
+        BasemapGallery,
+        SceneLayer,
+        LayerList
+      ) {
+        const webscene = new WebScene({
+          portalItem: {
+            id: "48a900de3c124a47993de5fe9090671d"
+          }
+        });
+        const view = new SceneView({
+          container: "view-div",
+          map: webscene,
+          camera: {
+            position: {
+              x: 4.7589,
+              y: 52.9551,
+              z: 150,
+              spatialReference: {
+                wkid: 4326
+              }
+            },
+            heading: 0,
+            tilt: 65
+          },
+          background: {
+            type: "color",
+            color: [100, 149, 237, 1]
+          }
+        });
+
+        const sketchLayer = new GraphicsLayer({
+          elevationInfo: {
+            mode: "absolute-height"
+          },
+          title: "Schetslaag"
+        });
+        view.map.add(sketchLayer);
+
+        const sketch = new Sketch({
+          view: view,
+          layer: sketchLayer,
+          container: "sketchWidget",
+          creationMode: "update"
+        });
+        const sketchVM = sketch.viewModel;
+
+        const heightInput = document.getElementById("heightInput");
+        const colorInput = document.getElementById("colorInput");
+
+        function updateSymbols(height, color, symbolType) {
+          let width = 1;
+          let depth = 1;
+          let anchor = "bottom";
+
+          if (symbolType === "sphere") {
+            width = height;
+            depth = height;
+          } else if (symbolType === "cube") {
+            width = height;
+            depth = height;
+            anchor = "center";
+          }
+
+          sketchVM.pointSymbol = {
+            type: "point-3d",
+            symbolLayers: [{
+              type: "object",
+              resource: {
+                primitive: symbolType
+              },
+              material: {
+                color: color
+              },
+              height: height,
+              width: width,
+              depth: depth,
+              anchor: anchor
+            }]
+          };
+
+          sketchVM.polylineSymbol = {
+            type: "line-3d",
+            symbolLayers: [{
+              type: "path",
+              material: {
+                color: color
+              },
+              width: 0.2,
+              profile: "tube",
+              height: height
+            }]
+          };
+
+          sketchVM.polygonSymbol = {
+            type: "polygon-3d",
+            symbolLayers: [{
+              type: "extrude",
+              material: {
+                color: color
+              },
+              size: height
+            }]
+          };
+        }
+
+        updateSymbols(parseFloat(heightInput.value), colorInput.value, "cone");
+
+        function refreshSymbols() {
+          const height = parseFloat(heightInput.value);
+          const color = colorInput.value;
+          const selectedSymbol = document.querySelector(".symbol-item.selected");
+          const symbolType = selectedSymbol ? selectedSymbol.getAttribute("data-symbol") : "cone";
+          updateSymbols(height, color, symbolType);
+        }
+
+        heightInput.addEventListener("change", refreshSymbols);
+        colorInput.addEventListener("input", refreshSymbols);
+
+        // Symbol gallery interaction
+        const symbolItems = document.querySelectorAll(".symbol-item");
+        symbolItems.forEach(item => {
+          item.addEventListener("click", function() {
+            symbolItems.forEach(i => i.classList.remove("selected"));
+            this.classList.add("selected");
+            refreshSymbols();
+          });
+        });
+        // Select the first symbol item by default
+        if (symbolItems.length > 0) {
+          symbolItems[0].click();
+        }
+
+        // Measurement Widgets
+        let activeMeasurement = null;
+        const directLineMeasurement = new DirectLineMeasurement3D({
+          view: view,
+          unit: "meters",
+          labelFormat: "distance",
+        });
+        const areaMeasurement = new AreaMeasurement3D({
+          view: view,
+          unit: "square-meters",
+          labelFormat: "area"
+        });
+
+        function deactivateAllMeasurements() {
+          if (activeMeasurement) {
+            view.ui.remove(activeMeasurement);
+            activeMeasurement.destroy();
+            activeMeasurement = null;
+          }
+        }
+
+        document.getElementById("directLineMeasurement").addEventListener("click", () => {
+          deactivateAllMeasurements();
+          activeMeasurement = directLineMeasurement;
+          view.ui.add(directLineMeasurement, "bottom-right");
+        });
+
+        document.getElementById("areaMeasurement").addEventListener("click", () => {
+          deactivateAllMeasurements();
+          activeMeasurement = areaMeasurement;
+          view.ui.add(areaMeasurement, "bottom-right");
+        });
+
+        document.getElementById("clearMeasurements").addEventListener("click", () => {
+          deactivateAllMeasurements();
+        });
+
+        // Daylight widget
+        const daylightExpand = new Expand({
+          view: view,
+          content: new Daylight({
+            view: view
+          }),
+          expandIcon: "sun",
+          expanded: false,
+          label: "Daglicht"
+        });
+        view.ui.add(daylightExpand, "top-right");
+
+        // Weather widget
+        const weatherExpand = new Expand({
+          view: view,
+          content: new Weather({
+            view: view
+          }),
+          expandIcon: "cloudy",
+          expanded: false,
+          label: "Weer"
+        });
+        view.ui.add(weatherExpand, "top-right");
+
+        // Fullscreen widget
+        const fullscreen = new Fullscreen({
+          view: view
+        });
+        view.ui.add(fullscreen, "top-left");
+
+        // Search widget
+        const searchExpand = new Expand({
+          view: view,
+          content: new Search({
+            view: view
+          }),
+          expandIcon: "search",
+          expanded: false,
+          label: "Zoeken"
+        });
+        view.ui.add(searchExpand, "top-left");
+
+        // Basemap Gallery with Expand widget
+        const basemapGalleryExpand = new Expand({
+          view: view,
+          content: new BasemapGallery({
+            view: view
+          }),
+          expandIcon: "basemap",
+          expanded: false,
+          label: "Basemap"
+        });
+        view.ui.add(basemapGalleryExpand, "top-left");
+
+        // 3D BAG layer (hidden by default)
+        const bag3DLayer = new SceneLayer({
+          url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3DBAG_WGS_EGM_V2/SceneServer",
+          title: "3D BAG",
+          visible: false
+        });
+        view.map.add(bag3DLayer);
+
+        // 3D Bomen layer (hidden by default)
+        const bomen3DLayer = new SceneLayer({
+          url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3D_Bomen_WGS/SceneServer",
+          title: "3D Bomen",
+          visible: false
+        });
+        view.map.add(bomen3DLayer);
+
+        // LayerList widget in an Expand widget
+        const layerListExpand = new Expand({
+          view: view,
+          content: new LayerList({
+            view: view
+          }),
+          expandIcon: "layers",
+          expanded: false,
+          label: "Lagen"
+        });
+        view.ui.add(layerListExpand, "top-left");
+
+        // Sketch Panel expand
+        const sketchExpand = new Expand({
+          view: view,
+          content: document.getElementById("sketchPanel"),
+          expandIcon: "pencil",
+          expanded: false,
+          label: "Schetsen"
+        });
+        view.ui.add(sketchExpand, "top-right");
+      });
+    </script>
+  </body>
+</html>
