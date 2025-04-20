@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title> Bouwjaar | ArcGIS Map</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/dark/main.css" />
+    <script src="https://js.arcgis.com/4.32/"></script>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/layers/FeatureLayer",
+        "esri/views/MapView",
+        "esri/widgets/Legend",
+        "esri/widgets/Home",
+        "esri/widgets/Slider",
+        "esri/widgets/Fullscreen",
+        "esri/symbols/SimpleFillSymbol",
+        "esri/renderers/ClassBreaksRenderer",
+        "esri/PopupTemplate" // Import PopupTemplate
+      ], (Map, FeatureLayer, MapView, Legend, Home, Slider, Fullscreen, SimpleFillSymbol, ClassBreaksRenderer, PopupTemplate) => {
+        
+        //-------------------------------------------------------------------------- 
+        //
+        //  Kaart en View instellen
+        //
+        //--------------------------------------------------------------------------
+
+        const layer = new FeatureLayer({
+          url: "https://basisregistraties.arcgisonline.nl/arcgis/rest/services/BAG/BAGv3/FeatureServer/4", 
+          outFields: ["bouwjaar"], 
+          minScale: 72223.819286,
+          //definitionExpression: "bouwjaar < 2000"
+        });
+
+        // Define the PopupTemplate
+        const popupTemplate = new PopupTemplate({
+          title: "Gegevens van het gebouw",
+          content: "<b>Bouwjaar:</b> {bouwjaar}", // Use the "bouwjaar" field for popup content
+        });
+
+        // Assign the popupTemplate to the layer
+        layer.popupTemplate = popupTemplate;
+
+        // Renderer met kleurcondities voor bouwjaar
+        const renderer = new ClassBreaksRenderer({
+          field: "bouwjaar",
+          defaultSymbol: new SimpleFillSymbol({
+            color: "#555555", // Donkergrijs voor 'anders'
+            outline: {
+              color: "white",
+              width: 0.02
+            }
+          }),
+          defaultLabel: "Anders",
+          classBreakInfos: [
+            {
+              minValue: 0,
+              maxValue: 1999.99,
+              symbol: new SimpleFillSymbol({
+                color: "#ffaa00", // Neon Oranje
+                outline: {
+                  color: "white",
+                  width: 0.02
+                }
+              }),
+              label: "Voor 2000"
+            },
+            {
+              minValue: 2000,
+              maxValue: 2000,
+              symbol: new SimpleFillSymbol({
+                color: "#ff66cc", // Neon Roze
+                outline: {
+                  color: "white",
+                  width: 0.02
+                }
+              }),
+              label: "Rond 2000"
+            },
+            {
+              minValue: 2000.01,
+              maxValue: 2024,
+              symbol: new SimpleFillSymbol({
+                color: "#00ffff", // Cyaan neon
+                outline: {
+                  color: "white",
+                  width: 0.02
+                }
+              }),
+              label: "Na 2000"
+            }
+          ]
+        });
+
+        // Apply the renderer to the layer
+        layer.renderer = renderer;
+
+        const map = new Map({
+          basemap: "dark-gray-vector", 
+          layers: [layer]
+        });
+
+        const view = new MapView({
+          map: map,
+          container: "viewDiv",
+          center: [4.7583, 52.9592], 
+          zoom: 15,
+          constraints: {
+            snapToZoom: false,
+            minScale: 72223.819286
+          },
+          resizeAlign: "top-left"
+        });
+
+        //-------------------------------------------------------------------------- 
+        //
+        //  UI instellen
+        //
+        //--------------------------------------------------------------------------
+
+        const slider = new Slider({
+          container: "slider",
+          min: 1800, 
+          max: 2024, 
+          values: [1990],
+          step: 1,
+          visibleElements: {
+            rangeLabels: true
+          }
+        });
+
+        const sliderValueNode = document.createElement("div");
+        sliderValueNode.classList.add("slider-value");
+        sliderValueNode.innerHTML = "Bouwjaar: " + Math.round(slider.values[0]);
+
+        const sliderContainer = document.getElementById("sliderContainer");
+        sliderContainer.appendChild(sliderValueNode);
+
+        // Update de kaart op basis van de slider waarde.
+        slider.on("thumb-drag", (event) => {
+          setYear(event.value);
+          sliderValueNode.innerHTML = "Bouwjaar: " + Math.round(event.value);
+        });
+
+        slider.on("end", (event) => {
+          setYear(event.value);
+          sliderValueNode.innerHTML = "Bouwjaar: " + Math.round(event.value);
+        });
+
+        // Stel het initiële bouwjaar in.
+        setYear(1990);
+
+        //-------------------------------------------------------------------------- 
+        //
+        //  Methoden
+        //
+        //--------------------------------------------------------------------------
+
+        function setYear(year) {
+          const filterExpression = "bouwjaar <= " + year;
+          layer.definitionExpression = filterExpression;
+          view.whenLayerView(layer).then((layerView) => {
+            layerView.filter = {
+              where: filterExpression
+            };
+          });
+        }
+
+        // Voeg de widgets toe (Legend, Home button, Fullscreen)
+        const legend = new Legend({
+          view: view,
+          layerInfos: [{
+            layer: layer,
+            title: "Bouwjaar per gebouw"
+          }] 
+        });
+        view.ui.add(new Home({ view: view }), "top-left");
+        view.ui.add(legend, "bottom-left");
+        view.ui.add(new Fullscreen({ view: view, element: document.getElementById("applicationDiv") }), "top-right");
+
+      });
+    </script>
+
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+      }
+
+      #applicationDiv {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        margin: 0;
+      }
+
+      #viewDiv {
+        width: 100%;
+        height: 100%;
+        flex: 1 1 auto;
+        order: 1;
+        position: relative;
+        margin-top: 0;
+        padding-top: 0;
+      }
+
+      #titleDiv {
+        font-weight: 400;
+        font-size: 1.2rem;
+        padding: 10px;
+        text-align: center;
+        color: white;
+        background-color: #212121;
+        border-radius: 5px;
+        padding: 10px 20px;
+        margin-bottom: 10px;
+        display: inline-block;
+      }
+
+      #titleDiv:before {
+        content: "Bouwjaar Overzicht Gemeente Den Helder";
+      }
+
+      #sliderContainer {
+        flex: 0 0 80px;
+        order: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 12px;
+      }
+
+      #slider {
+        width: 100%;
+        max-width: 500px;
+      }
+
+      .slider-value {
+        margin-top: 10px;
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #fff;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      #sliderInnerContainer {
+        flex: 1 1 auto;
+        order: 2;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 20px;
+      }
+
+      #playButton {
+        flex: 0 0 100px;
+        order: 3;
+        margin: 20px 0;
+      }
+
+      .tooltip {
+        position: absolute;
+        pointer-events: none;
+        transition: opacity 200ms;
+      }
+
+      .tooltip>div {
+        margin: 0 auto;
+        padding: 12px;
+        border-radius: 4px;
+        box-shadow: 0px 0px 4px rgba(255, 255, 255, 0.75);
+        transform: translate3d(-50%, -125%, 0);
+      }
+
+      /* Style for the logo */
+      #logoDiv {
+        position: absolute;
+        bottom: 15px;
+        right: 10px;
+        z-index: 100;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 5px;
+        border-radius: 5px;
+      }
+
+      #logoDiv img {
+        height: 60px;
+        width: auto;
+      }
+
+      /* Extra glow-effect simuleren */
+      .esri-view-surface {
+        filter: brightness(1.2) contrast(1.3) saturate(1.4);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="applicationDiv">
+      <div id="titleDiv" class="esri-widget">
+        
+      </div>
+      <div id="viewDiv">
+        <div id="logoDiv">
+          <img src="https://www.denhelder.nl/dsresource?objectid=571c93e2-71c1-4168-a4ae-21c0970c48d8" alt="Gemeente Den Helder Logo">
+        </div>
+      </div>
+      <div id="sliderContainer" class="esri-widget">
+        <div id="slider"></div>
+      </div>
+    </div>
+  </body>
+</html>
