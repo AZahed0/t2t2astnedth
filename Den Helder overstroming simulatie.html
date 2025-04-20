@@ -20,6 +20,18 @@
       max-width: 1000px;
       z-index: 1;
     }
+    #topLogo {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 60px;
+      z-index: 5;
+      background: white;
+      padding: 5px;
+      border-radius: 0.5em;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
   </style>
   <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
   <link rel="stylesheet" href="https://js.arcgis.com/calcite-components/3.0.3/calcite.css" />
@@ -40,13 +52,11 @@
       Map, SceneView, FeatureLayer, Expand, Weather, Daylight, SimpleRenderer, PolygonSymbol3D, ExtrudeSymbol3DLayer
     ) {
 
-      // Create the map with a 3D basemap and world elevation
       const map = new Map({
         basemap: "topo-3d",
         ground: "world-elevation"
       });
 
-      // Initialize the SceneView centered on Den Helder
       const view = new SceneView({
         container: "viewDiv",
         map: map,
@@ -68,17 +78,15 @@
         }
       });
 
-      // Define the renderer with extrusion for the water layer
       const waterRenderer = new SimpleRenderer({
         symbol: new PolygonSymbol3D({
           symbolLayers: [new ExtrudeSymbol3DLayer({
-            size: 4, // Extrude by 4 meters
-            material: { color: [0, 119, 190, 0.7] } // Water blue color with transparency
+            size: 4,
+            material: { color: [0, 119, 190, 0.7] }
           })]
         })
       });
 
-      // Create the FeatureLayer for Den Helder
       const denHelderLayer = new FeatureLayer({
         url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/CBS_Gemeente_actueel/FeatureServer/0",
         definitionExpression: "statnaam = 'Den Helder'",
@@ -86,17 +94,39 @@
         elevationInfo: {
           mode: "relative-to-ground"
         },
-        visible: false // Initially hidden
+        visible: false
       });
 
-      // Add the Den Helder layer to the map
       map.add(denHelderLayer);
 
-      // Add Weather and Daylight widgets
+      // Water height control
+      const heightSlider = document.getElementById("heightSlider");
+      const heightValue = document.getElementById("height-value");
+
+      heightSlider.addEventListener("calciteSliderInput", () => {
+        const newHeight = parseFloat(heightSlider.value);
+        heightValue.textContent = newHeight + " meters"; //changed here
+
+        // Clone the symbol and apply the new height
+        const updatedRenderer = new SimpleRenderer({
+          symbol: new PolygonSymbol3D({
+            symbolLayers: [
+              new ExtrudeSymbol3DLayer({
+                size: newHeight,
+                material: { color: [0, 119, 190, 0.7] }
+              })
+            ]
+          })
+        });
+
+        // Apply the new renderer
+        denHelderLayer.renderer = updatedRenderer;
+      });
+
       const weatherExpand = new Expand({
         view: view,
         content: new Weather({ view: view }),
-        expanded: true
+        expanded: false // Collapsed by default
       });
 
       const daylightExpand = new Expand({
@@ -106,7 +136,6 @@
 
       view.ui.add([weatherExpand, daylightExpand], "top-right");
 
-      // Handle the segmented control for flooding scenarios
       const selection = document.getElementById("selection");
       selection.addEventListener("calciteSegmentedControlChange", () => {
         const selectedValue = selection.selectedItem.value;
@@ -131,9 +160,30 @@
 </head>
 <body>
   <div id="viewDiv"></div>
+
+  <img
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNhWuVCXeqrUWI3pW93uw3_S735nJGX3N2deMVguZj5uYIURC0Xv4hN9_pgl4vi798WVo&usqp=CAU"
+    alt="Logo"
+    id="topLogo"
+  />
+
+  <calcite-label id="height-label" style="position:absolute; bottom: 20px; left: 20px; z-index: 2; background:white; padding: 0.5em; border-radius: 0.5em;">
+    Waterhoogte: <span id="height-value">4 meters</span>
+    <calcite-slider
+      id="heightSlider"
+      min="0"
+      max="20"
+      value="4"
+      step="0.5"
+      label-handles
+      label-ticks
+      precise
+    ></calcite-slider>
+  </calcite-label>
+
   <calcite-segmented-control id="selection" width="full">
     <calcite-segmented-control-item value="noFlooding" checked>Geen overstroming</calcite-segmented-control-item>
-    <calcite-segmented-control-item value="flooding">Overstroming</calcite-segmented-control-item>
+    <calcite-segmented-control-item value="flooding">Overstroming simulatie</calcite-segmented-control-item>
   </calcite-segmented-control>
 </body>
 </html>
