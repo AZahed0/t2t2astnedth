@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8" />
+    <title>Den Helder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.29/"></script>
+    <style>
+        html, body, #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        .tools-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 99;
+            background-color: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        #logoDiv {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            background-color: white;
+            border-radius: 5px;
+        }
+
+        #logoDiv img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        #toggleBuurtGrenzen {
+            position: absolute;
+            top: 85px; /* Adjusted top value to position below zoom controls */
+            left: 10px;
+            z-index: 100;
+            padding: 10px;
+            background-color: #014b6b; /* Darker blue background */
+            color: white; /* White text */
+            border-radius: 5px;
+            cursor: pointer;
+            border: 1px solid #014b6b; /* Darker blue border */
+        }
+        #toggleBuurtGrenzen:hover {
+            background-color: #014b6b; /* Darker blue on hover */
+        }
+
+    </style>
+</head>
+<body>
+    <div id="viewDiv"></div>
+    <div id="logoDiv">
+        <img src="https://www.denhelder.nl/dsresource?objectid=571c93e2-71c1-4168-a4ae-21c0970c48d8" alt="Gemeente Den Helder Logo" height="100">
+    </div>
+    <button id="toggleBuurtGrenzen">Toon Buurtgrenzen</button>
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/layers/GraphicsLayer",
+            "esri/widgets/Sketch",
+            "esri/widgets/Expand",
+            "esri/layers/VectorTileLayer",
+            "esri/widgets/DistanceMeasurement2D",
+            "esri/widgets/AreaMeasurement2D",
+            "esri/widgets/BasemapGallery",
+            "esri/widgets/Search",
+            "esri/core/promiseUtils",
+            "esri/widgets/Track",
+            "esri/layers/FeatureLayer",
+            "esri/Graphic" // Added for creating marker
+        ], function(
+            Map, MapView, GraphicsLayer, Sketch,  Expand, VectorTileLayer,
+            DistanceMeasurement2D, AreaMeasurement2D, BasemapGallery, Search, promiseUtils, Track, FeatureLayer, Graphic
+        ) {
+
+            // Topo_RD Basemap (no API key required)
+            const topoRD = new VectorTileLayer({
+                url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/Topo_RD/VectorTileServer"
+            });
+
+            const graphicsLayer = new GraphicsLayer();
+
+            const map = new Map({
+                basemap: {
+                  baseLayers: [topoRD]
+                },
+                layers: [graphicsLayer]
+            });
+
+            const view = new MapView({
+                container: "viewDiv",
+                map: map,
+                center: [4.7591, 52.9590], // Den Helder
+                zoom: 10,
+                locale: "nl"
+            });
+
+            // Feature layer for CBS Buurtgrenzen 2024
+            const buurtGrenzen = new FeatureLayer({
+                url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/CBS_Buurt_actueel/FeatureServer/0",
+                // Apply a simple outline style with no fill
+                renderer: {
+                    type: "simple",
+                    symbol: {
+                        type: "simple-fill",
+                        outline: {
+                            color: [1, 75, 107],  // Changed to #014b6b
+                            width: 1.5
+                        },
+                        color: null // No fill
+                    }
+                },
+                visible: false // Set to false to default to off
+            });
+            map.add(buurtGrenzen);
+
+            // Add button to toggle layer visibility
+            const toggleButton = document.getElementById("toggleBuurtGrenzen");
+            toggleButton.addEventListener("click", function() {
+                buurtGrenzen.visible = !buurtGrenzen.visible;
+                if (buurtGrenzen.visible) {
+                    toggleButton.textContent = "Verberg Buurtgrenzen";
+                } else {
+                    toggleButton.textContent = "Toon Buurtgrenzen";
+                }
+            });
+
+
+            // Sketch tool
+            const sketch = new Sketch({
+                layer: graphicsLayer,
+                view: view,
+                creationMode: "update",
+                availableCreateTools: ["point", "polyline", "polygon", "rectangle", "circle"],
+                polygonSymbol: {
+                    color: [ 255, 0, 0, 0.3 ],
+                    outline: {
+                        color: "#ff0000",
+                        width: 1
+                    }
+                },
+                polylineSymbol: {
+                    color: "#ff0000",
+                    width: 2
+                },
+                pointSymbol: {
+                    color: "#ff0000",
+                    size: 8,
+                    type: "simple-marker"
+                }
+            });
+
+            // Sketch Expand widget (collapsible)
+            const sketchExpand = new Expand({
+                view: view,
+                content: sketch,
+                expandTooltip: "Schets tekenen",
+                expandIconClass: "esri-icon-edit", // valid icon
+                expanded: false
+            });
+
+
+            // Measurement tools
+            let distanceWidget = new DistanceMeasurement2D({
+                view: view,
+                unit: "meters",
+                labelFormatFunction: function(value, unit) {
+                    return value.toFixed(2) + " " + unit;
+                }
+            });
+            let areaWidget = new AreaMeasurement2D({
+                view: view,
+                unit: "square-meters",
+                labelFormatFunction: function(value, unit) {
+                    return value.toFixed(2) + " m²";
+                }
+            });
+
+            const distanceExpand = new Expand({
+                view,
+                content: distanceWidget,
+                expandTooltip: "Afstand meten",
+                expanded: false
+            });
+
+            const areaExpand = new Expand({
+                view,
+                content: areaWidget,
+                expandTooltip: "Oppervlakte meten",
+                expanded: false
+            });
+
+            // Basemap Gallery
+            const basemapGallery = new BasemapGallery({
+                view: view,
+                heading: "Selecteer een Basemap"
+            });
+            const basemapExpandWidget = new Expand({
+                view: view,
+                content: basemapGallery,
+                expandIcon: "basemap",
+                expandTooltip: "Basemap wisselen",
+                expanded: false
+            });
+
+            function clearMeasurements() {
+                distanceWidget.destroy();
+                areaWidget.destroy();
+                distanceWidget = new DistanceMeasurement2D({
+                    view: view,
+                    unit: "meters",
+                    labelFormatFunction: function(value, unit) {
+                        return value.toFixed(2) + " " + unit;
+                    }
+                });
+                areaWidget = new AreaMeasurement2D({
+                    view: view,
+                    unit: "square-meters",
+                    labelFormatFunction: function(value, unit) {
+                        return value.toFixed(2) + " m²";
+                    }
+                });
+                distanceExpand.content = distanceWidget;
+                areaExpand.content = areaWidget;
+            }
+
+            // Create a button to clear the measurements
+            const clearMeasurementsButton = document.createElement("button");
+            clearMeasurementsButton.innerHTML = "Metingen wissen";
+            clearMeasurementsButton.className = "esri-widget esri-button";
+            clearMeasurementsButton.addEventListener("click", clearMeasurements);
+
+
+            // PDOK Locatieserver Search
+            const pdokSearch = new Search({
+                view: view,
+                placeholder: "Zoek een adres...", // Dutch placeholder
+                sources: [
+                    {
+                        locator: {
+                            url: "https://geodata.nationaalgeoregister.nl/locatieserver/v3/suggest"
+                        },
+                        outFields: ["完整地址", "TYPE"],
+                        name: "PDOK Locatieserver",
+                        autoSelect: true,
+                        resultTemplate: "{完整地址}",
+                        zoom: 17,
+                        // Custom search function to handle PDOK's specific query parameters and response structure.
+                        search: function(params) {
+                            const suggestUrl = "https://geodata.nationaalgeoregister.nl/locatieserver/v3/suggest";
+                            const lookupUrl = "https://geodata.nationaalgeoregister.nl/locatieserver/v3/lookup";
+
+                            // 1. Suggest Service: Get suggestions based on input
+                            const suggestParams = {
+                                zoek: params.searchTerm,
+                                fq: "type:adres",
+                                wt: "json"
+                            };
+
+                            // Build the full URL for the suggest service request.
+                            const suggestFullUrl = suggestUrl + "?" + Object.entries(suggestParams)
+                                .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+                                .join("&");
+
+                            return fetch(suggestFullUrl)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error("Failed to fetch suggestions");
+                                    }
+                                    return response.json();
+                                })
+                                .then(suggestData => {
+                                    if (!suggestData.response || suggestData.response.numFound === 0) {
+                                        return []; // Return empty array if no suggestions
+                                    }
+                                    // 2. Lookup Service: Get detailed results for each suggestion.
+                                    const lookupPromises = suggestData.response.docs.map(suggestDoc => {
+                                        const lookupParams = {
+                                            id: suggestDoc.id,
+                                            wt: "json"
+                                        };
+                                        const lookupFullUrl = lookupUrl + "?" + Object.entries(lookupParams)
+                                            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+                                            .join("&");
+
+                                        return fetch(lookupFullUrl)
+                                            .then(response => {
+                                                if (!response.ok) {
+                                                    throw new Error("Failed to fetch lookup details");
+                                                }
+                                                return response.json();
+                                            });
+                                    });
+                                    return Promise.all(lookupPromises); // Resolve all lookup promises
+                                })
+                                .then(lookupResults => {
+                                    // Format the results in the structure that the ArcGIS API expects.
+                                    const formattedResults = lookupResults.flatMap(lookupData => {
+                                        if (lookupData.response && lookupData.response.docs) {
+                                            return lookupData.response.docs.map(doc => ({
+                                                name: doc.完整地址,
+                                                location: {
+                                                    x: doc.centroide_rd.x,
+                                                    y: doc.centroide_rd.y
+                                                }
+                                            }));
+                                        }
+                                        return [];
+                                    });
+                                     // Add this inside the search function, before returning the formatted results
+                                        formattedResults.forEach(result => {
+                                            const point = {
+                                                type: "point",
+                                                x: result.location.x,
+                                                y: result.location.y
+                                            };
+
+                                            const markerSymbol = {
+                                                type: "simple-marker",
+                                                color: [255, 0, 0],  // Red
+                                                outline: {
+                                                    color: [255, 255, 255], // White
+                                                    width: 1
+                                                },
+                                                size: 12
+                                            };
+
+                                            const graphic = new Graphic({
+                                                geometry: point,
+                                                symbol: markerSymbol
+                                            });
+                                            graphicsLayer.add(graphic);
+                                        });
+                                    return formattedResults;
+                                })
+                                .catch(error => {
+                                    console.error("Error in PDOK search:", error);
+                                    return []; // Return empty array on error to avoid breaking the map
+                                });
+                        }
+                    }
+                ]
+            });
+
+            // Search Expand widget (collapsible)
+            const searchExpand = new Expand({
+                view: view,
+                content: pdokSearch,
+                expandTooltip: "Zoeken",
+                expandIconClass: "esri-icon-search",
+                expanded: false
+            });
+
+            // Create an instance of the Track widget
+            const track = new Track({
+                view: view
+            });
+
+
+            // Add the button to the view
+            view.ui.add(clearMeasurementsButton, "bottom-left");
+            view.ui.add(searchExpand, "top-right"); // Collapsible Search
+            view.ui.add(track, "top-right");
+
+
+            // UI Additions.  Added colorDiv to the top-right
+            view.ui.add(sketchExpand, "top-right"); // Collapsible Sketch
+            view.ui.add(basemapExpandWidget, "top-right"); // Moved below sketch
+            view.ui.add(distanceExpand, "bottom-left");
+            view.ui.add(areaExpand, "bottom-left");
+
+        });
+    </script>
+</body>
+</html>
