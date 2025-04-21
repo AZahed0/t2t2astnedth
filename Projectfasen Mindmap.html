@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projectfasen Mindmap</title>
+    <meta name="description" content="Interactieve mindmap van projectfasen">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .mindmap-wrapper {
+            width: 100%;
+            height: 80vh;
+            overflow: hidden;
+            position: relative;
+            border-radius: 12px;
+            background: #f8fafc;
+            transition: background-color 0.3s ease;
+        }
+        .mindmap {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-origin: center center;
+            transition: transform 0.3s ease;
+        }
+        .node {
+            position: absolute;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
+            z-index: 10;
+            transition: all 0.3s ease;
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .node.central {
+            background-color: #e5e7eb;
+            font-size: 1rem;
+            font-weight: 600;
+            z-index: 20;
+            left: 50%;
+            top: 50%;
+        }
+        .subnode {
+            display: none;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            position: absolute;
+            left: calc(100% + 8px);
+            top: 50%;
+            transform: translateY(-50%);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .node.active .subnode {
+            display: block;
+            opacity: 1;
+        }
+        .description {
+            position: absolute;
+            background: #fef3c7;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            z-index: 30;
+            white-space: normal;
+            max-width: 220px;
+            transform: translateX(-50%);
+            top: calc(100% + 12px);
+            left: 50%;
+            display: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .node:hover .description {
+            display: block;
+            opacity: 1;
+        }
+        .dark .mindmap-wrapper {
+            background: #1f2937;
+        }
+        .dark .node.central {
+            background-color: #374151;
+            color: #f9fafb;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .dark .node {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .dark .node[data-phase="phase1"] {
+            background-color: #1e40af;
+            color: #f0f9ff;
+        }
+        .dark .node[data-phase="phase2"] {
+            background-color: #78350f;
+            color: #fef08a;
+        }
+        .dark .node[data-phase="phase3"] {
+            background-color: #ea580c;
+            color: #f9fafb;
+        }
+        .dark .node[data-phase="phase4"] {
+            background-color: #166534;
+            color: #d1fae5;
+        }
+        .dark .node[data-phase="phase5"] {
+            background-color: #991b1b;
+            color: #fecaca;
+        }
+        .dark .subnode {
+            background-color: #374151;
+            color: #d1d5db;
+            border: 1px solid #4b5563;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .dark .description {
+            background: #7c2d12;
+            color: #fef3c7;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+        }
+        @media (max-width: 768px) {
+            .mindmap-wrapper {
+                height: 85vh;
+            }
+            .node {
+                font-size: 0.75rem;
+                padding: 0.4rem 0.6rem;
+            }
+            .node.central {
+                font-size: 0.85rem;
+            }
+            .subnode {
+                font-size: 0.65rem;
+                padding: 3px 6px;
+            }
+            .description {
+                font-size: 0.65rem;
+                max-width: 150px;
+            }
+        }
+        .node:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            z-index: 15;
+        }
+        .node:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 4px;
+        }
+        .status-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 10px;
+            height: 10px;
+            border-radius: 9999px;
+        }
+        .status-badge.actief { background-color: #3b82f6; }
+        .status-badge.gepland { background-color: #facc15; }
+        .status-badge.voltooid { background-color: #10b981; }
+        .connector-line {
+            stroke: #9ca3af;
+            stroke-width: 2;
+            opacity: 0.6;
+            transition: stroke 0.3s ease;
+        }
+        .node:hover ~ svg .connector-line {
+            stroke: #3b82f6;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-6 min-h-screen dark:bg-gray-900">
+    <main class="mx-auto max-w-5xl bg-white rounded-lg shadow-lg p-6 dark:bg-gray-800">
+        <h1 class="text-2xl font-semibold text-center text-gray-800 mb-6 dark:text-gray-100">Projectfasen Mindmap</h1>
+        <div id="mindmap-wrapper" class="mindmap-wrapper shadow-inner" role="region" aria-label="Interactieve mindmap van projectfasen">
+            <div class="mindmap" id="mindmap">
+                <svg class="connectors" style="position: absolute; width: 100%; height: 100%; z-index: 1;"></svg>
+                <div class="node central" id="central" tabindex="0">Projectfasen</div>
+            </div>
+        </div>
+        <button id="darkToggle" class="mt-4 px-4 py-2 bg-gray-200 dark:text-gray-100">
+            Toggle Dark Mode
+        </button>
+    </main>
+    <script>
+        const phases = [
+            {
+                title: "1 Initiatief / Definitie",
+                sub: [
+                    "Probleem of behoefte analyseren",
+                    
+                ],
+                color: "#e0f2fe",
+                textColor: "#0369a1",
+                subcolor: "#eff6ff",
+                description: "De startfase van een project. Hier wordt het idee onderzocht en gekeken of het haalbaar is.",
+                status: 'actief',
+                descriptionPos: 'bottom',
+                initialPosition: { x: null, y: null },
+                textAlignment: 'center',
+                order: 1
+            },
+            {
+                title: "2 Werkvoorbereiding / Ontwerp",
+                sub: [
+                    "Definitief ontwerp maken",
+                    
+                ],
+                color: "#fefce8",
+                textColor: "#78350f",
+                subcolor: "#fefce8",
+                description: "Het project krijgt vorm. Technische tekeningen en plannen worden uitgewerkt.",
+                status: 'gepland',
+                descriptionPos: 'bottom',
+                initialPosition: { x: null, y: null },
+                textAlignment: 'center',
+                order: 4
+            },
+            {
+                title: "3 Realisatie",
+                sub: [
+                    "Bouw/aanleg starten",
+                    
+                ],
+                color: "#fb923c",
+                textColor: "#c2410c",
+                subcolor: "#ffedd5",
+                description: "De uitvoering van het project begint.",
+                status: 'actief',
+                descriptionPos: 'bottom',
+                initialPosition: { x: null, y: null },
+                textAlignment: 'center',
+                order: 2
+            },
+            {
+                title: "4 Oplevering en Nazorg",
+                sub: [
+                    "Eindcontrole en testen",
+                   
+                ],
+                color: "#f0fdf4",
+                textColor: "#15803d",
+                subcolor: "#dcfce7",
+                description: "Het project wordt afgerond en overgedragen.",
+                status: 'voltooid',
+                descriptionPos: 'bottom',
+                initialPosition: { x: null, y: null },
+                textAlignment: 'center',
+                order: 3
+            },
+            {
+                title: "* On Hold / Vervallen",
+                sub: [
+                    "Tijdelijke pauze",
+                  
+                ],
+                color: "#fef2f2",
+                textColor: "#b91c1c",
+                subcolor: "#fee2e2",
+                description: "Het project is stopgezet of geannuleerd.",
+                status: 'gepland',
+                descriptionPos: 'bottom',
+                initialPosition: { x: null, y: null },
+                textAlignment: 'center',
+                order: 5
+            }
+        ];
+        const mindmap = document.getElementById("mindmap");
+        const wrapper = document.getElementById("mindmap-wrapper");
+        const central = document.getElementById("central");
+        const connectorsSvg = mindmap.querySelector(".connectors");
+        let activeZIndex = 10;
+        function createPhaseNodes() {
+            // Clear existing nodes (except central and SVG)
+            while (mindmap.children.length > 2) {
+                mindmap.removeChild(mindmap.lastChild);
+            }
+            // Clear existing connectors
+            connectorsSvg.innerHTML = "";
+            const radius = Math.min(wrapper.clientWidth, wrapper.clientHeight) * 0.42;
+            const centerX = wrapper.clientWidth / 2;
+            const centerY = wrapper.clientHeight / 2;
+            // Sort phases by order
+            phases.sort((a, b) => a.order - b.order);
+            phases.forEach((phase, index) => {
+                const angle = (2 * Math.PI / phases.length) * index - Math.PI / 2;
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                const node = document.createElement("div");
+                node.className = "node";
+                node.style.left = `${x}px`;
+                node.style.top = `${y}px`;
+                node.style.backgroundColor = phase.color;
+                node.style.color = phase.textColor;
+                node.setAttribute("tabindex", "0");
+                node.setAttribute("data-phase", `phase${index + 1}`);
+                node.setAttribute("data-status", phase.status);
+                node.setAttribute('data-description-pos', phase.descriptionPos);
+                phase.initialPosition = { x: x, y: y };
+                node.style.textAlign = phase.textAlignment;
+                node.innerHTML = `
+                    ${phase.title}
+                    <div class="description">${phase.description}</div>
+                    ${phase.sub.map((text, i) => `<div class="subnode" style="background-color: ${phase.subcolor}">${text}</div>`).join("")}
+                    <div class="status-badge ${phase.status}"></div>
+                `;
+                node.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    node.classList.toggle("active");
+                    activeZIndex += 1;
+                    node.style.zIndex = activeZIndex;
+                    // Move description
+                    const descriptionElement = node.querySelector('.description');
+                    let currentPosition = node.getAttribute('data-description-pos');
+                    let newPosition = currentPosition === 'bottom' ? 'top' : 'bottom';
+                    node.setAttribute('data-description-pos', newPosition);
+                    descriptionElement.className = `description ${newPosition}`;
+                    if (newPosition === 'top') {
+                        descriptionElement.style.top = `calc(-100% - 10px)`;
+                        descriptionElement.style.bottom = 'auto';
+                    }
+                    else {
+                        descriptionElement.style.top = `calc(100% + 12px)`;
+                        descriptionElement.style.bottom = 'auto';
+                    }
+                });
+                node.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        node.classList.toggle("active");
+                        activeZIndex += 1;
+                        node.style.zIndex = activeZIndex;
+                        // Move description
+                        const descriptionElement = node.querySelector('.description');
+                        let currentPosition = node.getAttribute('data-description-pos');
+                        let newPosition = currentPosition === 'bottom' ? 'top' : 'bottom';
+                        node.setAttribute('data-description-pos', newPosition);
+                        descriptionElement.className = `description ${newPosition}`;
+                        if (newPosition === 'top') {
+                            descriptionElement.style.top = `calc(-100% - 10px)`;
+                            descriptionElement.style.bottom = 'auto';
+                        }
+                        else {
+                            descriptionElement.style.top = `calc(100% + 12px)`;
+                            descriptionElement.style.bottom = 'auto';
+                        }
+                    }
+                });
+                mindmap.appendChild(node);
+                // Create SVG connector
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("class", "connector-line");
+                line.setAttribute("x1", centerX);
+                line.setAttribute("y1", centerY);
+                line.setAttribute("x2", x);
+                line.setAttribute("y2", y);
+                connectorsSvg.appendChild(line);
+            });
+            // After creating nodes, adjust "Oplevering en Nazorg" position
+            const opleveringNode = document.querySelector('[data-phase="phase4"]');
+            if (opleveringNode) {
+                // Calculate the opposite position
+                const centerX = wrapper.clientWidth / 2;
+                const centerY = wrapper.clientHeight / 2;
+                const currentX = phases[3].initialPosition.x;
+                const currentY = phases[3].initialPosition.y;
+                const newX = centerX - (currentX - centerX);
+                const newY = centerY - (currentY - centerY);
+                opleveringNode.style.left = `${newX}px`;
+                opleveringNode.style.top = `${newY}px`;
+                // Update the connector line
+                const connectorLine = connectorsSvg.querySelector(`.connector-line:nth-of-type(${phases.indexOf(phases[3]) + 1})`);
+                if (connectorLine) {
+                    connectorLine.setAttribute("x2", newX);
+                    connectorLine.setAttribute("y2", newY);
+                }
+                phases[3].initialPosition = { x: newX, y: newY };
+            }
+        }
+        // Zoom & Pan
+        let scale = 1;
+        let pos = { x: 0, y: 0 };
+        let start = { x: 0, y: 0 };
+        let dragging = false;
+        function updateTransform() {
+            mindmap.style.transform = `translate(${pos.x}px, ${pos.y}px) scale(${scale})`;
+        }
+        wrapper.addEventListener("wheel", (e) => {
+            e.preventDefault();
+            const delta = e.deltaY * -0.001;
+            const newScale = Math.min(Math.max(0.5, scale + delta), 2);
+            const mouseX = e.clientX - wrapper.getBoundingClientRect().left;
+            const mouseY = e.clientY - wrapper.getBoundingClientRect().top;
+            const x = (mouseX - pos.x) / scale;
+            const y = (mouseY - pos.y) / scale;
+            scale = newScale;
+            pos.x = mouseX - x * scale;
+            pos.y = mouseY - y * scale;
+            updateTransform();
+        });
+        wrapper.addEventListener("mousedown", (e) => {
+            if (e.target.closest('.node')) return;
+            dragging = true;
+            start.x = e.clientX - pos.x;
+            start.y = e.clientY - pos.y;
+            wrapper.style.cursor = 'grabbing';
+        });
+        document.addEventListener("mousemove", (e) => {
+            if (!dragging) return;
+            pos.x = e.clientX - start.x;
+            pos.y = e.clientY - start.y;
+            updateTransform();
+        });
+        document.addEventListener("mouseup", () => {
+            dragging = false;
+            wrapper.style.cursor = '';
+        });
+        // Dark mode toggle
+        const darkToggle = document.getElementById('darkToggle');
+        darkToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+        });
+        // Initialize
+        if (localStorage.getItem('darkMode') === 'true' ||
+            (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+        createPhaseNodes();
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            createPhaseNodes();
+        });
+    </script>
+</body>
+</html>
