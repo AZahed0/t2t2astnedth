@@ -12,11 +12,13 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            margin: 0; /* Remove default body margin */
+            overflow: hidden; /* Prevent scrollbars */
         }
         .mindmap-wrapper {
             width: 100%;
-            height: 80vh;
-            overflow: hidden;
+            height: 100vh; /* Ensures the wrapper takes up full viewport height */
+            overflow: hidden; /* Prevents scrolling */
             position: relative;
             border-radius: 12px;
             background: #f8fafc;
@@ -26,15 +28,15 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            transform-origin: center center;
-            transition: transform 0.3s ease;
+            transform-origin: center center; /* Ensure it scales from the center */
+            transition: transform 0.3s ease; /* Smooth transformation for resizing */
         }
         .node {
             position: absolute;
             padding: 0.6rem 1.2rem;
             border-radius: 8px;
             font-weight: 500;
-            font-size: 0.9rem;
+            font-size: 0.9rem; /* Adjusted font size */
             text-align: center;
             cursor: pointer;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
@@ -137,10 +139,10 @@
         }
         @media (max-width: 768px) {
             .mindmap-wrapper {
-                height: 85vh;
+                height: 100vh; /* Use full viewport height on small screens too */
             }
             .node {
-                font-size: 0.75rem;
+                font-size: 0.75rem; /* Smaller font size for mobile screens */
                 padding: 0.4rem 0.6rem;
             }
             .node.central {
@@ -205,7 +207,9 @@
                 title: "1 Initiatief / Definitie",
                 sub: [
                     "Probleem of behoefte analyseren",
-                    
+                    "Doelstellingen bepalen",
+                    "Gesprekken met belanghebbenden",
+                    "Locaties / Oplossingen verkennen"
                 ],
                 color: "#e0f2fe",
                 textColor: "#0369a1",
@@ -237,7 +241,8 @@
                 title: "3 Realisatie",
                 sub: [
                     "Bouw/aanleg starten",
-                    
+                    "Toezicht en kwaliteitscontrole",
+                    "Communicatie met omgeving"
                 ],
                 color: "#fb923c",
                 textColor: "#c2410c",
@@ -253,7 +258,7 @@
                 title: "4 Oplevering en Nazorg",
                 sub: [
                     "Eindcontrole en testen",
-                   
+                    
                 ],
                 color: "#f0fdf4",
                 textColor: "#15803d",
@@ -269,7 +274,8 @@
                 title: "* On Hold / Vervallen",
                 sub: [
                     "Tijdelijke pauze",
-                  
+                    "Definitief beëindigd",
+                    "Geen verdere werkzaamheden"
                 ],
                 color: "#fef2f2",
                 textColor: "#b91c1c",
