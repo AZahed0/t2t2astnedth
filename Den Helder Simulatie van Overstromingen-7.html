@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Den Helder Simulatie van Overstromingen</title>
+    <style>
+        html, body, #viewDiv {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #selection {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            max-width: 1000px;
+            z-index: 1;
+        }
+        #topLogo {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            height: 60px;
+            z-index: 5;
+            background: white;
+            padding: 5px;
+            border-radius: 0.5em;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+    </style>
+    <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+    <link rel="stylesheet" href="https://js.arcgis.com/calcite-components/3.0.3/calcite.css" />
+    <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.32/"></script>
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/SceneView",
+            "esri/layers/FeatureLayer",
+            "esri/widgets/Expand",
+            "esri/widgets/Weather",
+            "esri/widgets/Daylight",
+            "esri/renderers/SimpleRenderer",
+            "esri/symbols/PolygonSymbol3D",
+            "esri/symbols/ExtrudeSymbol3DLayer"
+        ], function(
+            Map, SceneView, FeatureLayer, Expand, Weather, Daylight, SimpleRenderer, PolygonSymbol3D, ExtrudeSymbol3DLayer
+        ) {
+
+            const map = new Map({
+                basemap: "topo-3d",
+                ground: "world-elevation"
+            });
+
+            const view = new SceneView({
+                container: "viewDiv",
+                map: map,
+                camera: {
+                    position: {
+                        x: 4.7589,
+                        y: 52.9551,
+                        z: 150,
+                        spatialReference: { wkid: 4326 }
+                    },
+                    heading: 0,
+                    tilt: 65
+                },
+                environment: {
+                    weather: {
+                        type: "cloudy",
+                        cloudCover: 0.3
+                    }
+                }
+            });
+
+            const waterRenderer = new SimpleRenderer({
+                symbol: new PolygonSymbol3D({
+                    symbolLayers: [new ExtrudeSymbol3DLayer({
+                        size: 0,
+                        material: { color: [0, 119, 190, 0.7] }
+                    })]
+                })
+            });
+
+            const denHelderLayer = new FeatureLayer({
+                url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/CBS_Gemeente_actueel/FeatureServer/0",
+                definitionExpression: "statnaam = 'Den Helder'",
+                renderer: waterRenderer,
+                elevationInfo: {
+                    mode: "relative-to-ground",
+                    offset: -7  // Apply the -7 meter offset here
+                },
+                visible: false
+            });
+
+            map.add(denHelderLayer);
+
+            // Water height control
+            const heightSlider = document.getElementById("heightSlider");
+            const heightValue = document.getElementById("height-value");
+
+            heightSlider.addEventListener("calciteSliderInput", () => {
+                const sliderValue = parseFloat(heightSlider.value);
+                heightValue.textContent = sliderValue + " meters";
+
+                // Clone the symbol and apply the new height
+                const updatedRenderer = new SimpleRenderer({
+                    symbol: new PolygonSymbol3D({
+                        symbolLayers: [
+                            new ExtrudeSymbol3DLayer({
+                                size: sliderValue + 7,
+                                material: { color: [0, 119, 190, 0.7] }
+                            })
+                        ]
+                    })
+                });
+
+                // Apply the new renderer
+                denHelderLayer.renderer = updatedRenderer;
+            });
+
+            const weatherExpand = new Expand({
+                view: view,
+                content: new Weather({ view: view }),
+                expanded: false // Collapsed by default
+            });
+
+            const daylightExpand = new Expand({
+                view: view,
+                content: new Daylight({ view: view })
+            });
+
+            view.ui.add([weatherExpand, daylightExpand], "top-right");
+
+            const selection = document.getElementById("selection");
+            selection.addEventListener("calciteSegmentedControlChange", () => {
+                const selectedValue = selection.selectedItem.value;
+                if (selectedValue === "flooding") {
+                    view.environment.weather = {
+                        type: "rainy",
+                        cloudCover: 0.7,
+                        precipitation: 0.3
+                    };
+                    denHelderLayer.visible = true;
+                } else {
+                    view.environment.weather = {
+                        type: "cloudy",
+                        cloudCover: 0.3
+                    };
+                    denHelderLayer.visible = false;
+                }
+            });
+
+        });
+    </script>
+</head>
+<body>
+    <div id="viewDiv"></div>
+
+    <img
+        src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNhWuVCXeqrUWI3pW93uw3_S735nJGX3N2deMVguZj5uYIURC0Xv4hN9_pgl4vi798WVo&usqp=CAU"
+        alt="Logo"
+        id="topLogo"
+    />
+
+    <calcite-label id="height-label" style="position:absolute; bottom: 20px; left: 20px; z-index: 2; background:white; padding: 0.5em; border-radius: 0.5em;">
+        Waterhoogte: <span id="height-value">-7 meters</span>
+        <calcite-slider
+            id="heightSlider"
+            min="-7"
+            max="20"
+            value="-7"
+            step="0.5"
+            label-handles
+            label-ticks
+            precise
+        ></calcite-slider>
+    </calcite-label>
+
+    <calcite-segmented-control id="selection" width="full">
+        <calcite-segmented-control-item value="noFlooding" checked>Geen overstroming</calcite-segmented-control-item>
+        <calcite-segmented-control-item value="flooding">Overstroming simulatie</calcite-segmented-control-item>
+    </calcite-segmented-control>
+</body>
+</html>
