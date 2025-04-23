@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Den Helder - Hoogtekaarten & Waterrisico's</title>
+
+  <style>
+    html, body {
+      font-family: "Avenir Next W00", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    arcgis-map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .scroller {
+      position: absolute;
+      overflow-y: scroll;
+      width: 100%;
+      height: 100%;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+    }
+
+    .scroller > .content {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .scroller > .content > .slide {
+      height: 100vh;
+      scroll-snap-align: start;
+      position: relative;
+    }
+
+    .card {
+      position: absolute;
+      right: 15px;
+      top: 15px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      width: 240px;
+      max-height: 85vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+      padding: 12px 16px;
+      background: #0079c1;
+      color: white;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    .card-body {
+      padding: 12px 16px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+
+    .nav-dots {
+      position: fixed;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 100;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.6);
+      border: 2px solid rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .dot.active {
+      background: #0079c1;
+      border-color: white;
+      transform: scale(1.2);
+    }
+
+    .progress-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.1);
+      z-index: 100;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: #0079c1;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    #logo {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 100;
+      height: 70px; /* Increased size */
+    }
+
+    @media (max-width: 768px) {
+      .card {
+        width: 90%;
+        right: 5%;
+        top: 10px;
+      }
+      
+      .nav-dots {
+        right: 10px;
+      }
+    }
+  </style>
+
+  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.32/"></script>
+
+  <script type="module" src="https://js.arcgis.com/map-components/4.32/arcgis-map-components.esm.js"></script>
+</head>
+
+<body>
+  <arcgis-map id="my-map" center="4.759,52.961" zoom="12">
+    
+    <arcgis-basemap basemap="hybrid"></arcgis-basemap>
+  </arcgis-map>
+
+  <img id="logo" src="https://www.multibel.eu/wp-content/uploads/gemeente-den-helder-app-quote-500x383.png" alt="Gemeente Den Helder Logo">
+
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div class="scroller" id="scroller">
+    <div class="content" id="content"></div>
+  </div>
+
+  <div class="nav-dots" id="navDots"></div>
+
+  <script>
+    require([
+      "esri/Map",
+      "esri/layers/ImageryLayer",
+      "esri/geometry/Extent",
+      "esri/views/MapView"
+    ], (Map, ImageryLayer, Extent, MapView) => {
+      // Definieer kaartlagen met Nederlandse namen en beschrijvingen
+      const layers = [
+        {
+          url: "https://ahn.arcgisonline.nl/arcgis/rest/services/Hoogtebestand/AHN3_r/ImageServer",
+          title: "AHN3 Reliëfkaart",
+          description: "Gedetailleerd reliëf van Den Helder (2014-2019)"
+        },
+        {
+          url: "https://ahn.arcgisonline.nl/arcgis/rest/services/Hoogtebestand/AHN3_i/ImageServer",
+          title: "AHN3 Intensiteitskaart",
+          description: "Laserpulsintensiteit van Den Helder (2014-2019)"
+        },
+        {
+          url: "https://ahn.arcgisonline.nl/arcgis/rest/services/Hoogtebestand/AHN2_r/ImageServer",
+          title: "AHN2 Reliëfkaart",
+          description: "Historisch reliëf van Den Helder (2007-2012)"
+        },
+        {
+          url: "https://image.arcgisonline.nl/arcgis/rest/services/KEA/Maximale_overstromingsdiepte/ImageServer",
+          title: "Maximale Overstromingsdiepte",
+          description: "Diepte van mogelijke overstromingen in Den Helder"
+        },
+        {
+          url: "https://image.arcgisonline.nl/arcgis/rest/services/KEA/Plaatsgebonden_overstromingskans/ImageServer",
+          title: "Overstromingsrisico",
+          description: "Kans op overstromingen in Den Helder"
+        }
+      ];
+
+      // Maak ImageryLayer instanties
+      const imageryLayers = layers.map(layerInfo => {
+        return new ImageryLayer({
+          url: layerInfo.url,
+          title: layerInfo.title,
+          opacity: 0.9
+        });
+      });
+
+      // Maak een nieuwe kaart en voeg lagen toe
+      const map = new Map({
+        basemap: "hybrid",
+        layers: imageryLayers
+      });
+
+      // Definieer extent voor Den Helder
+      const denHelderExtent = new Extent({
+        xmin: 4.70,
+        ymin: 52.88,
+        xmax: 4.82,
+        ymax: 52.99,
+        spatialReference: { wkid: 4326 }
+      });
+
+      // Wijs de kaart toe aan het arcgis-map element
+      const mapElem = document.querySelector("arcgis-map");
+      mapElem.map = map;
+
+      // Wacht tot de kaartview klaar is
+      mapElem.addEventListener("arcgisViewReadyChange", (event) => {
+        const view = event.target.view;
+        
+        // Zoom in op Den Helder met vloeiende animatie
+        view.when(() => {
+          view.goTo({
+            target: denHelderExtent,
+            duration: 2000
+          });
+        });
+
+        // Maak swipe componenten voor elke laag
+        const swipes = imageryLayers.map((layer) => {
+          layer.visible = true;
+          const swipe = document.createElement("arcgis-swipe");
+          swipe.trailingLayers = [layer];
+          swipe.leadingLayers = [];
+          swipe.disabled = true;
+          swipe.direction = "vertical";
+          swipe.hideHandle = true;
+          swipe.swipePosition = 100;
+          swipe.referenceElement = "my-map";
+          return swipe;
+        });
+
+        const content = document.getElementById("content");
+        const scroller = document.getElementById("scroller");
+        const navDots = document.getElementById("navDots");
+        const progressBar = document.getElementById("progressBar");
+
+        // Maak slides voor elke kaartlaag
+        layers.forEach((layerInfo, index) => {
+          // Maak slide
+          const slide = document.createElement("div");
+          slide.className = "slide";
+          slide.id = `slide-${index}`;
+          
+          // Maak info card
+          const card = document.createElement("div");
+          card.className = "card";
+          
+          const cardHeader = document.createElement("div");
+          cardHeader.className = "card-header";
+          cardHeader.textContent = layerInfo.title;
+          
+          const cardBody = document.createElement("div");
+          cardBody.className = "card-body";
+          
+          const description = document.createElement("p");
+          description.textContent = layerInfo.description;
+          description.style.marginTop = "0";
+          
+          const legend = document.createElement("arcgis-legend");
+          legend.layerInfos = [{ layer: imageryLayers[index] }];
+          legend.referenceElement = "my-map";
+          
+          cardBody.appendChild(description);
+          cardBody.appendChild(legend);
+          card.appendChild(cardHeader);
+          card.appendChild(cardBody);
+          slide.appendChild(card);
+          content.appendChild(slide);
+          
+          // Maak navigatie dot
+          const dot = document.createElement("div");
+          dot.className = "dot";
+          dot.dataset.index = index;
+          dot.addEventListener("click", () => {
+            scroller.scrollTo({
+              top: index * window.innerHeight,
+              behavior: 'smooth'
+            });
+          });
+          navDots.appendChild(dot);
+        });
+
+        // Update progress bar en active dot
+        const updateUI = () => {
+          const scrollPosition = scroller.scrollTop;
+          const scrollPercentage = (scrollPosition / (content.scrollHeight - window.innerHeight)) * 100;
+          progressBar.style.width = `${scrollPercentage}%`;
+          
+          const currentSlide = Math.round(scrollPosition / window.innerHeight);
+          document.querySelectorAll('.dot').forEach((dot, i) => {
+            dot.classList.toggle('active', i === currentSlide);
+          });
+        };
+
+        // Update swipe positie
+        const setScroll = (value) => {
+          const pageRatio = value / window.innerHeight;
+          swipes.forEach((swipe, index) => {
+            mapElem.append(swipe);
+            let position = (index - pageRatio) * 100;
+            
+            if (position < 0 && swipe.trailingLayers.length) {
+              swipe.leadingLayers.addMany(swipe.trailingLayers);
+              swipe.trailingLayers.removeAll();
+            } else if (position >= 0 && swipe.leadingLayers.length) {
+              swipe.trailingLayers.addMany(swipe.leadingLayers);
+              swipe.leadingLayers.removeAll();
+            }
+            
+            if (position < 0) position += 100;
+            swipe.swipePosition = Math.min(100, Math.max(0, position));
+          });
+          
+          updateUI();
+        };
+
+        // Stel scroll hoogte in
+        content.style.height = `${layers.length * 100}vh`;
+        
+        // Voorkom standaard scroll gedrag
+        scroller.addEventListener("wheel", (event) => {
+          event.stopImmediatePropagation();
+        });
+
+        // Update swipe bij scroll
+        scroller.addEventListener("scroll", () => {
+          setScroll(scroller.scrollTop);
+        });
+
+        // Initialiseer UI
+        updateUI();
+      });
+    });
+  </script>
+</body>
+</html>
