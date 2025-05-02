@@ -1,0 +1,230 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "color": "#9b59b6",
+        "fillColor": "#9b59b6",
+        "fillOpacity": 0.4,
+        "weight": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              4.741716,
+              52.957278
+            ],
+            [
+              4.751201,
+              52.957326
+            ],
+            [
+              4.754848,
+              52.95185
+            ],
+            [
+              4.739313,
+              52.954946
+            ],
+            [
+              4.741716,
+              52.957278
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "color": "#2ecc71",
+        "fillColor": "#2ecc71",
+        "fillOpacity": 0.5,
+        "weight": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              4.761415,
+              52.960688
+            ],
+            [
+              4.768667,
+              52.962006
+            ],
+            [
+              4.764891,
+              52.957871
+            ],
+            [
+              4.760084,
+              52.958
+            ],
+            [
+              4.761415,
+              52.960688
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.771415,
+          52.95587
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "standard_marker"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.747295,
+          52.961412
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "color": "#40e754",
+        "fillColor": "#40e754",
+        "fillOpacity": 0.6,
+        "weight": 2
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.762573,
+          52.95278
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "marker"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.74987,
+          52.959654
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.771415,
+          52.95587
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "color": "#07cf1f",
+        "fillColor": "#07cf1f",
+        "fillOpacity": 0.7,
+        "weight": 3,
+        "label": "Project 1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              4.74,
+              52.951694
+            ],
+            [
+              4.752531,
+              52.955985
+            ],
+            [
+              4.760771,
+              52.949161
+            ],
+            [
+              4.739399,
+              52.94425
+            ],
+            [
+              4.74,
+              52.951694
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "label": "Project 1",
+        "isTextLabel": true,
+        "isLabel": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.750085,
+          52.950118
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              4.764832,
+              52.956285
+            ],
+            [
+              4.76525,
+              52.956783
+            ],
+            [
+              4.765792,
+              52.956647
+            ],
+            [
+              4.765325,
+              52.956117
+            ],
+            [
+              4.764832,
+              52.956285
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "FID": 0,
+        "color": "#e74c3c",
+        "fillColor": "#e74c3c",
+        "fillOpacity": 0.4,
+        "weight": 3
+      }
+    }
+  ]
+}
