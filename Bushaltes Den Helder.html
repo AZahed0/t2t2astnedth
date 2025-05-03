@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Lopenzones binnen 2 meters, Bushaltes Den Helder</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.29/"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        /* CSS Variables for easier theming */
+        :root {
+            --primary-color: #004c71; /* Dark blue */
+            --secondary-color: #0078a8; /* Lighter blue */
+            --text-color: #333;
+            --header-bg: rgba(0, 76, 113, 0.9);
+            --widget-bg: rgba(255, 255, 255, 0.95); /* Slightly less transparent */
+            --widget-border: rgba(209, 213, 219, 0.5);
+            --shadow-light: 0 2px 10px rgba(0, 0, 0, 0.15);
+            --shadow-heavy: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        html, body, #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text-color);
+        }
+
+        /* Main app styling */
+        .app-container {
+            position: relative;
+            height: 100%;
+            overflow: hidden; /* Prevent potential overflow issues */
+        }
+
+        .app-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--header-bg);
+            color: white;
+            padding: 12px 20px;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-light);
+            /* Add a subtle gradient */
+            background-image: linear-gradient(to right, rgba(0, 76, 113, 0.95), rgba(0, 120, 168, 0.85));
+        }
+
+        .app-title {
+            font-size: 1.6rem; /* Slightly larger title */
+            font-weight: 700; /* Bolder font */
+            margin: 0;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Subtle text shadow */
+        }
+
+        .app-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .header-icons i {
+            margin-left: 15px; /* Space between icons */
+            font-size: 1.3rem; /* Slightly larger icons */
+        }
+
+        /* Widget panel styling */
+        .widget-panel {
+            position: absolute;
+            top: 80px; /* Adjusted position to be below header */
+            right: 15px;
+            z-index: 99;
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Increased gap */
+            max-height: calc(100% - 100px); /* Adjusted max height */
+            overflow-y: auto;
+            padding-right: 5px; /* Add padding for scrollbar */
+        }
+
+        .widget-container {
+            width: 280px; /* Slightly wider widgets */
+            background: var(--widget-bg);
+            border-radius: 8px;
+            box-shadow: var(--shadow-light);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px); /* Add blur effect */
+            border: 1px solid var(--widget-border); /* Add a light border */
+        }
+
+        .widget-container:hover {
+            box-shadow: var(--shadow-heavy);
+        }
+
+        .widget-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 18px; /* Increased padding */
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none; /* Prevent text selection */
+            transition: background-color 0.2s ease;
+        }
+
+        .widget-header:hover {
+            background-color: var(--secondary-color); /* Darker on hover */
+        }
+
+        .widget-header i {
+            transition: transform 0.3s ease;
+        }
+
+        .widget-header.collapsed i {
+            transform: rotate(-90deg);
+        }
+
+        .widget-content {
+            padding: 15px; /* Increased padding */
+            max-height: 350px; /* Increased max height for content */
+            overflow-y: auto;
+            transition: max-height 0.3s ease, padding 0.3s ease; /* Smooth transition */
+        }
+
+        .widget-content.collapsed {
+            max-height: 0; /* Collapse height */
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: hidden; /* Hide content when collapsed */
+        }
+
+        /* Custom scrollbar */
+        .widget-panel::-webkit-scrollbar,
+        .widget-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .widget-panel::-webkit-scrollbar-track,
+        .widget-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .widget-panel::-webkit-scrollbar-thumb,
+        .widget-content::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .widget-panel::-webkit-scrollbar-thumb:hover,
+        .widget-content::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+
+        /* ArcGIS widget overrides for better integration */
+        .esri-widget {
+             background: none !important; /* Remove default widget background */
+             padding: 0 !important; /* Remove default widget padding */
+             box-shadow: none !important; /* Remove default widget shadow */
+             border: none !important; /* Remove default widget border */
+        }
+
+        .esri-widget-button {
+             background-color: var(--widget-bg) !important;
+             color: var(--primary-color) !important;
+             border: 1px solid var(--widget-border) !important;
+             border-radius: 4px !important;
+             margin: 5px !important; /* Add some margin */
+             transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .esri-widget-button:hover {
+             background-color: var(--primary-color) !important;
+             color: white !important;
+        }
+
+        .esri-basemap-gallery__item {
+            border-radius: 4px; /* Match container border-radius */
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Subtle shadow for items */
+            transition: box-shadow 0.2s ease;
+        }
+
+        .esri-basemap-gallery__item:hover {
+             box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .esri-layer-list__item {
+            padding: 8px 0; /* Adjust vertical padding */
+            border-bottom: 1px solid var(--widget-border); /* Use CSS variable */
+        }
+
+        .esri-layer-list__item:last-child {
+            border-bottom: none;
+        }
+
+        /* Loading indicator styling */
+        #loadingIndicator {
+            margin-left: 20px;
+            color: white;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+         #loadingIndicator i {
+             margin-right: 5px;
+         }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) { /* Adjusted breakpoint */
+            .app-header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 10px 15px;
+            }
+
+             .app-title {
+                 font-size: 1.4rem;
+             }
+
+             .app-subtitle {
+                 font-size: 0.8rem;
+             }
+
+            .header-icons {
+                margin-top: 5px;
+            }
+
+            .header-icons i {
+                 margin-left: 0;
+                 margin-right: 10px;
+            }
+
+            .widget-panel {
+                top: auto;
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px; /* Adjusted gap for row layout */
+                max-height: 40vh; /* Limit height when horizontal */
+                overflow-y: auto; /* Keep scrolling */
+                padding-right: 0; /* Remove padding if scrollbar is less likely */
+            }
+
+            .widget-container {
+                width: calc(50% - 5px); /* Two widgets per row */
+                min-width: 140px; /* Minimum width */
+                max-height: 35vh; /* Limit height */
+                overflow: hidden; /* Hide overflow when collapsed */
+            }
+
+             .widget-content {
+                 max-height: 25vh; /* Adjusted max height for content */
+                 overflow-y: auto; /* Ensure content is scrollable when expanded */
+             }
+
+            .widget-header {
+                 padding: 10px 12px; /* Adjusted header padding */
+                 font-size: 0.9rem;
+            }
+
+            .widget-header i {
+                 font-size: 1rem;
+            }
+
+            /* Collapse widgets by default on smaller screens */
+            .widget-header:not(.collapsed) + .widget-content {
+                 max-height: 25vh; /* Ensure content is visible but limited */
+                 overflow-y: auto;
+            }
+        }
+
+         @media (max-width: 480px) {
+             .widget-container {
+                 width: 100%; /* Full width on very small screens */
+             }
+         }
+
+        /* Ensure map padding adjusts when widgets are visible */
+        .esri-ui .esri-ui-corner .esri-component.esri-widget--panel {
+             margin: 15px; /* Add margin around default widgets */
+        }
+
+        /* Style for the logo */
+        .gemeente-logo {
+            position: absolute;
+            top: 15px; /* Adjusted position */
+            right: 15px; /* Adjusted position */
+            z-index: 101; /* Above header and widgets */
+            height: 40px; /* Adjusted size */
+            border-radius: 4px;
+            box-shadow: var(--shadow-light);
+            background-color: white; /* Ensure background is white for the logo */
+            padding: 4px;
+        }
+
+         @media (max-width: 768px) {
+             .gemeente-logo {
+                 top: 10px;
+                 right: 10px;
+                 height: 30px; /* Smaller on mobile */
+             }
+         }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="viewDiv">
+            </div>
+
+        <header class="app-header">
+            <div>
+                <h2 class="app-title">Lopenzones binnen 2 meter</h2>
+                <p class="app-subtitle">Bushaltes Den Helder</p>
+            </div>
+            <div class="header-icons">
+                 <div id="loadingIndicator" style="display: none;">
+                     <i class="fas fa-spinner fa-spin"></i> Laden...
+                 </div>
+            </div>
+        </header>
+
+        <img src="https://www.behoorlijkbestuur.nl/wp-content/uploads/2019/03/Logo-gemeente-Den-Helder.jpg"
+             alt="Gemeente Den Helder"
+             class="gemeente-logo" />
+
+        <div class="widget-panel">
+            <div class="widget-container">
+                <div class="widget-header" onclick="toggleWidget(this)" role="button" aria-expanded="false" tabindex="0">
+                    <span>Lagen</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="widget-content collapsed" id="layerListDiv">
+                    </div>
+            </div>
+
+            <div class="widget-container">
+                <div class="widget-header" onclick="toggleWidget(this)" role="button" aria-expanded="false" tabindex="0">
+                    <span>Legenda</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="widget-content collapsed" id="legendDiv">
+                    </div>
+            </div>
+
+            <div class="widget-container">
+                <div class="widget-header" onclick="toggleWidget(this)" role="button" aria-expanded="false" tabindex="0">
+                    <span>Basiskaarten</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="widget-content collapsed" id="basemapDiv">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to toggle widget content visibility
+        function toggleWidget(header) {
+            const content = header.nextElementSibling;
+            const isCollapsed = header.classList.toggle('collapsed');
+            content.classList.toggle('collapsed');
+            // Update ARIA attribute
+            header.setAttribute('aria-expanded', !isCollapsed);
+        }
+
+        require([
+            "esri/views/MapView",
+            "esri/WebMap",
+            "esri/widgets/Legend",
+            "esri/widgets/BasemapGallery",
+            "esri/widgets/LayerList",
+            "esri/widgets/Home",
+            "esri/widgets/Zoom", // Added Zoom widget
+            "esri/widgets/Search", // Added Search widget
+            "esri/widgets/Fullscreen" // Added Fullscreen widget
+        ], function(MapView, WebMap, Legend, BasemapGallery, LayerList, Home, Zoom, Search, Fullscreen) {
+
+            // Load your web map
+            const webmap = new WebMap({
+                portalItem: {
+                    id: "30a1005e11ca4b3eb6b3fdf1f4abb0cb" // Replace with your Web Map ID
+                }
+            });
+
+            // Create the MapView
+            const view = new MapView({
+                container: "viewDiv",
+                map: webmap,
+                padding: {
+                    top: 80 // Adjusted padding to account for the slightly taller header
+                },
+                ui: {
+                    components: ["attribution"] // Only show attribution by default
+                }
+            });
+
+            // Add standard ArcGIS widgets to the view's UI
+            const homeWidget = new Home({
+                view: view
+            });
+            view.ui.add(homeWidget, "top-left"); // Position Home widget
+
+            const zoomWidget = new Zoom({
+                view: view
+            });
+            view.ui.add(zoomWidget, "top-left"); // Position Zoom widget below Home
+
+             const searchWidget = new Search({
+                 view: view
+             });
+             view.ui.add(searchWidget, "top-right"); // Position Search widget
+
+             const fullscreenWidget = new Fullscreen({
+                 view: view
+             });
+             view.ui.add(fullscreenWidget, "top-right"); // Position Fullscreen widget
+
+
+            // Add custom widgets to their respective containers
+            const legend = new Legend({
+                view: view,
+                container: "legendDiv",
+                style: "card"
+            });
+
+            const basemapGallery = new BasemapGallery({
+                view: view,
+                container: "basemapDiv"
+            });
+
+            const layerList = new LayerList({
+                view: view,
+                container: "layerListDiv",
+                listItemCreatedFunction: function(event) {
+                    const item = event.item;
+                    // Add legend panel to layers that are not group layers
+                    if (item.layer.type !== "group") {
+                        item.panel = {
+                            content: "legend",
+                            style: "card"
+                        };
+                    }
+                }
+            });
+
+            // Collapse all custom widgets by default on all screens
+            document.querySelectorAll('.widget-header').forEach(header => {
+                header.classList.add('collapsed');
+                header.nextElementSibling.classList.add('collapsed');
+                header.setAttribute('aria-expanded', 'false'); // Update ARIA
+            });
+
+            // Add loading indicator functionality
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            view.watch('updating', (updating) => {
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = updating ? 'flex' : 'none'; // Use flex for centering icon/text
+                }
+            });
+
+             // Add keyboard event listener for toggling widgets
+             document.querySelectorAll('.widget-header').forEach(header => {
+                 header.addEventListener('keydown', function(event) {
+                     // Toggle on Enter or Space key press
+                     if (event.key === 'Enter' || event.key === ' ') {
+                         event.preventDefault(); // Prevent default scroll behavior for space
+                         toggleWidget(this);
+                     }
+                 });
+             });
+
+             // Optional: Zoom to specific area (Den Helder) after the view is ready
+             view.when(() => {
+                 view.goTo({
+                     center: [4.759, 52.956], // Den Helder coordinates
+                     zoom: 14
+                 }).catch((error) => {
+                     // Handle any potential errors during the goTo operation
+                     console.error("Error zooming to Den Helder:", error);
+                 });
+
+                 // Removed quick toggle button logic
+             });
+        });
+    </script>
+</body>
+</html>
