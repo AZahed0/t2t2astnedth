@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>3D Webscene App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <style>
+    html, body, #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    .esri-widget {
+      font-family: "Avenir Next", sans-serif;
+    }
+
+    /* Custom logo styling - Moved to top middle */
+    #customLogo {
+      position: absolute;
+      top: 10px;
+      left: 50%; /* Center horizontally */
+      transform: translateX(-50%); /* Adjust for the element's own width */
+      z-index: 99;
+      max-width: 80px;
+      height: auto;
+      background: white;
+      padding: 5px;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Footer styling - Moved from header to footer */
+    #appFooter {
+      position: absolute;
+      bottom: 0; /* Position at the bottom */
+      left: 0;
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 10px 20px;
+      box-sizing: border-box;
+      z-index: 98;
+      text-align: center;
+      font-family: "Avenir Next", sans-serif;
+      font-size: 18px;
+      color: #333;
+      box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1); /* Shadow at the top */
+    }
+
+    /* Styling for the measurement buttons container */
+    #measurement-buttons {
+      position: absolute;
+      top: 80px; /* Keep below the area where the logo might be */
+      right: 10px;
+      z-index: 98;
+      background: white;
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      display: flex;
+      gap: 10px;
+      flex-direction: row;
+    }
+
+    #measurement-buttons button {
+      font-size: 14px;
+      padding: 6px 10px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      background-color: #f8f8f8;
+      border-radius: 4px;
+    }
+
+    #measurement-buttons button:hover {
+        background-color: #e8e8e8;
+    }
+
+    #measurement-buttons button:active {
+        background-color: #d8d8d8;
+    }
+
+    #measurement-buttons button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Style for active measurement button */
+    #measurement-buttons button.active {
+      background-color: #d0ebff;
+      border-color: #3399ff;
+    }
+
+
+    @media (max-width: 600px) {
+      /* Adjust top-left widgets position to avoid logo */
+      .esri-ui-top-left {
+        top: 70px;
+      }
+      /* Adjust footer font size and padding on mobile */
+      #appFooter {
+        font-size: 16px;
+        padding: 8px 15px;
+      }
+      /* Stack buttons vertically on smaller screens */
+      #measurement-buttons {
+          top: 130px;
+          right: 5px;
+          padding: 8px;
+          flex-direction: column;
+          gap: 6px;
+      }
+       #measurement-buttons button {
+           width: 120px;
+           font-size: 12px;
+           padding: 4px;
+           text-align: center;
+       }
+    }
+
+     /* Styling for the measurement widgets added to the UI */
+    .esri-direct-line-measurement-3d,
+    .esri-area-measurement-3d {
+       /* You might want to add specific styles here if needed,
+          but they are usually styled by the ArcGIS API theme */
+    }
+  </style>
+</head>
+<body>
+  <div id="viewDiv"></div>
+  <img id="customLogo" src="https://www.multibel.eu/wp-content/uploads/gemeente-den-helder-app-quote-500x383.png" alt="Gemeente Den Helder Logo">
+
+  <div id="measurement-buttons">
+    <button id="start-distance">Afstand meten</button>
+    <button id="start-area">Oppervlakte meten</button>
+    <button id="stop-measurement">Stop Meten</button>
+  </div>
+
+  <div id="appFooter">
+      Loopzones binnen 2 meter van bushaltes in Den Helder
+  </div>
+
+  <script>
+    require([
+      "esri/WebScene",
+      "esri/views/SceneView",
+      "esri/widgets/Legend",
+      "esri/widgets/LayerList",
+      "esri/widgets/Expand",
+      "esri/widgets/Fullscreen",
+      "esri/widgets/BasemapGallery",
+      "esri/widgets/DirectLineMeasurement3D",
+      "esri/widgets/AreaMeasurement3D",
+      "esri/config" // Added esri/config for locale
+    ], function (
+      WebScene,
+      SceneView,
+      Legend,
+      LayerList,
+      Expand,
+      Fullscreen,
+      BasemapGallery,
+      DirectLineMeasurement3D,
+      AreaMeasurement3D,
+      esriConfig // Added esriConfig
+    ) {
+
+      // Set locale to Dutch
+      esriConfig.locale = "nl";
+
+      const scene = new WebScene({
+        portalItem: {
+          id: "05ecefd16e6f4ec0acce4a248d1777c1"
+        }
+      });
+
+      const view = new SceneView({
+        container: "viewDiv",
+        map: scene,
+        qualityProfile: "high"
+      });
+
+      // Legenda
+      const legend = new Legend({ view });
+      const legendExpand = new Expand({
+        view,
+        content: legend,
+        expandTooltip: "Toon legenda"
+      });
+
+      // Lagenlijst
+      const layerList = new LayerList({ view });
+      const layerListExpand = new Expand({
+        view,
+        content: layerList,
+        expandTooltip: "Toon lagen"
+      });
+
+      // Basemap Gallery
+      const basemapGallery = new BasemapGallery({ view });
+      const basemapGalleryExpand = new Expand({
+        view,
+        content: basemapGallery,
+        expandTooltip: "Kaartlaag kiezen"
+      });
+
+      // Fullscreen
+      const fullscreen = new Fullscreen({ view });
+
+      // Voeg widgets toe aan de UI (behalve de meetwidgets, die worden dynamisch toegevoegd)
+      view.ui.add([legendExpand, layerListExpand, basemapGalleryExpand], "top-left");
+      // Moved fullscreen to bottom-right
+      view.ui.add(fullscreen, "bottom-right");
+
+      // Declare measurement widgets outside the functions so they can be accessed
+      let distanceWidget = null;
+      let areaWidget = null;
+
+      // Get references to the buttons
+      const startDistanceBtn = document.getElementById("start-distance");
+      const startAreaBtn = document.getElementById("start-area");
+      const stopBtn = document.getElementById("stop-measurement");
+
+      // Disable stop button initially
+      stopBtn.disabled = true;
+
+      // Function to set the active button class
+      function setActive(btn) {
+        document.querySelectorAll("#measurement-buttons button").forEach(b => b.classList.remove("active"));
+        if (btn) {
+            btn.classList.add("active");
+        }
+      }
+
+      // Function to clear any active measurement widgets
+      function clearMeasurements() {
+        if (distanceWidget) {
+          distanceWidget.destroy();
+          distanceWidget = null;
+        }
+        if (areaWidget) {
+          areaWidget.destroy();
+          areaWidget = null;
+        }
+        stopBtn.disabled = true;
+        setActive(null); // Remove active class from all buttons
+      }
+
+      // Event listener for the "Measure Distance" button
+      startDistanceBtn.addEventListener("click", () => {
+        clearMeasurements();
+        distanceWidget = new DirectLineMeasurement3D({ view, unit: "meters" });
+        view.ui.add(distanceWidget, "top-right");
+        stopBtn.disabled = false;
+        setActive(startDistanceBtn); // Set active class
+      });
+
+      // Event listener for the "Measure Area" button
+      startAreaBtn.addEventListener("click", () => {
+        clearMeasurements();
+        areaWidget = new AreaMeasurement3D({ view, unit: "square-meters" });
+        view.ui.add(areaWidget, "top-right");
+        stopBtn.disabled = false;
+        setActive(startAreaBtn); // Set active class
+      });
+
+      // Event listener for the "Stop Measurement" button
+      stopBtn.addEventListener("click", () => {
+        clearMeasurements();
+      });
+
+      // Optional: Adjust widget placement for mobile if needed
+      view.watch("stationary", function(isStationary) {
+          if (isStationary && view.widthBreakpoint === "xsmall") {
+              view.ui.move([legendExpand, layerListExpand, basemapGalleryExpand], "top-left");
+              // Fullscreen is now handled by its bottom-right position
+          } else {
+               view.ui.move(legendExpand, "top-left");
+               view.ui.move(layerListExpand, "top-left");
+               view.ui.move(basemapGalleryExpand, "top-left");
+               // Fullscreen is now handled by its bottom-right position
+          }
+      });
+
+       // Auto-collapse widgets on mobile (suggestion 2)
+       view.watch("widthBreakpoint", function(breakpoint) {
+           if (breakpoint === "xsmall") {
+               legendExpand.expanded = false;
+               layerListExpand.expanded = false;
+               basemapGalleryExpand.expanded = false;
+           }
+       });
+
+    });
+  </script>
+</body>
+</html>
