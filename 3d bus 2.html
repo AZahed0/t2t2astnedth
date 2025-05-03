@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>3D Webscene App - Den Helder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <style>
+    :root {
+      --accent: #007ac2;
+      --accent-light: #d0ebff;
+      --font: "Avenir Next", sans-serif;
+      --text-color: #333;
+      --background-color: #f2f2f2;
+      --hover-background: #e0e0e0;
+      --active-background: var(--accent-light);
+      --active-color: var(--accent);
+      --disabled-opacity: 0.5;
+      --shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      --border-radius: 6px;
+      --padding-small: 8px;
+      --padding-medium: 12px;
+      --padding-large: 15px;
+      --gap-small: 6px;
+      --gap-medium: 8px;
+    }
+
+    html, body, #viewDiv {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: var(--font);
+      overflow: hidden; /* Prevent body scroll */
+    }
+
+    .esri-widget {
+      font-family: var(--font);
+    }
+
+    /* Custom logo styling */
+    #customLogo {
+      position: absolute;
+      top: 15px; /* Adjusted top for better spacing */
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 99;
+      max-width: 80px; /* Slightly increased max-width */
+      height: auto;
+      background: rgba(255, 255, 255, 0.9); /* Semi-transparent background */
+      padding: var(--padding-small);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      transition: opacity 0.3s ease;
+    }
+
+    #customLogo:hover {
+        opacity: 0.9;
+    }
+
+    /* Footer styling */
+    #appFooter {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.95); /* Almost opaque */
+      padding: var(--padding-large) var(--padding-medium); /* Increased padding */
+      box-sizing: border-box;
+      z-index: 98;
+      text-align: center;
+      font-size: 16px;
+      color: var(--text-color);
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15); /* Clearer shadow top */
+      border-top: 1px solid #eee; /* Subtle border */
+    }
+
+    /* Styling for the measurement buttons container */
+    #measurement-buttons {
+      position: absolute;
+      top: 90px; /* Position below logo area */
+      right: 15px; /* Adjusted right for better spacing */
+      z-index: 98;
+      background: rgba(255, 255, 255, 0.9); /* Semi-transparent background */
+      padding: var(--padding-medium);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column; /* Default to column */
+      gap: var(--gap-medium);
+      align-items: stretch; /* Stretch buttons */
+    }
+
+    #measurement-buttons button {
+      font-family: var(--font);
+      font-size: 14px;
+      padding: var(--padding-small) var(--padding-medium);
+      border: none;
+      border-radius: var(--border-radius);
+      background: var(--background-color);
+      color: var(--text-color);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex; /* Use flexbox for icon and text alignment */
+      align-items: center;
+      justify-content: center; /* Center content */
+      gap: var(--gap-small); /* Space between icon and text */
+    }
+
+    #measurement-buttons button i {
+        /* Style for Font Awesome icons */
+        font-size: 16px; /* Slightly larger icon */
+    }
+
+    #measurement-buttons button:hover {
+      background: var(--hover-background);
+    }
+
+    #measurement-buttons button.active {
+      background-color: var(--active-background);
+      color: var(--active-color);
+      font-weight: bold;
+    }
+
+    #measurement-buttons button:disabled {
+      opacity: var(--disabled-opacity);
+      cursor: not-allowed;
+      background-color: #f1f1f1;
+      color: #999; /* Dimmer text color */
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      /* Adjust top-left widgets position to avoid logo */
+      .esri-ui-top-left {
+        top: 80px; /* More space for logo */
+      }
+      /* Adjust footer font size and padding on mobile */
+      #appFooter {
+        font-size: 14px; /* Smaller font on mobile */
+        padding: var(--padding-small) var(--padding-medium);
+      }
+      /* Stack buttons vertically on smaller screens (already default) */
+      #measurement-buttons {
+        top: 150px; /* Position further down to avoid widgets and logo */
+        right: 10px;
+        padding: var(--padding-small);
+        gap: var(--gap-small);
+        width: auto; /* Allow width to adjust */
+      }
+      #measurement-buttons button {
+        width: 100%; /* Buttons take full width */
+        font-size: 13px;
+        padding: var(--gap-small);
+      }
+      /* Adjust top-right widget placement on small screens */
+      .esri-ui-top-right {
+          top: 150px; /* Adjust position to be below measurement buttons */
+      }
+    }
+
+     @media (min-width: 601px) and (max-width: 1024px) {
+         /* Adjust widget placement for tablets */
+         .esri-ui-top-left {
+             top: 80px;
+         }
+         .esri-ui-top-right {
+             top: 100px; /* Adjust to be below logo */
+         }
+         #measurement-buttons {
+             top: 100px; /* Adjust to be below logo */
+             right: 10px;
+         }
+     }
+
+    /* Styling for the measurement widgets added to the UI */
+    /* These are generally styled by the ArcGIS API theme,
+       but you can add overrides here if needed */
+    .esri-direct-line-measurement-3d,
+    .esri-area-measurement-3d {
+       /* Example: You could add margin-top if they overlap with other elements */
+       /* margin-top: 10px; */
+    }
+  </style>
+</head>
+<body>
+  <div id="viewDiv"></div>
+  <img id="customLogo" src="https://www.multibel.eu/wp-content/uploads/gemeente-den-helder-app-quote-500x383.png" alt="Gemeente Den Helder Logo">
+
+  <div id="measurement-buttons">
+    <button id="start-distance" aria-label="Afstand meten">
+        <i class="fas fa-ruler-horizontal"></i> Afstand
+    </button>
+    <button id="start-area" aria-label="Oppervlakte meten">
+        <i class="fas fa-ruler-combined"></i> Oppervlakte
+    </button>
+    <button id="stop-measurement" aria-label="Stop meting">
+        <i class="fas fa-times"></i> Stop
+    </button>
+  </div>
+
+  <div id="appFooter">
+      Loopzones binnen 2 meter van bushaltes in Den Helder
+  </div>
+
+  <script>
+    require([
+      "esri/WebScene",
+      "esri/views/SceneView",
+      "esri/widgets/Legend",
+      "esri/widgets/LayerList",
+      "esri/widgets/Expand",
+      "esri/widgets/Fullscreen",
+      "esri/widgets/BasemapGallery",
+      "esri/widgets/DirectLineMeasurement3D",
+      "esri/widgets/AreaMeasurement3D",
+      "esri/config"
+    ], function (
+      WebScene,
+      SceneView,
+      Legend,
+      LayerList,
+      Expand,
+      Fullscreen,
+      BasemapGallery,
+      DirectLineMeasurement3D,
+      AreaMeasurement3D,
+      esriConfig
+    ) {
+
+      // Set locale to Dutch for widgets
+      esriConfig.locale = "nl";
+
+      // Create the WebScene
+      const scene = new WebScene({
+        portalItem: {
+          id: "05ecefd16e6f4ec0acce4a248d1777c1"
+        }
+      });
+
+      // Create the SceneView
+      const view = new SceneView({
+        container: "viewDiv",
+        map: scene,
+        qualityProfile: "high", // Use high quality
+        // Add a subtle environment light for better 3D rendering
+        environment: {
+            lighting: {
+                directShadowsEnabled: true,
+                ambientOcclusionEnabled: true
+            }
+        }
+      });
+
+      // Add Widgets
+      // Legend
+      const legend = new Legend({ view });
+      const legendExpand = new Expand({
+        view,
+        content: legend,
+        expandTooltip: "Toon legenda",
+        group: "top-left" // Group widgets to manage their layout better
+      });
+
+      // Layer List
+      const layerList = new LayerList({ view });
+      const layerListExpand = new Expand({
+        view,
+        content: layerList,
+        expandTooltip: "Toon lagen",
+        group: "top-left"
+      });
+
+      // Basemap Gallery
+      const basemapGallery = new BasemapGallery({ view });
+      const basemapGalleryExpand = new Expand({
+        view,
+        content: basemapGallery,
+        expandTooltip: "Kaartlaag kiezen",
+        group: "top-left"
+      });
+
+      // Fullscreen
+      const fullscreen = new Fullscreen({ view });
+
+      // Add widgets to the UI
+      view.ui.add([legendExpand, layerListExpand, basemapGalleryExpand], "top-left");
+      view.ui.add(fullscreen, "bottom-right");
+
+      // Declare measurement widgets
+      let distanceWidget = null;
+      let areaWidget = null;
+
+      // Get references to the buttons
+      const startDistanceBtn = document.getElementById("start-distance");
+      const startAreaBtn = document.getElementById("start-area");
+      const stopBtn = document.getElementById("stop-measurement");
+
+      // Disable stop button initially
+      stopBtn.disabled = true;
+
+      // Function to set the active button class
+      function setActive(btn) {
+        document.querySelectorAll("#measurement-buttons button").forEach(b => b.classList.remove("active"));
+        if (btn) {
+            btn.classList.add("active");
+        }
+      }
+
+      // Function to clear any active measurement widgets
+      function clearMeasurements() {
+        if (distanceWidget) {
+          distanceWidget.destroy(); // Destroy the widget instance
+          distanceWidget = null;
+          // Remove the widget from the UI if it was added
+          const distanceWidgetNode = view.ui.find("direct-line-measurement-3d");
+          if(distanceWidgetNode) {
+              view.ui.remove(distanceWidgetNode);
+          }
+        }
+        if (areaWidget) {
+          areaWidget.destroy(); // Destroy the widget instance
+          areaWidget = null;
+           // Remove the widget from the UI if it was added
+          const areaWidgetNode = view.ui.find("area-measurement-3d");
+          if(areaWidgetNode) {
+              view.ui.remove(areaWidgetNode);
+          }
+        }
+        stopBtn.disabled = true;
+        setActive(null); // Remove active class from all buttons
+      }
+
+      // Event listener for the "Measure Distance" button
+      startDistanceBtn.addEventListener("click", () => {
+        clearMeasurements(); // Clear any existing measurements
+        distanceWidget = new DirectLineMeasurement3D({
+            view: view,
+            unit: "meters",
+            container: document.createElement("div") // Create a temporary container
+        });
+        // Add the widget's container to the view's UI
+        view.ui.add(distanceWidget.container, "top-right");
+        stopBtn.disabled = false;
+        setActive(startDistanceBtn); // Set active class
+      });
+
+      // Event listener for the "Measure Area" button
+      startAreaBtn.addEventListener("click", () => {
+        clearMeasurements(); // Clear any existing measurements
+        areaWidget = new AreaMeasurement3D({
+            view: view,
+            unit: "square-meters",
+             container: document.createElement("div") // Create a temporary container
+        });
+         // Add the widget's container to the view's UI
+        view.ui.add(areaWidget.container, "top-right");
+        stopBtn.disabled = false;
+        setActive(startAreaBtn); // Set active class
+      });
+
+      // Event listener for the "Stop Measurement" button
+      stopBtn.addEventListener("click", clearMeasurements); // Simplified event listener
+
+      // Auto-collapse widgets on mobile breakpoint
+      view.watch("widthBreakpoint", function(breakpoint) {
+          if (breakpoint === "xsmall") {
+              legendExpand.expanded = false;
+              layerListExpand.expanded = false;
+              basemapGalleryExpand.expanded = false;
+          }
+      });
+
+      // Ensure measurement widgets are removed from UI when cleared
+      // This watch is not strictly necessary for clearing but can be useful for debugging UI components
+      view.ui.watch("components", function(components) {
+          // console.log("UI components changed:", components.toArray());
+      });
+
+    });
+  </script>
+</body>
+</html>
