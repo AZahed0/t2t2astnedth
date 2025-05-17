@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projectplanning Gantt-diagram</title>
+  <meta name="color-scheme" content="light dark">
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      --primary: #3498db;
+      --primary-dark: #2980b9;
+      --text: #333;
+      --text-light: #777;
+      --bg: #fff;
+      --bg-secondary: #f8f9fa;
+      --border: #e0e0e0;
+      --shadow: rgba(0,0,0,0.1);
+      --success: #27ae60;
+      --warning: #f39c12;
+      --danger: #e74c3c;
+      --info: #3498db;
+    }
+
+    [data-theme="dark"] {
+      --primary: #3da5d9;
+      --primary-dark: #2c8ec9;
+      --text: #f0f0f0;
+      --text-light: #b0b0b0;
+      --bg: #1e1e1e;
+      --bg-secondary: #2d2d2d;
+      --border: #444;
+      --shadow: rgba(0,0,0,0.3);
+      /* Dark mode specific status colors if needed, or rely on general text color */
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    h1 {
+      color: var(--primary);
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 10px;
+    }
+
+    .container {
+      display: flex;
+      gap: 20px;
+    }
+
+    .left-panel {
+      width: 350px;
+      background-color: var(--bg-secondary);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px var(--shadow);
+      height: fit-content;
+      transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+    .right-panel {
+      flex: 1;
+    }
+
+    .controls {
+      background-color: var(--bg-secondary);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 8px var(--shadow);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+    .control-group {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    input[type="file"], input[type="text"], select, input[type="date"] {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      width: 100%;
+      max-width: 100%;
+      font-size: 14px;
+      transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    input[type="file"]:hover, input[type="text"]:hover, select:hover, input[type="date"]:hover {
+      border-color: var(--primary);
+    }
+
+    /* Improved buttons */
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-end; /* Align buttons to the bottom */
+    }
+
+    /* Icons for buttons (using simple text/emoji for now) */
+    .icon-zoom::before { content: "🔍"; margin-right: 4px; }
+    .icon-layers::before { content: "📊"; margin-right: 4px; }
+    .icon-clear::before { content: "❌"; margin-right: 4px; }
+    .icon-theme::before { content: "🌙"; margin-right: 4px; }
+
+    /* Improved select dropdown */
+    select {
+      background-color: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      border-radius: 6px;
+      transition: all 0.3s;
+    }
+
+    select:hover {
+      border-color: var(--primary);
+    }
+
+    select[multiple] {
+      min-height: 100px;
+      padding: 8px;
+    }
+
+    select[multiple] option {
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin: 2px 0;
+      color: var(--text); /* Ensure option text color is readable */
+      background-color: var(--bg); /* Ensure option background is readable */
+    }
+
+    select[multiple] option:checked {
+        background-color: var(--primary);
+        color: white;
+    }
+
+    select[multiple] option:hover {
+      background-color: var(--primary-dark);
+      color: white;
+    }
+
+    /* Project list improvements */
+    .project-list li {
+      padding: 10px 15px;
+      border-radius: 4px;
+      transition: all 0.2s;
+      cursor: pointer;
+      margin: 2px 0;
+      border-bottom: 1px solid var(--border); /* Use CSS variable for border */
+      display: flex; /* Use flexbox for layout */
+      align-items: center; /* Align items vertically */
+      gap: 8px; /* Space between items */
+    }
+
+    .project-list li:hover {
+      background-color: rgba(52, 152, 219, 0.1); /* Use a fixed rgba for hover background */
+    }
+
+    .project-list li.selected {
+      background-color: rgba(33, 150, 243, 0.2); /* Use a fixed rgba for selected background */
+      border-left: 3px solid var(--primary);
+      font-weight: bold;
+    }
+
+    .project-list li a {
+        flex-grow: 1; /* Allow the link to take up space */
+        text-decoration: none; /* Remove underline */
+        color: inherit; /* Inherit color from parent li */
+    }
+
+
+    /* Dark mode toggle switch */
+    #toggleDarkMode {
+      background-color: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+
+    [data-theme="dark"] #toggleDarkMode {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    /* Chart container */
+    #chart_div {
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 2px 10px var(--shadow);
+      transition: all 0.3s;
+      padding: 15px; /* Added padding back */
+      min-height: 500px; /* Ensure min-height is maintained */
+    }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+      color: white; /* Ensure text is white for status badges */
+    }
+
+    .success { background-color: var(--success); }
+    .warning { background-color: var(--warning); }
+    .danger { background-color: var(--danger); }
+    .info { background-color: var(--info); }
+
+    /* Phase colors - updated for dark mode */
+    /* These classes are applied via the 'style' column in the DataTable */
+    .initiatief-bar { background-color: #5dade2; }
+    .definitie-bar { background-color: #85c1e9; }
+    .werkvoorbereiding-bar { background-color: #f4d03f; } /* Yellow */
+    .realisatie-bar { background-color: #e67e22; }
+    .oplevering-bar { background-color: #27ae60; }
+    .onhold-bar { background-color: #e74c3c; }
+
+    [data-theme="dark"] .initiatief-bar { background-color: #3a7ca5; }
+    [data-theme="dark"] .definitie-bar { background-color: #5a9bc8; }
+    [data-theme="dark"] .werkvoorbereiding-bar { background-color: #d4b839; } /* Darker yellow */
+    [data-theme="dark"] .realisatie-bar { background-color: #c86e1e; }
+    [data-theme="dark"] .oplevering-bar { background-color: #219653; }
+    [data-theme="dark"] .onhold-bar { background-color: #c0392b; }
+
+
+    /* Status indicators (for project details panel) */
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .status-active { background-color: var(--warning); }
+    .status-completed { background-color: var(--success); }
+    .status-upcoming { background-color: var(--info); }
+
+
+    /* Empty state and spinner */
+    .spinner {
+      animation: rotate 1s linear infinite;
+      height: 50px;
+      width: 50px;
+      margin: 20px auto;
+      stroke: var(--primary); /* Use primary color for spinner */
+    }
+    @keyframes rotate {
+      100% { transform: rotate(360deg); }
+    }
+    .spinner circle {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: 0;
+      stroke-linecap: round;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-light); /* Use text-light for empty state message */
+    }
+
+    /* Responsive Improvements */
+    @media (max-width: 1024px) { /* Adjusted breakpoint for better layout on tablets */
+      .container {
+        flex-direction: column-reverse; /* Chart on top on mobile */
+      }
+      .left-panel {
+        width: auto; /* Allow left panel to take full width */
+        margin-top: 20px;
+      }
+      .controls {
+        grid-template-columns: 1fr; /* Stack controls on small screens */
+      }
+      .button-group {
+        flex-direction: column; /* Stack buttons on small screens */
+        align-items: stretch; /* Stretch buttons to full width */
+      }
+      button {
+        width: 100%; /* Full width buttons on small screens */
+      }
+      #chart_div {
+        min-height: 300px; /* Adjust minimum height for smaller screens */
+      }
+    }
+
+    /* Accessibility: Focus states */
+    button:focus, select:focus, input:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    /* Google Charts specific styles for hover */
+     /* Note: Targeting Google Chart elements directly can be fragile */
+    .google-visualization-gantt-bar {
+        transition: fill 0.2s ease; /* Subtle animation for bars */
+        stroke-width: 0; /* Ensure default stroke is not visible */
+    }
+    .google-visualization-gantt-bar:hover {
+        opacity: 0.9; /* Slightly less opaque on hover */
+        stroke: var(--text); /* Add a stroke on hover */
+        stroke-width: 2px; /* Increase stroke width on hover */
+    }
+
+    /* Enhanced tooltips */
+    .google-visualization-tooltip {
+      border-radius: 8px !important;
+      box-shadow: 0 4px 12px var(--shadow) !important;
+      border: none !important;
+      background-color: var(--bg) !important; /* Use background variable */
+      padding: 12px !important; /* Add padding */
+      color: var(--text) !important; /* Ensure tooltip text uses text variable */
+    }
+     .google-visualization-tooltip h3 {
+        margin-top: 0 !important;
+        margin-bottom: 10px !important;
+        color: var(--primary) !important; /* Use primary color for tooltip title */
+     }
+     .google-visualization-tooltip h4 {
+        margin: 8px 0 !important;
+        color: var(--primary-dark) !important; /* Use primary-dark for phase title */
+     }
+     .google-visualization-tooltip p {
+        margin: 6px 0 !important;
+     }
+     .google-visualization-tooltip strong {
+        color: var(--text) !important; /* Use text variable for strong text */
+     }
+
+    /* Multi-select dropdown styling */
+    #projectFilter[multiple] {
+      height: auto;
+      min-height: 100px; /* Increased min-height */
+      padding: 8px;
+    }
+
+    #projectFilter[multiple] option {
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin: 2px 0;
+      color: var(--text); /* Ensure option text color is readable */
+      background-color: var(--bg); /* Ensure option background is readable */
+    }
+
+    select[multiple] option:checked {
+        background-color: var(--primary);
+        color: white;
+    }
+
+    select[multiple] option:hover {
+      background-color: var(--primary-dark);
+      color: white;
+    }
+
+    /* Project Details Link Overflow Fix */
+    #project-details {
+      max-height: 70vh; /* Limit height */
+      overflow-y: auto; /* Add scrollbar */
+      padding-right: 8px; /* Space for scrollbar */
+      margin-right: -8px; /* Compensate for scrollbar */
+    }
+
+    /* Custom scrollbar for dark mode */
+    [data-theme="dark"] #project-details::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    [data-theme="dark"] #project-details::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    [data-theme="dark"] #project-details::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 4px;
+    }
+
+    [data-theme="dark"] #project-details::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    .project-detail {
+      margin-bottom: 15px;
+      overflow-wrap: break-word; /* Ensures long words/URLs break */
+      word-break: break-word; /* Alternative for better URL handling */
+    }
+
+    .link-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 5px 0;
+    }
+
+    .link-icon::before {
+      content: "🔗";
+      font-size: 0.9em;
+    }
+
+    .project-detail a {
+      color: var(--primary);
+      text-decoration: none;
+      display: inline-block;
+      max-width: 100%; /* Constrain width */
+      overflow: hidden; /* Hide overflowing text */
+      text-overflow: ellipsis; /* Add ellipsis for overflow */
+      white-space: nowrap; /* Prevent wrapping initially */
+      vertical-align: bottom;
+    }
+
+    .project-detail a:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive Handling for Links */
+    @media (max-width: 768px) {
+      .project-detail a {
+        white-space: normal; /* Allow wrapping on smaller screens */
+        display: inline; /* Revert to inline display */
+        max-width: none; /* Remove max-width constraint */
+        overflow: visible; /* Show full text */
+        text-overflow: clip; /* Remove ellipsis */
+      }
+
+      .link-container {
+        flex-direction: column; /* Stack icon and link vertically */
+        align-items: flex-start; /* Align items to the start */
+        gap: 4px; /* Reduce gap */
+      }
+    }
+
+     /* Style file input button */
+    input[type="file"] {
+      color: var(--text); /* Ensure text color is readable */
+      padding: 10px; /* Add some padding */
+    }
+
+    input[type="file"]::file-selector-button {
+      background-color: var(--bg-secondary);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-right: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Search box styling */
+    #projectSearch {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 10px;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    /* Multi-select improvements */
+    #projectFilter[multiple] {
+      min-height: 120px;
+      width: 100%;
+    }
+
+    /* Selected projects container */
+    .selected-projects-container {
+      margin-top: 20px;
+      border-top: 1px solid var(--border);
+      padding-top: 15px;
+    }
+
+    .project-detail-card {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-left: 4px solid var(--primary);
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    .project-detail-card h3 {
+      margin-top: 0;
+      color: var(--primary);
+      transition: color 0.3s;
+    }
+
+    /* Phase timeline styling */
+    .phase-timeline {
+      margin: 15px 0;
+      padding: 10px;
+      background: rgba(0,0,0,0.05); /* Use a fixed rgba for background */
+      border-radius: 6px;
+      transition: background 0.3s;
+    }
+
+    [data-theme="dark"] .phase-timeline {
+      background: rgba(255,255,255,0.05); /* Use a fixed rgba for background in dark mode */
+    }
+
+    .phase-item {
+      display: flex;
+      margin: 5px 0;
+      padding: 5px;
+      flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    }
+
+    .phase-name {
+      font-weight: 600;
+      width: 150px; /* Fixed width for name */
+      color: var(--text-light);
+      flex-shrink: 0; /* Prevent shrinking */
+    }
+
+    .phase-dates {
+      flex-grow: 1;
+      word-break: break-word; /* Ensure dates wrap */
+    }
+
+    @media (max-width: 480px) { /* Adjust for very small screens */
+        .phase-item {
+            flex-direction: column; /* Stack name and dates */
+            align-items: flex-start;
+        }
+        .phase-name {
+            width: auto; /* Auto width when stacked */
+            margin-bottom: 4px;
+        }
+    }
+
+    /* Project Health Indicators */
+    .health-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+      flex-shrink: 0; /* Prevent shrinking in flex container */
+    }
+    .health-good { background: #2ecc71; } /* Green */
+    .health-warning { background: #f39c12; } /* Orange */
+    .health-critical { background: #e74c3c; } /* Red */
+    .health-unknown { background: #95a5a6; } /* Gray */
+
+
+    /* Project Tabs */
+    .project-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      overflow-x: auto; /* Enable horizontal scrolling for tabs */
+      padding-bottom: 5px; /* Space for scrollbar */
+      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      scrollbar-width: thin; /* Make scrollbar thinner */
+      scrollbar-color: var(--primary) var(--bg-secondary); /* Style scrollbar */
+    }
+
+    /* Custom scrollbar for tabs */
+    .project-tabs::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .project-tabs::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+      border-radius: 4px;
+    }
+
+    .project-tabs::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .project-tabs::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+
+    .project-tabs .tab {
+      padding: 8px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: var(--bg-secondary);
+      color: var(--text-light);
+      font-weight: 600;
+      transition: all 0.3s;
+      white-space: nowrap; /* Prevent tabs from wrapping */
+      border: 1px solid var(--border);
+    }
+
+    .project-tabs .tab:hover {
+      background-color: rgba(52, 152, 219, 0.1); /* Hover effect */
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .project-tabs .tab.active {
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    /* Filter Chips Container */
+    .filter-chips-container {
+        margin-top: 10px;
+        margin-bottom: 15px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        min-height: 24px; /* Ensure space even when empty */
+    }
+
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        background: var(--primary);
+        color: white;
+        border-radius: 16px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .filter-chip:hover {
+        background: var(--primary-dark);
+    }
+
+    .filter-chip .close-btn {
+        margin-left: 6px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    /* Project details under chart */
+    .project-details-under-chart {
+      margin-top: 20px;
+      background-color: var(--bg-secondary);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .project-details-under-chart h2 {
+      color: var(--primary);
+      margin-top: 0;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <h1>Projectplanning Gantt-diagram</h1>
+
+  <div class="controls">
+    <div class="control-group">
+      <label for="csvFile">Selecteer CSV-bestand:</label>
+      <input type="file" id="csvFile" accept=".csv" title="Selecteer een CSV-bestand">
+      <div id="fileInfo" class="file-info">Geen bestand geselecteerd</div>
+    </div>
+
+    <div class="control-group">
+      <label for="projectSearch">Zoek project:</label>
+      <input type="text" id="projectSearch" placeholder="Typ om te zoeken...">
+    </div>
+
+    <div class="control-group">
+      <label for="projectFilter">Selecteer projecten:</label>
+      <select id="projectFilter" multiple size="5"> <option value="">Alle projecten</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label>Acties:</label>
+      <div class="button-group">
+        <button id="resetZoom"><i class="icon-zoom"></i> Reset weergave</button>
+        <button id="togglePhases"><i class="icon-layers"></i> Fases tonen/verbergen</button>
+        <button id="clearSelection"><i class="icon-clear"></i> Selectie wissen</button>
+        <button id="toggleDarkMode"><i class="icon-theme"></i> Donkere modus</button>
+        <button id="debugButton">Debug</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="left-panel">
+      <h2>Projecten</h2>
+      <div class="project-tabs">
+        <div class="tab active" data-filter-status="all">Alles</div>
+        <div class="tab" data-filter-status="active">Actief</div>
+        <div class="tab" data-filter-status="upcoming">Toekomstig</div>
+        <div class="tab" data-filter-status="completed">Afgerond</div>
+      </div>
+      <div id="filter-chips-container" class="filter-chips-container">
+          </div>
+      <div class="project-list">
+        <h3>Projectlijst</h3>
+        <ul id="project-list"></ul>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div id="chart_div">
+         <div class="empty-state">
+            <svg class="spinner" viewBox="0 0 50 50">
+              <circle cx="25" cy="25" r="20" fill="none" stroke="var(--primary)" stroke-width="5"></circle>
+            </svg>
+            <p>Selecteer een CSV-bestand om te beginnen</p>
+          </div>
+      </div>
+
+      <div class="project-details-under-chart">
+        <h2>Projectdetails</h2>
+        <div id="selected-projects-details" class="selected-projects-container">
+            <p>Selecteer projecten om details te zien</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load Google Charts and initialize
+    google.charts.load('current', { packages:['gantt'], language: 'nl' });
+    google.charts.setOnLoadCallback(initialize);
+
+    // Global variables
+    let chart;
+    let dataTable;
+    let allProjects = [];
+    let showPhases = true;
+    let currentFileName = '';
+    let currentStatusFilter = 'all'; // Default status filter
+
+    function initialize() {
+      // Ensure multi-select is enabled
+      document.getElementById('projectFilter').multiple = true;
+
+      // Set up event listeners
+      document.getElementById('csvFile').addEventListener('change', handleFileUpload);
+
+      // Event listener for the project filter dropdown
+      document.getElementById('projectFilter').addEventListener('change', function() {
+          filterProjects(); // Update chart based on selection
+          showSelectedProjectsDetails(); // Show details for selected projects
+          updateFilterChips(); // Update filter chips
+      });
+
+      document.getElementById('resetZoom').addEventListener('click', resetZoom);
+      document.getElementById('togglePhases').addEventListener('click', togglePhases);
+      document.getElementById('clearSelection').addEventListener('click', clearSelection); // Added Clear Selection listener
+      document.getElementById('toggleDarkMode').addEventListener('click', toggleDarkMode); // Added Dark Mode toggle listener
+
+      // Add debug button listener
+      document.getElementById('debugButton').addEventListener('click', () => {
+        logCurrentFilterState();
+        validateDataTable();
+      });
+
+
+      // Setup search functionality
+      setupSearch();
+
+      // Setup project status tabs
+      setupTabs();
+
+      // Setup keyboard shortcuts for the filter dropdown
+      setupKeyboardShortcuts();
+
+
+      // Check for saved theme preference on load
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+          document.documentElement.setAttribute('data-theme', savedTheme);
+           // Update button text based on loaded theme
+          const button = document.getElementById('toggleDarkMode');
+          button.innerHTML = savedTheme === 'dark'
+             ? '<i class="icon-theme"></i> Lichte modus'
+             : '<i class="icon-theme"></i> Donkere modus';
+      } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          // If no saved theme, check system preference
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.getElementById('toggleDarkMode').innerHTML = '<i class="icon-theme"></i> Lichte modus';
+      }
+
+      // Update file info text initially
+       document.getElementById('fileInfo').textContent = 'Geen bestand geselecteerd';
+
+       // Initial display for details panel
+       document.getElementById('selected-projects-details').innerHTML = '<p>Selecteer projecten om details te zien</p>';
+
+       // Initial display for filter chips
+       updateFilterChips();
+    }
+
+    // Helper function to parse date strings
+    function parseDate(dateString) {
+      if (!dateString) return null;
+      // Attempt to parse date, handling potential different formats
+      const date = new Date(dateString);
+      return isNaN(date) ? null : date;
+    }
+
+    // Helper function to format dates in Dutch
+    function formatDutchDate(date) {
+      if (!date || isNaN(date)) return 'Onbekend';
+      return date.toLocaleDateString('nl-NL', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    // Helper function to calculate duration in days
+    function calculateDurationInDays(start, end) {
+      if (!start || !end || isNaN(start) || isNaN(end)) return 'Onbekend';
+      const ms = Math.abs(end - start);
+      // Add 1 day to include both start and end dates
+      return `${Math.ceil(ms / (1000 * 60 * 60 * 24)) + 1} dagen`;
+    }
+
+    // Helper function to calculate duration in months
+    function calculateDurationInMonths(start, end) {
+      if (!start || !end || isNaN(start) || isNaN(end)) return 'Onbekend';
+      const months = Math.max(0, Math.round(
+        ((end.getFullYear() - start.getFullYear()) * 12) +
+        (end.getMonth() - start.getMonth())
+      ));
+      return `${months} maand${months !== 1 ? 'en' : ''}`;
+    }
+
+    // Helper function to get project status
+    function getProjectStatus(start, end) {
+      if (!start || !end || isNaN(start) || isNaN(end)) {
+        return { text: 'Onbekend', class: '' };
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (end < today) return { text: 'Afgerond', class: 'success' };
+      if (start > today) return { text: 'Toekomstig', class: 'info' };
+      return { text: 'Bezig', class: 'warning' };
+    }
+
+    // Helper function to get project health based on status
+    function getProjectHealth(project) {
+        const startDate = parseDate(project['initiatief_begindatum']);
+        const phaseEndDates = [
+            parseDate(project['initiatief_einddatum']),
+            parseDate(project['definitie_einddatum']),
+            parseDate(project['werkvoorbereiding_einddatum']),
+            parseDate(project['realisatie_begindatum']),
+            parseDate(project['realisatie_einddatum']),
+            parseDate(project['oplevering_nazorg_eind']),
+            parseDate(project['vervallen_begindatum']),
+            parseDate(project['vervallen_einddatum'])
+        ].filter(date => date && !isNaN(date));
+        const endDate = phaseEndDates.length > 0 ? new Date(Math.max(...phaseEndDates)) : null;
+
+        const status = getProjectStatus(startDate, endDate);
+
+        if (status.class === 'success') return { class: 'health-good', tooltip: 'Project is afgerond' };
+        if (status.class === 'warning') return { class: 'health-warning', tooltip: 'Project is bezig' };
+        if (status.class === 'info') return { class: 'health-good', tooltip: 'Project is toekomstig' }; // Upcoming can be considered 'good' health
+        if (status.class === 'danger') return { class: 'health-critical', tooltip: 'Project is on hold' }; // On hold can be critical
+
+        return { class: 'health-unknown', tooltip: 'Gezondheid onbekend' };
+    }
+
+
+     // Helper function to shorten long URLs
+    function truncateUrl(url, maxLength = 40) {
+      if (!url) return '';
+      if (url.length <= maxLength) return url;
+
+      // Remove protocol and www for display
+      const cleanUrl = url.replace(/(https?:\/\/)?(www\.)?/, '');
+      if (cleanUrl.length <= maxLength) return cleanUrl;
+
+      return cleanUrl.substring(0, maxLength) + '...';
+    }
+
+    // Helper function to clean project data (trim whitespace, handle empty names)
+    function cleanProjectData(projects) {
+      return projects.map(project => {
+        const cleanedProject = {};
+        // Trim all string values
+        Object.keys(project).forEach(key => {
+          if (typeof project[key] === 'string') {
+            cleanedProject[key] = project[key].trim();
+          } else {
+            cleanedProject[key] = project[key];
+          }
+        });
+
+        // Standardize null/empty values for project naam
+        if (!cleanedProject['projectnaam'] || cleanedProject['projectnaam'] === '') {
+          // Generate a unique placeholder name if projectnaam is missing
+          cleanedProject['projectnaam'] = `Onbekend_project_${Math.random().toString(36).substr(2, 5)}`;
+           console.warn(`Assigned placeholder name to project at index ${projects.indexOf(project)} due to missing naam.`);
+        }
+
+        return cleanedProject;
+      });
+    }
+
+
+    // Handle file upload
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) {
+         document.getElementById('fileInfo').textContent = 'Geen bestand geselecteerd';
+         return;
+      }
+
+      currentFileName = file.name;
+      document.getElementById('fileInfo').textContent = `Geselecteerd: ${currentFileName}`;
+
+      // Show spinner while parsing
+      const container = document.getElementById('chart_div');
+       container.innerHTML = `
+         <div class="empty-state">
+           <svg class="spinner" viewBox="0 0 50 50">
+             <circle cx="25" cy="25" r="20" fill="none" stroke="var(--primary)" stroke-width="5"></circle>
+           </svg>
+           <p>Bestand wordt geladen...</p>
+         </div>
+       `;
+
+
+      Papa.parse(file, {
+        header: true,
+        delimiter: ';', // Specify semicolon delimiter
+        skipEmptyLines: true,
+        complete: function(results) {
+          if (results.errors.length > 0) {
+            console.error('PapaParse Errors:', results.errors); // Log errors to console
+            alert('Fouten gevonden in CSV-bestand. Controleer de console voor details.');
+             container.innerHTML = `
+               <div class="empty-state">
+                 <p>Fouten bij het laden van het bestand.</p>
+               </div>
+             `;
+            return;
+          }
+
+          console.log('Raw data count:', results.data.length);
+
+          // Clean the data
+          const cleanedData = cleanProjectData(results.data);
+
+          // Filter out duplicate projects based on 'projectnaam'
+          const uniqueProjects = cleanedData.filter((project, index, self) =>
+            index === self.findIndex((p) => (
+              p['projectnaam'] === project['projectnaam']
+            ))
+          );
+
+          console.log('Duplicate projects filtered:', cleanedData.length - uniqueProjects.length);
+          console.log('Processed unique project count:', uniqueProjects.length);
+
+
+          allProjects = uniqueProjects;
+          console.log('Processed data:', allProjects); // Log processed data
+
+
+          // Build data table, update filter, and update list with all projects
+          // Initially build with all projects to populate filter and list
+          dataTable = buildDataTable(allProjects);
+          updateProjectFilter(allProjects);
+          updateProjectList(allProjects);
+          drawChart();
+          showSelectedProjectsDetails(); // Show initial details message
+          updateFilterChips(); // Update filter chips initially
+        },
+        error: function(error) {
+          console.error('PapaParse Error:', error); // Log error to console
+          alert('Fout bij het lezen van CSV-bestand. Controleer de console voor details.');
+           container.innerHTML = `
+             <div class="empty-state">
+               <p>Fout bij het lezen van het bestand.</p>
+             </div>
+           `;
+        }
+      });
+    }
+
+    // Helper function to check if a project has at least one valid date
+    function hasValidDates(project) {
+      const dates = [
+        parseDate(project['initiatief_begindatum']),
+        parseDate(project['initiatief_einddatum']),
+        parseDate(project['definitie_begindatum']),
+        parseDate(project['definitie_einddatum']),
+        parseDate(project['werkvoorbereiding_begindatum']),
+        parseDate(project['werkvoorbereiding_einddatum']),
+        parseDate(project['realisatie_begindatum']),
+        parseDate(project['realisatie_einddatum']),
+        parseDate(project['oplevering_nazorg_begin']),
+        parseDate(project['oplevering_nazorg_eind']),
+        parseDate(project['vervallen_begindatum']),
+        parseDate(project['vervallen_einddatum'])
+      ];
+      return dates.some(date => date && !isNaN(date));
+    }
+
+
+    // Build the Google Charts DataTable
+    function buildDataTable(projects) {
+      const table = new google.visualization.DataTable();
+      table.addColumn('string', 'Task ID');
+      table.addColumn('string', 'Task Name');
+      table.addColumn('string', 'Resource');
+      table.addColumn('date', 'Start Date');
+      table.addColumn('date', 'End Date');
+      table.addColumn('number', 'Duration');
+      table.addColumn('number', 'Percent Complete');
+      table.addColumn('string', 'Dependencies');
+      table.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
+      table.addColumn({ type: 'string', role: 'style' });
+
+      console.log('Building DataTable from', projects.length, 'projects.'); // Log number of projects being built
+
+      // Sort projects alphabetically by name
+      const sortedProjects = [...projects].sort((a, b) => {
+        const nameA = a['projectnaam'] || '';
+        const nameB = b['projectnaam'] || '';
+        return nameA.localeCompare(nameB);
+      });
+
+
+      sortedProjects.forEach((project, index) => {
+        const projectName = project['projectnaam'] || `Project_${index}`;
+        const projectId = `project_${index}`;
+
+        // Collect all valid start and end dates from all phases
+        const dates = [
+          parseDate(project['initiatief_begindatum']),
+          parseDate(project['initiatief_einddatum']),
+          parseDate(project['definitie_begindatum']),
+          parseDate(project['definitie_einddatum']),
+          parseDate(project['werkvoorbereiding_begindatum']),
+          parseDate(project['werkvoorbereiding_einddatum']),
+          parseDate(project['realisatie_begindatum']),
+          parseDate(project['realisatie_einddatum']),
+          parseDate(project['oplevering_nazorg_begin']),
+          parseDate(project['oplevering_nazorg_eind']),
+          parseDate(project['vervallen_begindatum']),
+          parseDate(project['vervallen_einddatum'])
+        ].filter(date => date && !isNaN(date));
+
+        // Determine the overall project start and end dates (min/max of all phase dates)
+        if (dates.length === 0) {
+           console.warn(`Skipping project "${projectName}" in DataTable - no valid dates found.`);
+           return; // Skip this project if no valid dates
+        }
+
+        const projectStart = new Date(Math.min(...dates));
+        const projectEnd = new Date(Math.max(...dates));
+        const status = getProjectStatus(projectStart, projectEnd);
+
+        // Add project row first
+        table.addRow([
+          projectId,
+          projectName,
+          null, // Resource
+          projectStart,
+          projectEnd,
+          null, // Duration
+          0, // Percent Complete (0 for project summary row)
+          null, // Dependencies (Removed dependency here)
+          createProjectTooltip(projectName, status, projectStart, projectEnd),
+          'font-weight: bold; color: #2c3e50;'
+        ]);
+
+        // Then add all phases for this project immediately after
+        if (showPhases) {
+          const phases = [
+            {
+              id: `${projectId}_init`, // Unique ID based on project ID and phase name
+              name: 'Initiatief',
+              start: 'initiatief_begindatum',
+              end: 'initiatief_einddatum',
+              class: 'initiatief-bar'
+            },
+            {
+              id: `${projectId}_def`,
+              name: 'Definitie',
+              start: 'definitie_begindatum',
+              end: 'definitie_einddatum',
+              class: 'definitie-bar'
+            },
+            {
+              id: `${projectId}_werk`,
+              name: 'Werkvoorbereiding',
+              start: 'werkvoorbereiding_begindatum',
+              end: 'werkvoorbereiding_einddatum',
+              class: 'werkvoorbereiding-bar'
+            },
+            {
+              id: `${projectId}_real`,
+              name: 'Realisatie',
+              start: 'realisatie_begindatum',
+              end: 'realisatie_einddatum',
+              class: 'realisatie-bar'
+            },
+            {
+              id: `${projectId}_oplev`,
+              name: 'Oplevering',
+              start: 'oplevering_nazorg_begin',
+              end: 'oplevering_nazorg_eind',
+              class: 'oplevering-bar'
+            },
+            {
+              id: `${projectId}_hold`,
+              name: 'On hold',
+              start: 'vervallen_begindatum',
+              end: 'vervallen_einddatum',
+              class: 'onhold-bar'
+            }
+          ];
+
+          phases.forEach(phase => {
+            const start = parseDate(project[phase.start]);
+            const end = parseDate(project[phase.end]);
+
+            if (start && end && !isNaN(start.getTime()) && !isNaN(end.getTime())) {
+              const phaseTooltip = createPhaseTooltip(projectName, { name: phase.name, start, end });
+              table.addRow([
+                phase.id,
+                `↳ ${phase.name}`,
+                phase.name, // Resource
+                start,
+                end,
+                null, // Duration
+                100, // Percent Complete (Phases are considered 100% complete visually)
+                projectId, // Dependency is now the project row ID
+                phaseTooltip,
+                `color: #7f8c8d; padding-left: 25px;` // Style for phase rows
+              ]);
+            } else {
+               console.warn(`Skipping phase "${phase.name}" for project "${projectName}" - missing/invalid dates.`);
+            }
+          });
+        }
+      });
+
+      console.log('DataTable built with', table.getNumberOfRows(), 'rows.'); // Log final row count
+      return table;
+    }
+
+    // Create tooltip HTML for a project
+    function createProjectTooltip(project, status, startDate, endDate) {
+      return `
+        <div style="padding:12px;max-width:300px;">
+          <h3 style="margin-top:0;margin-bottom:10px;color:var(--text);">${project}</h3>
+          <div class="status-badge ${status.class}" style="margin-bottom:12px;">${status.text}</div>
+          <p style="margin:6px 0;"><strong>Startdatum:</strong> ${formatDutchDate(startDate) || 'Onbekend'}</p>
+          <p style="margin:6px 0;"><strong>Einddatum:</strong> ${formatDutchDate(endDate) || 'Onbekend'}</p>
+          <p style="margin:6px 0;"><strong>Looptijd:</strong> ${startDate && endDate ? calculateDurationInDays(startDate, endDate) + ' (' + calculateDurationInMonths(startDate, endDate) + ')' : 'Onbekend'}</p>
+        </div>`;
+    }
+
+    // Create tooltip HTML for a phase
+    function createPhaseTooltip(project, phase) {
+      return `
+        <div style="padding:12px;max-width:300px;">
+          <h3 style="margin-top:0;margin-bottom:8px;color:var(--text);">${project}</h3>
+          <h4 style="margin:8px 0;color:var(--primary);">${phase.name}</h4>
+          <p style="margin:6px 0;"><strong>Startdatum:</strong> ${formatDutchDate(phase.start)}</p>
+          <p style="margin:6px 0;"><strong>Einddatum:</strong> ${formatDutchDate(phase.end)}</p>
+          <p style="margin:6px 0;"><strong>Looptijd:</strong> ${calculateDurationInDays(phase.start, phase.end)} (${calculateDurationInMonths(phase.start, phase.end)})</p>
+        </div>`;
+    }
+
+    // Update the project filter dropdown
+    function updateProjectFilter(projects) {
+      const filter = document.getElementById('projectFilter');
+      // Store current selected values before clearing
+      const selectedValues = Array.from(filter.selectedOptions).map(opt => opt.value);
+
+      filter.innerHTML = '<option value="">Alle projecten</option>';
+
+      // Get unique project names from all projects (with names) and sort them
+      const uniqueProjects = [...new Set(projects
+        .map(p => p['projectnaam'])
+        .filter(name => name && name.trim() !== '' && !name.startsWith('Onbekend_project_')) // Exclude placeholder names
+      )].sort((a, b) => a.localeCompare(b));
+
+      // Add options to filter dropdown
+      uniqueProjects.forEach(project => {
+        const option = new Option(project, project);
+        // Restore selection if it was previously selected
+        if (selectedValues.includes(project)) {
+            option.selected = true;
+        }
+        filter.appendChild(option);
+      });
+
+      // Enable the filter if we have projects with names
+      filter.disabled = uniqueProjects.length === 0;
+      console.log('Project filter bijgewerkt met', uniqueProjects.length, 'unieke projecten.');
+    }
+
+    // Update the project list in the left panel
+    function updateProjectList(projects) {
+      const projectList = document.getElementById('project-list');
+      projectList.innerHTML = '';
+
+      // Filter for projects with names (excluding placeholders) and sort them
+      const projectsWithName = projects
+        .filter(p => p['projectnaam'] && p['projectnaam'].trim() !== '' && !p['projectnaam'].startsWith('Onbekend_project_'))
+        .sort((a, b) => (a['projectnaam'] || '').localeCompare(b['projectnaam'] || ''));
+
+      console.log('Projectenlijst bijwerken met', projectsWithName.length, 'projecten.');
+
+      projectsWithName.forEach((project, index) => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.textContent = project['projectnaam']; // Use the filtered project name
+        a.href = '#';
+
+        // Add health indicator
+        const health = getProjectHealth(project);
+        const healthIndicator = document.createElement('span');
+        healthIndicator.className = `health-indicator ${health.class}`;
+        healthIndicator.title = health.tooltip; // Add tooltip for health status
+        li.appendChild(healthIndicator);
+
+        // Add click listener to show details and filter the chart
+        a.addEventListener('click', function(e) {
+          e.preventDefault();
+
+          const filter = document.getElementById('projectFilter');
+          const option = Array.from(filter.options).find(opt => opt.value === project['projectnaam']);
+
+          if (option) {
+            // For Ctrl/Cmd clicks, toggle selection
+            if (e.ctrlKey || e.metaKey) {
+              option.selected = !option.selected;
+            }
+            // For Shift clicks, select range
+            else if (e.shiftKey) {
+              const lastSelected = projectList.querySelector('li.selected');
+              if (lastSelected) {
+                const lastProjectName = lastSelected.querySelector('a').textContent;
+                const options = Array.from(filter.options);
+                const startIdx = options.findIndex(opt => opt.value === lastProjectName);
+                const endIdx = options.findIndex(opt => opt.value === project['projectnaam']);
+
+                const [from, to] = [Math.min(startIdx, endIdx), Math.max(startIdx, endIdx)];
+                for (let i = from; i <= to; i++) {
+                  if (options[i].value !== "") { // Avoid selecting "Alle projecten" in a range
+                     options[i].selected = true;
+                  }
+                }
+                 // Ensure "Alle projecten" is deselected if any other project is selected
+                 const allOption = Array.from(filter.options).find(opt => opt.value === "");
+                 if (allOption) allOption.selected = false;
+
+              } else {
+                 // If no previous selection, just select the clicked one
+                 Array.from(filter.options).forEach(opt => opt.selected = false);
+                 option.selected = true;
+              }
+            }
+            // Regular click - clear others and select this one
+            else {
+              Array.from(filter.options).forEach(opt => opt.selected = false);
+              option.selected = true;
+            }
+
+            // Trigger filtering
+            filter.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+
+        li.appendChild(a);
+        projectList.appendChild(li);
+      });
+    }
+
+    // Synchronize project list selection with filter dropdown
+    function updateProjectListSelection(selectedProjects) {
+      const projectListItems = document.querySelectorAll('#project-list li');
+
+      projectListItems.forEach(li => {
+        const projectName = li.querySelector('a').textContent.trim(); // Get name from the link
+        if (selectedProjects.includes(projectName)) {
+          li.classList.add('selected');
+        } else {
+          li.classList.remove('selected');
+        }
+      });
+    }
+
+    // Setup search functionality for the project filter dropdown
+    function setupSearch() {
+      const searchInput = document.getElementById('projectSearch');
+      const filterSelect = document.getElementById('projectFilter');
+
+      searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const options = filterSelect.querySelectorAll('option');
+
+        options.forEach(option => {
+          if (option.value === "") { // Always show "Alle projecten" option
+              option.style.display = 'block';
+              return;
+          }
+          const text = option.textContent.toLowerCase();
+          option.style.display = text.includes(searchTerm) ? 'block' : 'none';
+        });
+         // Trigger filtering when search changes
+        filterProjects();
+        showSelectedProjectsDetails();
+        updateFilterChips();
+      });
+    }
+
+    // Setup project status tabs
+    function setupTabs() {
+        const tabs = document.querySelectorAll('.project-tabs .tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                // Add active class to the clicked tab
+                this.classList.add('active');
+                // Update the current status filter
+                currentStatusFilter = this.getAttribute('data-filter-status');
+                // Trigger filtering
+                filterProjects();
+                showSelectedProjectsDetails();
+                updateFilterChips(); // Update filter chips
+            });
+        });
+    }
+
+     // Update filter chips based on current filters
+    function updateFilterChips() {
+        const container = document.getElementById('filter-chips-container');
+        container.innerHTML = ''; // Clear existing chips
+
+        // Add chip for selected status tab
+        const activeTab = document.querySelector('.project-tabs .tab.active');
+        if (activeTab && activeTab.getAttribute('data-filter-status') !== 'all') {
+             const chip = document.createElement('span');
+             chip.className = 'filter-chip';
+             chip.textContent = `Status: ${activeTab.textContent}`;
+             // No close button for status chip, as it's controlled by tabs
+             container.appendChild(chip);
+        }
+
+
+        // Add chips for selected projects in the filter dropdown
+        const selectedOptions = Array.from(document.getElementById('projectFilter').selectedOptions);
+        selectedOptions.forEach(option => {
+            if (option.value !== "") { // Don't create a chip for "Alle projecten"
+                const chip = document.createElement('span');
+                chip.className = 'filter-chip';
+                chip.textContent = option.value;
+
+                // Add close button
+                const closeBtn = document.createElement('span');
+                closeBtn.className = 'close-btn';
+                closeBtn.textContent = '×'; // Multiplication sign for close
+                closeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent the chip click from propagating to the container
+                    // Deselect the option in the dropdown
+                    const filterSelect = document.getElementById('projectFilter');
+                    const optionToDeselect = Array.from(filterSelect.options).find(opt => opt.value === option.value);
+                    if (optionToDeselect) {
+                        optionToDeselect.selected = false;
+                         // If all options are deselected, select "Alle projecten"
+                        const currentlySelected = Array.from(filterSelect.selectedOptions).filter(opt => opt.value !== '');
+                        if (currentlySelected.length === 0) {
+                            filterSelect.value = "";
+                        }
+                         // Trigger the filter change event
+                        filterSelect.dispatchEvent(new Event('change'));
+                    }
+                });
+
+                chip.appendChild(closeBtn);
+                container.appendChild(chip);
+            }
+        });
+
+         // Add a chip for the search term if there is one
+        const searchTerm = document.getElementById('projectSearch').value.trim();
+        if (searchTerm !== '') {
+             const chip = document.createElement('span');
+             chip.className = 'filter-chip';
+             chip.textContent = `Zoekterm: "${searchTerm}"`;
+             const closeBtn = document.createElement('span');
+             closeBtn.className = 'close-btn';
+             closeBtn.textContent = '×';
+             closeBtn.addEventListener('click', function() {
+                 document.getElementById('projectSearch').value = ''; // Clear search input
+                 setupSearch(); // Re-filter options based on empty search
+                 // The search input listener now triggers filterProjects, showSelectedProjectsDetails, and updateFilterChips
+             });
+             chip.appendChild(closeBtn);
+             container.appendChild(chip);
+        }
+    }
+
+
+    // Filter the projects displayed in the chart
+    function filterProjects() {
+      const selectedOptions = Array.from(document.getElementById('projectFilter').selectedOptions);
+      const selectedProjectNames = selectedOptions.map(opt => opt.value);
+      const searchTerm = document.getElementById('projectSearch').value.toLowerCase().trim();
+
+      // Determine if we should show all projects (when "All" is selected or no selection)
+      const showAll = selectedProjectNames.includes("") || selectedProjectNames.length === 0;
+
+      // Filter projects
+      let filteredProjects = allProjects.filter(project => {
+        const projectName = (project['projectnaam'] || '').toLowerCase();
+
+        // Check if project should be included based on name/selection and search term
+        const nameMatch = showAll || selectedProjectNames.includes(project['projectnaam']);
+        const searchMatch = projectName.includes(searchTerm);
+        const hasDates = hasValidDates(project); // Ensure project has at least one valid date
+
+        return nameMatch && searchMatch && hasDates;
+      });
+
+      // Apply status filter if needed
+      if (currentStatusFilter !== 'all') {
+        filteredProjects = filteredProjects.filter(project => {
+          const start = parseDate(project['initiatief_begindatum']);
+          const end = parseDate(project['oplevering_nazorg_eind'] || project['realisatie_einddatum']); // Use latest possible end date for status
+          const status = getProjectStatus(start, end).class;
+
+          // Map status classes to filter names
+          const statusMap = {
+            'success': 'completed',
+            'warning': 'active',
+            'info': 'upcoming'
+          };
+
+          return statusMap[status] === currentStatusFilter;
+
+        });
+      }
+
+      // Debugging output
+      debugFiltering(allProjects, filteredProjects);
+
+      console.log('Filter: Geselecteerde projecten tonen. Gevonden:', filteredProjects.length);
+
+      // Rebuild the data table with the filtered projects
+      dataTable = buildDataTable(filteredProjects);
+
+      // Redraw the chart
+      drawChart();
+
+      // Highlight selected projects in list (based on filter dropdown selection)
+      updateProjectListSelection(selectedProjectNames);
+
+      // Update filter chips (called by filterSelect change listener and tab clicks)
+      // updateFilterChips(); // Moved to change listeners
+    }
+
+    // Show details for all selected projects in the dedicated container
+    function showSelectedProjectsDetails() {
+      const container = document.getElementById('selected-projects-details');
+      container.innerHTML = ''; // Clear previous details
+
+      const selectedOptions = Array.from(document.getElementById('projectFilter').selectedOptions);
+
+      // If no projects selected or "Alle projecten" is selected, show a message
+      if (selectedOptions.length === 0 || selectedOptions.some(opt => opt.value === "")) {
+        container.innerHTML = '<p>Selecteer projecten om details te zien</p>';
+        return;
+      }
+
+      // Find and display details for each selected project
+      selectedOptions.forEach(option => {
+        if (option.value === "") return; // Skip "Alle projecten" option
+
+        const project = allProjects.find(p => p['projectnaam'] === option.value);
+        if (project) {
+          const card = document.createElement('div');
+          card.className = 'project-detail-card';
+          card.innerHTML = generateProjectCardHTML(project); // Generate HTML for the card
+          container.appendChild(card);
+        } else {
+           console.warn(`Could not find project data for selected option: ${option.value}`);
+        }
+      });
+    }
+
+    // Generate HTML for a single project detail card
+    function generateProjectCardHTML(project) {
+      const startDate = parseDate(project['initiatief_begindatum']);
+      // Use the latest end date from any phase for the overall project end date in the card
+      const allDates = [
+          parseDate(project['initiatief_begindatum']),
+          parseDate(project['initiatief_einddatum']),
+          parseDate(project['definitie_begindatum']),
+          parseDate(project['definitie_einddatum']),
+          parseDate(project['werkvoorbereiding_begindatum']),
+          parseDate(project['werkvoorbereiding_einddatum']),
+          parseDate(project['realisatie_begindatum']),
+          parseDate(project['realisatie_einddatum']),
+          parseDate(project['oplevering_nazorg_begin']),
+          parseDate(project['oplevering_nazorg_eind']),
+          parseDate(project['vervallen_begindatum']),
+          parseDate(project['vervallen_einddatum'])
+        ].filter(date => date && !isNaN(date));
+      const endDate = allDates.length > 0 ? new Date(Math.max(...allDates)) : null;
+
+
+      const status = getProjectStatus(startDate, endDate);
+      const health = getProjectHealth(project); // Get project health
+
+
+      return `
+        <h3>${project['projectnaam'] || 'Onbekend project'}</h3>
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <span class="status-badge ${status.class}">${status.text}</span>
+            <span class="health-indicator ${health.class}" title="${health.tooltip}"></span>
+        </div>
+
+
+        <p><strong>Periode:</strong> ${formatDutchDate(startDate) || 'Onbekend'} - ${formatDutchDate(endDate) || 'Onbekend'}</p>
+        <p><strong>Type:</strong> ${project['project_type'] || 'Onbekend'}</p>
+        <p><strong>Projectleider:</strong> ${project['projectleider'] || 'Onbekend'}</p>
+
+        <div class="phase-timeline">
+          <h4>Fase Planning:</h4>
+          ${generatePhaseTimeline(project)}
+        </div>
+
+        ${project['link'] ? `<p class="link-container"><span class="link-icon"></span><strong>Link:</strong> <a href="${project['link']}" target="_blank" rel="noopener noreferrer" title="${project['link']}">${truncateUrl(project['link'])}</a></p>` : ''}
+      `;
+    }
+
+    // Generate HTML for the phase timeline within a project detail card
+    function generatePhaseTimeline(project) {
+      const phases = [
+        { name: 'Initiatief', start: project['initiatief_begindatum'], end: project['initiatief_einddatum'] },
+        { name: 'Definitie', start: project['definitie_begindatum'], end: project['definitie_einddatum'] },
+        { name: 'Werkvoorbereiding', start: project['werkvoorbereiding_begindatum'], end: project['werkvoorbereiding_einddatum'] },
+        { name: 'Realisatie', start: project['realisatie_begindatum'], end: project['realisatie_einddatum'] },
+        { name: 'Oplevering', start: project['oplevering_nazorg_begin'], end: project['oplevering_nazorg_eind'] },
+        { name: 'On hold', start: project['vervallen_begindatum'], end: project['vervallen_einddatum'] }
+      ];
+
+      const validPhasesHtml = phases.map(phase => {
+        const start = parseDate(phase.start);
+        const end = parseDate(phase.end);
+        if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
+            return ''; // Skip if dates are invalid
+        }
+
+        return `
+          <div class="phase-item">
+            <span class="phase-name">${phase.name}:</span>
+            <span class="phase-dates">${formatDutchDate(start)} - ${formatDutchDate(end)}</span>
+          </div>
+        `;
+      }).join('');
+
+      return validPhasesHtml || '<p>Geen faseplanning beschikbaar</p>'; // Show message if no valid phases
+    }
+
+
+    // Toggle visibility of phase rows in the chart
+    function togglePhases() {
+      showPhases = !showPhases;
+      const button = document.getElementById('togglePhases');
+      button.innerHTML = showPhases ? '<i class="icon-layers"></i> Fases verbergen' : '<i class="icon-layers"></i> Fases tonen';
+
+      // Rebuild data with current filter and new phase visibility setting
+      filterProjects(); // This will rebuild the dataTable and redraw
+    }
+
+    // Draw the Gantt chart
+    function drawChart() {
+      console.log('drawChart called at', new Date().toISOString()); // Debug log
+      const container = document.getElementById('chart_div');
+
+      // Clear any previous error states or content
+      container.innerHTML = '';
+
+      if (!dataTable || dataTable.getNumberOfRows() === 0) {
+        container.innerHTML =
+          '<div class="empty-state">' + // Use empty-state class
+          (allProjects.length === 0 ? '<p>Selecteer een CSV-bestand om te beginnen</p>' : '<p>Geen data beschikbaar of geen projecten gevonden met de huidige filter/criteria.</p>') +
+          '</div>';
+        console.warn('Geen data om diagram te tekenen.');
+        return;
+      }
+
+      try {
+        // Calculate height based on number of rows
+        const chartHeight = Math.max(300, 50 + (dataTable.getNumberOfRows() * 35));
+
+        const options = {
+          height: chartHeight,
+          gantt: {
+            trackHeight: 30,
+            barHeight: 20,
+            labelStyle: {
+              fontName: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+              fontSize: 12
+            },
+            criticalPathEnabled: false,
+            innerGridTrack: { fill: 'var(--bg-secondary)' }, /* Use CSS variable */
+            innerGridDarkTrack: { fill: 'var(--border)' }, /* Use CSS variable */
+            barCornerRadius: 3,
+            // Hide dependency arrows (can be enabled here if CSV has dependency column)
+            arrow: {
+              angle: 0, /* Set to 60 to show arrows */
+              width: 0, /* Set to 2 to show arrows */
+              color: 'none', /* Set to '#95a5a6' or a variable to show arrows */
+              radius: 0
+            },
+             // Improve chart bars
+            bar: {
+              groupWidth: '70%',
+              strokeWidth: 2
+            },
+             // Timeline markers
+             timeline: {
+               showBarLabels: false,
+               colorByRowLabel: false,
+               rowLabelStyle: {
+                 fontName: 'Segoe UI',
+                 fontSize: 12,
+                 color: 'var(--text)' /* Use CSS variable */
+               }
+             }
+          },
+          tooltip: {
+            isHtml: true,
+            trigger: 'focus'
+          }
+        };
+
+        if (!chart) {
+          chart = new google.visualization.Gantt(container);
+
+          // Add click event listener to show project details (still useful for single clicks on chart)
+          google.visualization.events.addListener(chart, 'select', function() {
+            const selection = chart.getSelection();
+            if (selection.length > 0) {
+              const row = selection[0].row;
+              const taskId = dataTable.getValue(row, 0);
+
+              // Find the corresponding project data based on Task ID (project_index)
+              if (taskId.startsWith('project_')) {
+              // Get the project name from the dataTable row
+                const projectName = dataTable.getValue(row, 1);
+              // Find the original project data from allProjects using project name
+                const originalProjectData = allProjects.find(p => p['projectnaam'] === projectName);
+
+                if (originalProjectData) {
+                   // Select this project in the filter and show details
+                   const filter = document.getElementById('projectFilter');
+                   const option = Array.from(filter.options).find(opt => opt.value === projectName);
+                   if (option) {
+                       // Clear existing selections unless Ctrl/Cmd is held
+                       if (!event.ctrlKey && !event.metaKey) {
+                           Array.from(filter.options).forEach(opt => opt.selected = false);
+                       }
+                       option.selected = true;
+                       filter.dispatchEvent(new Event('change')); // Trigger filter and details update
+                   }
+                } else {
+                  console.warn('Kon originele projectdata niet vinden voor taak-ID:', taskId);
+                }
+              }
+            }
+          });
+        }
+
+        chart.draw(dataTable, options);
+        console.log('Diagram getekend.');
+
+        // Debug log: Log DataTable rows after drawing
+         console.log('DataTable rows after draw:');
+         if (dataTable) {
+           for (let i = 0; i < dataTable.getNumberOfRows(); i++) {
+             console.log(`Row ${i}: Task ID=${dataTable.getValue(i, 0)}, Name=${dataTable.getValue(i, 1)}`);
+           }
+         }
+      } catch (error) {
+        console.error('Chart drawing error:', error);
+        container.innerHTML = '<div class="empty-state"><p>Fout bij het tekenen van het diagram</p></div>';
+      }
+    }
+
+    // Show project details in the left panel (This function is now replaced by showSelectedProjectsDetails)
+    // Kept as a placeholder or if needed for single project view later
+    function showProjectDetails(project) {
+      console.log("showProjectDetails called for:", project ? project['projectnaam'] : 'null');
+      // This function is now primarily handled by showSelectedProjectsDetails
+      // It could be adapted to show details for a single clicked project if needed.
+    }
+
+    // Reset chart zoom/view
+    function resetZoom() {
+      if (chart && dataTable) {
+        drawChart(); // Redrawing effectively resets the view
+        console.log('Weergave gereset.');
+      }
+    }
+
+    // Clear all selections in the filter and list, and reset filters/chips
+    function clearSelection() {
+      // Clear filter dropdown selection
+      const filter = document.getElementById('projectFilter');
+      Array.from(filter.options).forEach(opt => opt.selected = false);
+
+      // Clear search input
+      document.getElementById('projectSearch').value = '';
+      setupSearch(); // Re-filter dropdown options
+
+      // Reset status tab to 'Alles'
+      const tabs = document.querySelectorAll('.project-tabs .tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      document.querySelector('.project-tabs .tab[data-filter-status="all"]').classList.add('active');
+      currentStatusFilter = 'all';
+
+      // Trigger filtering to update chart and details
+      filterProjects();
+      showSelectedProjectsDetails();
+      updateFilterChips(); // Update chips
+
+      console.log('Selectie gewist.');
+    }
+
+    // Toggle Dark Mode
+    function toggleDarkMode() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+
+      // Update button text and icon
+      const button = document.getElementById('toggleDarkMode');
+      button.innerHTML = newTheme === 'dark'
+        ? '<i class="icon-theme"></i> Lichte modus'
+        : '<i class="icon-theme"></i> Donkere modus';
+
+      // Redraw chart to apply theme colors if needed (Google Charts sometimes needs this)
+      if (chart && dataTable) {
+         drawChart();
+      }
+    }
+
+    // Setup keyboard shortcuts for the filter dropdown
+    function setupKeyboardShortcuts() {
+        const filter = document.getElementById('projectFilter');
+
+        filter.addEventListener('keydown', (e) => {
+            // Space to toggle selection
+            if (e.key === ' ') {
+                e.preventDefault();
+                const option = filter.options[filter.selectedIndex];
+                if (option) {
+                    option.selected = !option.selected;
+                    filter.dispatchEvent(new Event('change')); // Trigger filter update
+                }
+            }
+            // Ctrl+A to select all
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                e.preventDefault();
+                Array.from(filter.options).forEach(opt => opt.selected = true);
+                 // Deselect the "Alle projecten" option if it exists
+                const allOption = Array.from(filter.options).find(opt => opt.value === "");
+                if (allOption) {
+                    allOption.selected = false;
+                }
+                filter.dispatchEvent(new Event('change')); // Trigger filter update
+            }
+        });
+    }
+
+    // Debugging helper: Log current filter state
+    function logCurrentFilterState() {
+      console.log('--- Current Filter State ---');
+      const filter = document.getElementById('projectFilter');
+      const selectedOptions = Array.from(filter.selectedOptions).map(o => o.value);
+      console.log('Selected projects:', selectedOptions.length > 0 ? selectedOptions : 'None');
+      console.log('Search term:', document.getElementById('projectSearch').value || 'None');
+      console.log('Status filter:', currentStatusFilter);
+      console.log('All projects count:', allProjects.length);
+      console.log('----------------------------');
+    }
+
+    // Debugging helper: Validate DataTable content
+    function validateDataTable() {
+      console.log('--- DataTable Validation ---');
+      if (!dataTable) {
+        console.error('No dataTable exists.');
+        console.log('----------------------------');
+        return false;
+      }
+
+      console.log('DataTable Rows:', dataTable.getNumberOfRows());
+
+      // Log first few rows for inspection
+      const rowsToLog = Math.min(10, dataTable.getNumberOfRows());
+      for (let i = 0; i < rowsToLog; i++) {
+        try {
+          console.log(`Row ${i}:`, {
+            id: dataTable.getValue(i, 0),
+            name: dataTable.getValue(i, 1),
+            start: dataTable.getValue(i, 3),
+            end: dataTable.getValue(i, 4),
+            percent: dataTable.getValue(i, 6),
+            dependencies: dataTable.getValue(i, 7),
+            style: dataTable.getValue(i, 9)
+          });
+        } catch (e) {
+          console.error(`Error accessing data for row ${i}:`, e);
+        }
+      }
+      console.log('----------------------------');
+      return true;
+    }
+
+    // Debugging helper: Debug filtering process
+    function debugFiltering(projects, filteredProjects) {
+      console.group('Filtering Debug');
+      console.log('Total projects loaded:', allProjects.length);
+      console.log('Projects matching current filters:', filteredProjects.length);
+
+      // Check for projects that were filtered out and why
+      allProjects.forEach(project => {
+        const projectName = project['projectnaam'] || 'Unnamed Project';
+        const isFilteredOut = !filteredProjects.some(p => p['projectnaam'] === project['projectnaam']);
+
+        if (isFilteredOut) {
+          console.warn(`Project "${projectName}" was filtered out.`);
+          const selectedOptions = Array.from(document.getElementById('projectFilter').selectedOptions).map(opt => opt.value);
+          const searchTerm = document.getElementById('projectSearch').value.toLowerCase().trim();
+          const showAll = selectedOptions.includes("") || selectedOptions.length === 0;
+          const projectMatchesNameSelection = showAll || selectedOptions.includes(project['projectnaam']);
+          const projectMatchesSearch = (project['projectnaam'] || '').toLowerCase().includes(searchTerm);
+          const projectHasValidDates = hasValidDates(project);
+
+          let filterReasons = [];
+          if (!projectMatchesNameSelection) filterReasons.push('Does not match selected names');
+          if (!projectMatchesSearch) filterReasons.push('Does not match search term');
+          if (!projectHasValidDates) filterReasons.push('Missing or invalid dates');
+
+          if (currentStatusFilter !== 'all') {
+             const start = parseDate(project['initiatief_begindatum']);
+             const end = parseDate(project['oplevering_nazorg_eind'] || project['realisatie_einddatum']);
+             const status = getProjectStatus(start, end).class;
+             const statusMap = {
+                'success': 'completed',
+                'warning': 'active',
+                'info': 'upcoming'
+             };
+             if (statusMap[status] !== currentStatusFilter) {
+                 filterReasons.push(`Does not match status filter (${currentStatusFilter}, project status is ${statusMap[status] || status})`);
+             }
+          }
+
+          console.log(`- Reasons for "${projectName}" being filtered out:`, filterReasons.join(', ') || 'Unknown reason');
+        }
+      });
+
+      console.groupEnd();
+    }
+
+
+  </script>
+</body>
+</html>
