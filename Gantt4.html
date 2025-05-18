@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Projectplanning Gantt-diagram</title>
+
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #7fb8e0; /* Pastel blue for primary elements */
+      --text: #f0f0f0; /* Light gray for main text */
+      --text-light: #d0d0d0; /* Lighter gray for secondary text */
+      --bg: #014b6b; /* Dark blue background */
+      --bg-secondary: #026081; /* Slightly lighter blue for panels */
+      --border: #4a8ca8; /* Blue-gray for borders */
+      --shadow: rgba(0,0,0,0.3); /* Soft shadow */
+      --success: #8fd694; /* Pastel green */
+      --warning: #f8d486; /* Pastel yellow */
+      --danger: #f4a7a7; /* Pastel red */
+      --info: #a7c7e8; /* Pastel blue */
+      --unknown: #c5c5c5; /* Pastel gray */
+      --transition-speed: 0.3s;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: clamp(1rem, 5%, 2rem);
+      max-width: 1400px;
+      margin: 0 auto;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    h1 {
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 0.5rem;
+      font-size: 2rem;
+    }
+
+    .container {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .left-panel {
+      width: 100%;
+      max-width: 350px;
+      background-color: var(--bg-secondary);
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px var(--shadow);
+    }
+
+    .right-panel {
+      flex: 1;
+    }
+
+    .controls {
+      background-color: var(--bg-secondary);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 12px var(--shadow);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    input[type="file"],
+    input[type="text"],
+    select,
+    input[type="date"] {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 100%;
+      font-size: 1rem;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    input[type="file"]:hover,
+    input[type="text"]:hover,
+    select:hover,
+    input[type="date"]:hover {
+      border-color: var(--primary);
+    }
+
+    button {
+      background-color: var(--primary);
+      color: var(--bg); /* Button text color to contrast with primary */
+      border: none;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 2px 4px var(--shadow);
+    }
+
+    button:hover {
+      background-color: #5d9bc8; /* Darker pastel blue */
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .icon-zoom::before { content: "🔍"; }
+    .icon-layers::before { content: "📊"; }
+    .icon-clear::before { content: "❌"; }
+
+    select[multiple] {
+      min-height: 120px;
+      padding: 0.5rem;
+      border-radius: 6px;
+    }
+
+    select[multiple] option {
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      margin: 0.25rem 0;
+    }
+
+    select[multiple] option:checked {
+      background-color: var(--primary);
+      color: var(--bg);
+    }
+
+    select[multiple] option:hover {
+      background-color: #5d9bc8;
+      color: var(--bg);
+    }
+
+    .project-list li {
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 0.25rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .project-list li:hover {
+      background-color: #5d9bc8;
+    }
+
+    .project-list li.selected {
+      background-color: var(--primary);
+      border-left: 4px solid #5d9bc8;
+      font-weight: bold;
+    }
+
+    .project-list li a {
+      flex-grow: 1;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    #chart_div {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 2px 12px var(--shadow);
+      padding: 1.5rem;
+      min-height: 400px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 14px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-left: 0.75rem;
+      color: var(--bg);
+    }
+
+    .success { background-color: var(--success); }
+    .warning { background-color: var(--warning); }
+    .danger { background-color: var(--danger); }
+    .info { background-color: var(--info); }
+    .unknown { background-color: var(--unknown); }
+
+    .initiatief-bar { background-color: #a7c7e8; }
+    .definitie-bar { background-color: #b7d7f8; }
+    .werkvoorbereiding-bar { background-color: #f8e8a8; }
+    .realisatie-bar { background-color: #f8c898; }
+    .oplevering-bar { background-color: #a8e8b8; }
+    .onhold-bar { background-color: #f8a8a8; }
+
+    .health-good { background: var(--success); }
+    .health-warning { background: var(--warning); }
+    .health-critical { background: var(--danger); }
+    .health-unknown { background: var(--unknown); }
+
+    .status-indicator {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+
+    .status-active { background-color: var(--warning); }
+    .status-completed { background-color: var(--success); }
+    .status-upcoming { background-color: var(--info); }
+    .status-unknown { background-color: var(--unknown); }
+
+    .spinner {
+      animation: rotate 1s linear infinite;
+      height: 50px;
+      width: 50px;
+      margin: 2rem auto;
+      stroke: var(--primary);
+    }
+
+    @keyframes rotate {
+      100% { transform: rotate(360deg); }
+    }
+
+    .spinner circle {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: 0;
+      stroke-linecap: round;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem;
+      color: var(--text-light);
+    }
+
+    @media (max-width: 1024px) {
+      .container {
+        flex-direction: column-reverse;
+      }
+
+      .left-panel {
+        width: 100%;
+        margin-top: 1.5rem;
+      }
+    }
+
+    button:focus, select:focus, input:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    .google-visualization-tooltip {
+      border-radius: 12px !important;
+      box-shadow: 0 4px 16px var(--shadow) !important;
+      border: none !important;
+      background-color: var(--bg-secondary) !important;
+      padding: 1rem !important;
+      color: var(--text) !important;
+    }
+
+    .google-visualization-tooltip h3 {
+      margin-top: 0 !important;
+      margin-bottom: 0.75rem !important;
+      color: var(--primary) !important;
+    }
+
+    .google-visualization-tooltip h4 {
+      margin: 0.5rem 0 !important;
+      color: #5d9bc8 !important;
+    }
+
+    .google-visualization-tooltip p {
+      margin: 0.5rem 0 !important;
+    }
+
+    .google-visualization-tooltip strong {
+      color: var(--text) !important;
+    }
+
+    .project-detail {
+      margin-bottom: 1.5rem;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .link-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0.5rem 0;
+    }
+
+    .link-icon::before { content: "🔗"; }
+
+    .project-detail a {
+      color: var(--primary);
+      text-decoration: none;
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: bottom;
+    }
+
+    .project-detail a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .project-detail a {
+        white-space: normal;
+        display: inline;
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
+      }
+
+      .link-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+    }
+
+    input[type="file"] {
+      color: var(--text);
+      padding: 0.75rem;
+    }
+
+    input[type="file"]::file-selector-button {
+      background-color: var(--bg-secondary);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      margin-right: 1rem;
+      cursor: pointer;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+      background-color: var(--primary);
+      color: var(--bg);
+      border-color: var(--primary);
+    }
+
+    #projectSearch {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    .selected-projects-container {
+      margin-top: 2rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+    }
+
+    .project-detail-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-left: 5px solid var(--primary);
+    }
+
+    .project-detail-card h3 {
+      margin-top: 0;
+      color: var(--primary);
+    }
+
+    .phase-timeline {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: rgba(0,0,0,0.05);
+      border-radius: 8px;
+    }
+
+    .phase-item {
+      display: flex;
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .phase-name {
+      font-weight: 600;
+      width: 150px;
+      color: var(--text-light);
+      flex-shrink: 0;
+    }
+
+    .phase-dates {
+      flex-grow: 1;
+      word-break: break-word;
+    }
+
+    @media (max-width: 480px) {
+      .phase-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .phase-name {
+        width: auto;
+        margin-bottom: 0.25rem;
+      }
+    }
+
+    .health-indicator {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .projectlijst {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    .project-list-container {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .project-item {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .project-item:hover {
+      background-color: #5d9bc8;
+    }
+
+    .project-name {
+      flex: 1;
+      color: var(--text);
+    }
+
+    .status-badge {
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: var(--bg);
+      margin-right: 0.5rem;
+    }
+
+    .health-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .no-projects {
+      color: var(--text-light);
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .filter-chips-container {
+      margin-top: 1rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      min-height: 24px;
+    }
+
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.8rem;
+      background: var(--primary);
+      color: var(--bg);
+      border-radius: 16px;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+
+    .filter-chip:hover {
+      background: #5d9bc8;
+    }
+
+    .filter-chip .close-btn {
+      margin-left: 0.5rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .project-details-under-chart {
+      margin-top: 2rem;
+      background-color: var(--bg-secondary);
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px var(--shadow);
+    }
+
+    .project-details-under-chart h2 {
+      color: var(--primary);
+      margin-top: 0;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+    }
+
+    .project-checkbox-list {
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 8px;
+      background-color: var(--bg-secondary);
+    }
+
+    .project-checkbox-list label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .project-checkbox-list label:hover {
+      color: var(--primary);
+    }
+
+    .project-checkbox-list input[type="checkbox"] {
+      margin-right: 0.75rem;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .project-checkbox-list label span {
+      flex-grow: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .project-tabs {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+
+    .project-tabs::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .project-tabs::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+      border-radius: 4px;
+    }
+
+    .project-tabs::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .project-tabs::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    .project-tabs .tab {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: var(--bg-secondary);
+      color: var(--text-light);
+      font-weight: 600;
+      white-space: nowrap;
+      border: 1px solid var(--border);
+    }
+
+    .project-tabs .tab:hover {
+      background-color: #5d9bc8;
+      color: var(--text);
+      border-color: var(--primary);
+    }
+
+    .project-tabs .tab.active {
+      background-color: var(--primary);
+      color: var(--bg);
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .fade-in {
+      animation: fadeIn var(--transition-speed);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .scale-in {
+      animation: scaleIn var(--transition-speed);
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    #fileInfo {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--text-light);
+    }
+
+    .project-list h3 {
+      margin-top: 0;
+      color: var(--primary);
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    #filter-chips-container {
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .button-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      #chart_div {
+        min-height: 300px;
+      }
+
+      .project-detail-card {
+        padding: 1rem;
+      }
+
+      .project-tabs {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Projectplanning Gantt-diagram</h1>
+
+  <div class="controls">
+    <div class="control-group">
+      <label for="csvFile">Selecteer CSV-bestand:</label>
+      <input type="file" id="csvFile" accept=".csv" title="Selecteer een CSV-bestand">
+      <div id="fileInfo" class="file-info">Geen bestand geselecteerd</div>
+    </div>
+
+    <div class="control-group">
+      <label for="projectSearch">Zoek project:</label>
+      <input type="text" id="projectSearch" placeholder="Typ om te zoeken...">
+    </div>
+
+    <div class="control-group">
+      <label for="projectFilter">Selecteer projecten:</label>
+      <div id="projectFilter" class="project-checkbox-list"></div>
+    </div>
+
+    <div class="control-group">
+      <label>Acties:</label>
+      <div class="button-group">
+        <button id="resetZoom"><span class="icon-zoom"></span> Reset weergave</button>
+        <button id="togglePhases"><span class="icon-layers"></span> Fases tonen/verbergen</button>
+        <button id="clearSelection"><span class="icon-clear"></span> Selectie wissen</button>
+        <button id="debugButton">Debug</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="left-panel">
+      <h2>Projecten</h2>
+
+      <div class="project-tabs">
+        <div class="tab active" data-filter-status="alle">Alles</div>
+        <div class="tab" data-filter-status="bezig">Bezig</div>
+        <div class="tab" data-filter-status="toekomstig">Toekomstig</div>
+        <div class="tab" data-filter-status="afgerond">Afgerond</div>
+        <div class="tab" data-filter-status="onbekend">Onbekend</div>
+      </div>
+
+      <div id="filter-chips-container" class="filter-chips-container"></div>
+
+      <div class="projectlijst">
+        <h3>Projectlijst</h3>
+        <div id="project-list" class="project-list-container">
+          <div class="no-projects" style="display: none;">
+            Geen projecten gevonden voor de geselecteerde filters.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div id="chart_div">
+        <div class="empty-state fade-in">
+          <svg class="spinner" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r="20" fill="none" stroke="var(--primary)" stroke-width="5"></circle>
+          </svg>
+          <p>Selecteer een CSV-bestand om te beginnen</p>
+        </div>
+      </div>
+
+      <div class="project-details-under-chart">
+        <h2>Projectdetails</h2>
+        <div id="selected-projects-details" class="selected-projects-container">
+          <p>Selecteer projecten om details te zien</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    google.charts.load('current', { packages:['gantt'], language: 'nl' });
+    google.charts.setOnLoadCallback(initialize);
+
+    let chart;
+    let dataTable;
+    let allProjects = [];
+    let showPhases = true;
+    let currentFileName = '';
+    let currentStatusFilter = 'alle';
+
+    function initialize() {
+      document.getElementById('csvFile').addEventListener('change', handleFileUpload);
+      document.getElementById('resetZoom').addEventListener('click', resetZoom);
+      document.getElementById('togglePhases').addEventListener('click', togglePhases);
+      document.getElementById('clearSelection').addEventListener('click', clearSelection);
+      document.getElementById('debugButton').addEventListener('click', () => {
+        logCurrentFilterState();
+        validateDataTable();
+      });
+      setupSearch();
+      setupTabs();
+      document.getElementById('fileInfo').textContent = 'Geen bestand geselecteerd';
+      document.getElementById('selected-projects-details').innerHTML = '<p>Selecteer projecten om details te zien</p>';
+      updateFilterChips();
+    }
+
+    function parseDate(dateString) {
+      if (!dateString) return null;
+      const date = new Date(dateString);
+      return isNaN(date) ? null : date;
+    }
+
+    function formatDutchDate(date) {
+      if (!date || isNaN(date)) return 'Onbekend';
+      return date.toLocaleDateString('nl-NL', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    function calculateDurationInDays(start, end) {
+      if (!start || !end || isNaN(start) || isNaN(end)) return 'Onbekend';
+      const ms = Math.abs(end - start);
+      return `${Math.ceil(ms / (1000 * 60 * 60 * 24)) + 1} dagen`;
+    }
+
+    function calculateDurationInMonths(start, end) {
+      if (!start || !end || isNaN(start) || isNaN(end)) return 'Onbekend';
+      const months = Math.max(0, Math.round(
+        ((end.getFullYear() - start.getFullYear()) * 12) +
+        (end.getMonth() - start.getMonth())
+      ));
+      return `${months} maand${months !== 1 ? 'en' : ''}`;
+    }
+
+    function getProjectStatus(project) {
+      const phaseDates = [
+        parseDate(project['initiatief_begindatum']),
+        parseDate(project['initiatief_einddatum']),
+        parseDate(project['definitie_begindatum']),
+        parseDate(project['definitie_einddatum']),
+        parseDate(project['werkvoorbereiding_begindatum']),
+        parseDate(project['werkvoorbereiding_einddatum']),
+        parseDate(project['realisatie_begindatum']),
+        parseDate(project['realisatie_einddatum']),
+        parseDate(project['oplevering_nazorg_begin']),
+        parseDate(project['oplevering_nazorg_eind']),
+      ].filter(date => date && !isNaN(date));
+
+      if (phaseDates.length === 0) return { text: 'Onbekend', class: 'unknown', key: 'onbekend' };
+
+      const start = new Date(Math.min(...phaseDates));
+      const end = new Date(Math.max(...phaseDates));
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (end < today) return { text: 'Afgerond', class: 'success', key: 'afgerond' };
+      if (start > today) return { text: 'Toekomstig', class: 'info', key: 'toekomstig' };
+      return { text: 'Bezig', class: 'warning', key: 'bezig' };
+    }
+
+    function getProjectHealth(project) {
+      const status = getProjectStatus(project);
+      if (status.key === 'afgerond') return { class: 'health-good', tooltip: 'Project is afgerond' };
+      if (status.key === 'bezig') return { class: 'health-warning', tooltip: 'Project is bezig' };
+      if (status.key === 'toekomstig') return { class: 'health-good', tooltip: 'Project is toekomstig' };
+      if (status.key === 'onbekend') return { class: 'health-unknown', tooltip: 'Gezondheid onbekend' };
+      if (parseDate(project['vervallen_begindatum'])) {
+        return { class: 'health-critical', tooltip: 'Project is on hold' };
+      }
+      return { class: 'health-unknown', tooltip: 'Gezondheid onbekend' };
+    }
+
+    function truncateUrl(url, maxLength = 40) {
+      if (!url) return '';
+      if (url.length <= maxLength) return url;
+      const cleanUrl = url.replace(/(https?:\/\/)?(www\.)?/, '');
+      if (cleanUrl.length <= maxLength) return cleanUrl;
+      return cleanUrl.substring(0, maxLength) + '...';
+    }
+
+    function cleanProjectData(projects) {
+      return projects.map(project => {
+        const cleanedProject = {};
+        Object.keys(project).forEach(key => {
+          if (typeof project[key] === 'string') {
+            cleanedProject[key] = project[key].trim();
+          } else {
+            cleanedProject[key] = project[key];
+          }
+        });
+        if (!cleanedProject['projectnaam'] || cleanedProject['projectnaam'] === '') {
+          cleanedProject['projectnaam'] = `Onbekend_project_${Math.random().toString(36).substr(2, 5)}`;
+          console.warn(`Assigned placeholder name to project due to missing naam.`);
+        }
+        return cleanedProject;
+      });
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        document.getElementById('fileInfo').textContent = 'Geen bestand geselecteerd';
+        return;
+      }
+      currentFileName = file.name;
+      document.getElementById('fileInfo').textContent = `Geselecteerd: ${currentFileName}`;
+
+      const container = document.getElementById('chart_div');
+      container.innerHTML = `
+        <div class="empty-state fade-in">
+          <svg class="spinner" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r="20" fill="none" stroke="var(--primary)" stroke-width="5"></circle>
+          </svg>
+          <p>Bestand wordt geladen...</p>
+        </div>
+      `;
+
+      Papa.parse(file, {
+        header: true,
+        delimiter: ';',
+        skipEmptyLines: true,
+        complete: function(results) {
+          if (results.errors.length > 0) {
+            console.error('PapaParse Errors:', results.errors);
+            alert('Fouten gevonden in CSV-bestand. Controleer de console voor details.');
+            container.innerHTML = `
+              <div class="empty-state fade-in">
+                <p>Fouten bij het laden van het bestand.</p>
+              </div>
+            `;
+            return;
+          }
+
+          const cleanedData = cleanProjectData(results.data);
+          const uniqueProjects = cleanedData.filter((project, index, self) =>
+            index === self.findIndex((p) => (
+              p['projectnaam'] === project['projectnaam']
+            ))
+          );
+
+          allProjects = uniqueProjects;
+          dataTable = buildDataTable(allProjects);
+          updateProjectFilter(allProjects);
+          updateProjectList(allProjects);
+          filterProjects();
+          showSelectedProjectsDetails();
+          updateFilterChips();
+        },
+        error: function(error) {
+          console.error('PapaParse Error:', error);
+          alert('Fout bij het lezen van CSV-bestand. Controleer de console voor details.');
+          container.innerHTML = `
+            <div class="empty-state fade-in">
+              <p>Fout bij het lezen van het bestand.</p>
+            </div>
+          `;
+        }
+      });
+    }
+
+    function hasValidDates(project) {
+      const dates = [
+        parseDate(project['initiatief_begindatum']),
+        parseDate(project['initiatief_einddatum']),
+        parseDate(project['definitie_begindatum']),
+        parseDate(project['definitie_einddatum']),
+        parseDate(project['werkvoorbereiding_begindatum']),
+        parseDate(project['werkvoorbereiding_einddatum']),
+        parseDate(project['realisatie_begindatum']),
+        parseDate(project['realisatie_einddatum']),
+        parseDate(project['oplevering_nazorg_begin']),
+        parseDate(project['oplevering_nazorg_eind']),
+        parseDate(project['vervallen_begindatum']),
+        parseDate(project['vervallen_einddatum'])
+      ].filter(date => date && !isNaN(date));
+      return dates.some(date => date && !isNaN(date.getTime()));
+    }
+
+    function buildDataTable(projects) {
+      const table = new google.visualization.DataTable();
+      table.addColumn('string', 'Task ID');
+      table.addColumn('string', 'Task Name');
+      table.addColumn('string', 'Resource');
+      table.addColumn('date', 'Start Date');
+      table.addColumn('date', 'End Date');
+      table.addColumn('number', 'Duration');
+      table.addColumn('number', 'Percent Complete');
+      table.addColumn('string', 'Dependencies');
+      table.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
+      table.addColumn({ type: 'string', role: 'style' });
+
+      const sortedProjects = [...projects].sort((a, b) => {
+        const nameA = a['projectnaam'] || '';
+        const nameB = b['projectnaam'] || '';
+        return nameA.localeCompare(nameB);
+      });
+
+      sortedProjects.forEach((project, index) => {
+        const projectName = project['projectnaam'] || `Project_${index}`;
+        const projectId = `project_${index}`;
+
+        const dates = [
+          parseDate(project['initiatief_begindatum']),
+          parseDate(project['initiatief_einddatum']),
+          parseDate(project['definitie_begindatum']),
+          parseDate(project['definitie_einddatum']),
+          parseDate(project['werkvoorbereiding_begindatum']),
+          parseDate(project['werkvoorbereiding_einddatum']),
+          parseDate(project['realisatie_begindatum']),
+          parseDate(project['realisatie_einddatum']),
+          parseDate(project['oplevering_nazorg_begin']),
+          parseDate(project['oplevering_nazorg_eind']),
+          parseDate(project['vervallen_begindatum']),
+          parseDate(project['vervallen_einddatum'])
+        ].filter(date => date && !isNaN(date));
+
+        if (dates.length === 0) {
+          console.warn(`Skipping project "${projectName}" in DataTable - no valid dates found.`);
+          return;
+        }
+
+        const projectStart = new Date(Math.min(...dates));
+        const projectEnd = new Date(Math.max(...dates));
+        const status = getProjectStatus(project);
+
+        table.addRow([
+          projectId,
+          projectName,
+          null,
+          projectStart,
+          projectEnd,
+          null,
+          null,
+          null,
+          createProjectTooltip(projectName, status, projectStart, projectEnd),
+          'font-weight: bold; color: var(--text);'
+        ]);
+
+        if (showPhases) {
+          const phases = [
+            {
+              id: `${projectId}_init`,
+              name: 'Initiatief',
+              start: 'initiatief_begindatum',
+              end: 'initiatief_einddatum',
+              class: 'initiatief-bar'
+            },
+            {
+              id: `${projectId}_def`,
+              name: 'Definitie',
+              start: 'definitie_begindatum',
+              end: 'definitie_einddatum',
+              class: 'definitie-bar'
+            },
+            {
+              id: `${projectId}_werk`,
+              name: 'Werkvoorbereiding',
+              start: 'werkvoorbereiding_begindatum',
+              end: 'werkvoorbereiding_einddatum',
+              class: 'werkvoorbereiding-bar'
+            },
+            {
+              id: `${projectId}_real`,
+              name: 'Realisatie',
+              start: 'realisatie_begindatum',
+              end: 'realisatie_einddatum',
+              class: 'realisatie-bar'
+            },
+            {
+              id: `${projectId}_oplev`,
+              name: 'Oplevering',
+              start: 'oplevering_nazorg_begin',
+              end: 'oplevering_nazorg_eind',
+              class: 'oplevering-bar'
+            },
+            {
+              id: `${projectId}_hold`,
+              name: 'On hold',
+              start: 'vervallen_begindatum',
+              end: 'vervallen_einddatum',
+              class: 'onhold-bar'
+            }
+          ];
+
+          phases.forEach(phase => {
+            const start = parseDate(project[phase.start]);
+            const end = parseDate(project[phase.end]);
+
+            if (start && end && !isNaN(start.getTime()) && !isNaN(end.getTime())) {
+              const phaseTooltip = createPhaseTooltip(projectName, { name: phase.name, start, end });
+              table.addRow([
+                phase.id,
+                `↳ ${phase.name}`,
+                phase.name,
+                start,
+                end,
+                null,
+                null,
+                projectId,
+                phaseTooltip,
+                `color: var(--text-light); padding-left: 25px;`
+              ]);
+            }
+          });
+        }
+      });
+
+      return table;
+    }
+
+    function createProjectTooltip(project, status, startDate, endDate) {
+      return `
+        <div style="padding:12px;max-width:300px;">
+          <h3 style="margin-top:0;margin-bottom:10px;color:var(--primary);">${project}</h3>
+          <div class="status-badge ${status.class}" style="margin-left: 0; margin-bottom:12px; color: var(--bg);">${status.text}</div>
+          <p style="margin:6px 0;color:var(--text);"><strong>Startdatum:</strong> ${formatDutchDate(startDate) || 'Onbekend'}</p>
+          <p style="margin:6px 0;color:var(--text);"><strong>Einddatum:</strong> ${formatDutchDate(endDate) || 'Onbekend'}</p>
+          <p style="margin:6px 0;color:var(--text);"><strong>Looptijd:</strong> ${startDate && endDate ? calculateDurationInDays(startDate, endDate) + ' (' + calculateDurationInMonths(startDate, endDate) + ')' : 'Onbekend'}</p>
+        </div>`;
+    }
+
+    function createPhaseTooltip(project, phase) {
+      return `
+        <div style="padding:12px;max-width:300px;">
+          <h3 style="margin-top:0;margin-bottom:8px;color:var(--primary);">${project}</h3>
+          <h4 style="margin:8px 0;color:#5d9bc8;">${phase.name}</h4>
+          <p style="margin:6px 0;color:var(--text);"><strong>Startdatum:</strong> ${formatDutchDate(phase.start)}</p>
+          <p style="margin:6px 0;color:var(--text);"><strong>Einddatum:</strong> ${formatDutchDate(phase.end)}</p>
+          <p style="margin:6px 0;color:var(--text);"><strong>Looptijd:</strong> ${calculateDurationInDays(phase.start, phase.end)} (${calculateDurationInMonths(phase.start, phase.end)})</p>
+        </div>`;
+    }
+
+    function updateProjectFilter(projects) {
+      const container = document.getElementById('projectFilter');
+      container.innerHTML = '';
+
+      const showAllWrapper = document.createElement('div');
+      showAllWrapper.style.marginBottom = '10px';
+      const showAllCheckbox = document.createElement('input');
+      showAllCheckbox.type = 'checkbox';
+      showAllCheckbox.id = 'showAllProjects';
+      const initiallySelected = document.querySelectorAll('#projectFilter input[type="checkbox"]:checked:not(#showAllProjects)').length > 0;
+      showAllCheckbox.checked = !initiallySelected;
+
+      const showAllLabel = document.createElement('label');
+      showAllLabel.htmlFor = 'showAllProjects';
+      showAllLabel.textContent = ' Toon alle projecten';
+      showAllLabel.prepend(showAllCheckbox);
+
+      showAllCheckbox.addEventListener('change', () => {
+        if (showAllCheckbox.checked) {
+          const individualCheckboxes = container.querySelectorAll('input[type="checkbox"]:not(#showAllProjects)');
+          individualCheckboxes.forEach(cb => cb.checked = false);
+        }
+        filterProjects();
+        showSelectedProjectsDetails();
+        updateFilterChips();
+      });
+
+      showAllWrapper.appendChild(showAllLabel);
+      container.appendChild(showAllWrapper);
+
+      const uniqueProjects = [...new Set(projects
+        .map(p => p['projectnaam'])
+        .filter(name => name && name.trim() !== '' && !name.startsWith('Onbekend_project_'))
+      )].sort((a, b) => a.localeCompare(b));
+
+      uniqueProjects.forEach(name => {
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = name;
+        checkbox.id = `project-${name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')}`;
+
+        const label = document.createElement('label');
+        label.htmlFor = checkbox.id;
+
+        const labelTextSpan = document.createElement('span');
+        labelTextSpan.textContent = name;
+        label.appendChild(checkbox);
+        label.appendChild(labelTextSpan);
+
+        checkbox.addEventListener('change', () => {
+          const showAll = document.getElementById('showAllProjects');
+          if (checkbox.checked) {
+            if (showAll) showAll.checked = false;
+          } else {
+            const anyOtherChecked = container.querySelector('input[type="checkbox"]:checked:not(#showAllProjects)');
+            if (!anyOtherChecked && showAll) {
+              showAll.checked = true;
+            }
+          }
+          filterProjects();
+          showSelectedProjectsDetails();
+          updateFilterChips();
+        });
+
+        container.appendChild(label);
+      });
+
+      const individualCheckboxes = container.querySelectorAll('input[type="checkbox"]:not(#showAllProjects)');
+      container.style.pointerEvents = individualCheckboxes.length === 0 ? 'none' : 'auto';
+      container.style.opacity = individualCheckboxes.length === 0 ? '0.6' : '1';
+    }
+
+    function updateProjectList(projects) {
+      const projectList = document.getElementById('project-list');
+      projectList.innerHTML = '';
+      const noProjectsMessage = document.createElement('div');
+      noProjectsMessage.className = 'no-projects';
+      noProjectsMessage.style.display = 'none';
+      noProjectsMessage.textContent = 'Geen projecten gevonden voor de geselecteerde filters.';
+      projectList.appendChild(noProjectsMessage);
+
+      const projectsWithName = projects
+        .filter(p => p['projectnaam'] && p['projectnaam'].trim() !== '' && !p['projectnaam'].startsWith('Onbekend_project_'))
+        .sort((a, b) => (a['projectnaam'] || '').localeCompare(b['projectnaam'] || ''));
+
+      projectsWithName.forEach((project, index) => {
+        const projectItem = document.createElement('div');
+        projectItem.className = 'project-item';
+        const status = getProjectStatus(project);
+        const health = getProjectHealth(project);
+        projectItem.innerHTML = `
+          <span class="project-name">${project['projectnaam']}</span>
+          <span class="status-badge ${status.class}" style="color: var(--bg);">${status.text}</span>
+          <span class="health-indicator ${health.class}" title="${health.tooltip}"></span>
+        `;
+        projectItem.addEventListener('click', () => {
+          const checkboxId = `project-${project['projectnaam'].replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')}`;
+          const checkbox = document.getElementById(checkboxId);
+          if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+          }
+        });
+        projectList.appendChild(projectItem);
+      });
+
+      noProjectsMessage.style.display = projectsWithName.length === 0 ? 'block' : 'none';
+    }
+
+    function updateProjectListSelection(selectedProjects) {
+      const projectItems = document.querySelectorAll('#project-list .project-item');
+      projectItems.forEach(item => {
+        const projectName = item.querySelector('.project-name').textContent.trim();
+        if (selectedProjects.includes(projectName)) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+    }
+
+    function setupSearch() {
+      const searchInput = document.getElementById('projectSearch');
+      const checkboxContainer = document.getElementById('projectFilter');
+
+      searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        const labels = checkboxContainer.querySelectorAll('label');
+
+        labels.forEach(label => {
+          if (label.htmlFor === 'showAllProjects') {
+            label.style.display = 'flex';
+            return;
+          }
+
+          const text = label.textContent.toLowerCase();
+          label.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+        });
+
+        filterProjects();
+        showSelectedProjectsDetails();
+        updateFilterChips();
+      });
+    }
+
+    function setupTabs() {
+      const tabs = document.querySelectorAll('.project-tabs .tab');
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          tabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          currentStatusFilter = this.getAttribute('data-filter-status');
+          filterProjects();
+          showSelectedProjectsDetails();
+          updateFilterChips();
+        });
+      });
+    }
+
+    function updateFilterChips() {
+      const container = document.getElementById('filter-chips-container');
+      container.innerHTML = '';
+
+      if (currentStatusFilter !== 'alle') {
+        const activeTab = document.querySelector(`.project-tabs .tab.active`);
+        if (activeTab) {
+          const chip = document.createElement('span');
+          chip.className = 'filter-chip scale-in';
+          chip.textContent = `Status: ${activeTab.textContent}`;
+          const closeBtn = document.createElement('span');
+          closeBtn.className = 'close-btn';
+          closeBtn.textContent = '×';
+          closeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const allTab = document.querySelector('.project-tabs .tab[data-filter-status="alle"]');
+            if (allTab) {
+              allTab.click();
+            }
+          });
+          chip.appendChild(closeBtn);
+          container.appendChild(chip);
+        }
+      }
+
+      const checkedCheckboxes = document.querySelectorAll('#projectFilter input[type="checkbox"]:checked:not(#showAllProjects)');
+      const selectedProjectNames = Array.from(checkedCheckboxes).map(cb => cb.value);
+
+      selectedProjectNames.forEach(projectName => {
+        const chip = document.createElement('span');
+        chip.className = 'filter-chip scale-in';
+        chip.textContent = projectName;
+        const closeBtn = document.createElement('span');
+        closeBtn.className = 'close-btn';
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const checkboxId = `project-${projectName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')}`;
+          const checkbox = document.getElementById(checkboxId);
+          if (checkbox) {
+            checkbox.checked = false;
+            checkbox.dispatchEvent(new Event('change'));
+          }
+        });
+        chip.appendChild(closeBtn);
+        container.appendChild(chip);
+      });
+
+      const searchTerm = document.getElementById('projectSearch').value.trim();
+      if (searchTerm !== '') {
+        const chip = document.createElement('span');
+        chip.className = 'filter-chip scale-in';
+        chip.textContent = `Zoekterm: "${searchTerm}"`;
+        const closeBtn = document.createElement('span');
+        closeBtn.className = 'close-btn';
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', function() {
+          document.getElementById('projectSearch').value = '';
+          setupSearch();
+        });
+        chip.appendChild(closeBtn);
+        container.appendChild(chip);
+      }
+    }
+
+    function filterProjects() {
+      const checkedCheckboxes = document.querySelectorAll('#projectFilter input[type="checkbox"]:checked:not(#showAllProjects)');
+      const selectedProjectNames = Array.from(checkedCheckboxes).map(cb => cb.value);
+      const searchTerm = document.getElementById('projectSearch').value.toLowerCase().trim();
+      const showAllChecked = document.getElementById('showAllProjects')?.checked;
+
+      let projectsToConsider = [...allProjects];
+
+      if (!showAllChecked && selectedProjectNames.length > 0) {
+        projectsToConsider = allProjects.filter(project =>
+          selectedProjectNames.includes(project['projectnaam'])
+        );
+      } else if (!showAllChecked && selectedProjectNames.length === 0) {
+        projectsToConsider = [];
+      }
+
+      let filteredProjects = projectsToConsider;
+      if (currentStatusFilter !== 'alle') {
+        filteredProjects = projectsToConsider.filter(project => {
+          const status = getProjectStatus(project).key;
+          return status === currentStatusFilter;
+        });
+      }
+
+      if (searchTerm !== '') {
+        filteredProjects = filteredProjects.filter(project => {
+          const projectName = (project['projectnaam'] || '').toLowerCase();
+          return projectName.includes(searchTerm);
+        });
+      }
+
+      dataTable = buildDataTable(filteredProjects);
+      drawChart();
+      updateProjectList(filteredProjects);
+      updateProjectListSelection(selectedProjectNames);
+    }
+
+    function showSelectedProjectsDetails() {
+      const container = document.getElementById('selected-projects-details');
+      container.innerHTML = '';
+
+      const checkedCheckboxes = document.querySelectorAll('#projectFilter input[type="checkbox"]:checked:not(#showAllProjects)');
+      const selectedProjectNames = Array.from(checkedCheckboxes).map(cb => cb.value);
+      const showAllChecked = document.getElementById('showAllProjects')?.checked;
+      const searchTerm = document.getElementById('projectSearch').value.toLowerCase().trim();
+
+      let projectsToShowDetails = [];
+      if (showAllChecked) {
+        projectsToShowDetails = allProjects.filter(project => {
+          const projectName = (project['projectnaam'] || '').toLowerCase();
+          const projectStatus = getProjectStatus(project).key;
+          const searchMatch = projectName.includes(searchTerm);
+          const statusMatch = currentStatusFilter === 'alle' || projectStatus === currentStatusFilter;
+          const hasDates = hasValidDates(project);
+          return searchMatch && statusMatch && hasDates;
+        });
+      } else if (selectedProjectNames.length > 0) {
+        projectsToShowDetails = allProjects.filter(project => {
+          const projectName = (project['projectnaam'] || '').toLowerCase();
+          const projectStatus = getProjectStatus(project).key;
+          const isSelected = selectedProjectNames.includes(project['projectnaam']);
+          const searchMatch = projectName.includes(searchTerm);
+          const statusMatch = currentStatusFilter === 'alle' || projectStatus === currentStatusFilter;
+          const hasDates = hasValidDates(project);
+          return isSelected && searchMatch && statusMatch && hasDates;
+        });
+      }
+
+      if (projectsToShowDetails.length > 0) {
+        projectsToShowDetails.forEach(project => {
+          const card = document.createElement('div');
+          card.className = 'project-detail-card fade-in';
+          card.innerHTML = generateProjectCardHTML(project);
+          container.appendChild(card);
+        });
+      } else {
+        container.innerHTML = '<p>Geen projecten gevonden die voldoen aan de huidige filters.</p>';
+      }
+    }
+
+    function generateProjectCardHTML(project) {
+      const startDate = parseDate(project['initiatief_begindatum']);
+      const allDates = [
+        parseDate(project['initiatief_begindatum']),
+        parseDate(project['initiatief_einddatum']),
+        parseDate(project['definitie_begindatum']),
+        parseDate(project['definitie_einddatum']),
+        parseDate(project['werkvoorbereiding_begindatum']),
+        parseDate(project['werkvoorbereiding_einddatum']),
+        parseDate(project['realisatie_begindatum']),
+        parseDate(project['realisatie_einddatum']),
+        parseDate(project['oplevering_nazorg_begin']),
+        parseDate(project['oplevering_nazorg_eind']),
+        parseDate(project['vervallen_begindatum']),
+        parseDate(project['vervallen_einddatum'])
+      ].filter(date => date && !isNaN(date));
+      const endDate = allDates.length > 0 ? new Date(Math.max(...allDates)) : null;
+      const status = getProjectStatus(project);
+      const health = getProjectHealth(project);
+
+      return `
+        <h3>${project['projectnaam'] || 'Onbekend project'}</h3>
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+          <span class="status-badge ${status.class}" style="margin-left: 0; margin-right: 10px; color: var(--bg);">${status.text}</span>
+          <span class="health-indicator ${health.class}" title="${health.tooltip}"></span>
+        </div>
+        <p><strong>Project ID:</strong> ${project['project_id'] || 'Onbekend'}</p>
+        <p><strong>Beschrijving:</strong> ${project['project_beschrijving'] || 'Niet beschikbaar'}</p>
+        <p><strong>Projectleider:</strong> ${project['projectleider'] || 'Onbekend'}</p>
+        <p><strong>Opdrachtgever:</strong> ${project['opdrachtgever_naam_bedrijf'] || 'Niet opgegeven'}</p>
+        <p><strong>Opdrachtnemer:</strong> ${project['opdrachtnemer'] || 'Niet opgegeven'}</p>
+        <p><strong>Opgaven:</strong> ${project['opgaven'] || 'Niet gespecificeerd'}</p>
+        <p><strong>Type werkzaamheden:</strong> ${project['type_werkzaamheden'] || 'Niet vermeld'}</p>
+        <p><strong>Wijk:</strong> ${project['wijknaam'] || 'Onbekend'} (${project['wijkcode'] || '-'})</p>
+        <p><strong>Buurt:</strong> ${project['buurtnaam'] || 'Onbekend'} (${project['buurtcode'] || '-'})</p>
+        <p><strong>Postcode:</strong> ${project['meest_voorkomende_postcode'] || 'Onbekend'}</p>
+        <p><strong>Directievoerder:</strong> ${project['directievoerder'] || 'Niet opgegeven'}</p>
+        <p><strong>Toezichthouder:</strong> ${project['toezichthouder'] || 'Niet opgegeven'}</p>
+        <div class="phase-timeline fade-in">
+          <h4>Fase Planning:</h4>
+          ${generatePhaseTimeline(project)}
+        </div>
+        ${project['link'] ? `
+          <p class="link-container">
+            <span class="link-icon"></span>
+            <strong>Projectlink:</strong>
+            <a href="${project['link']}" target="_blank" rel="noopener noreferrer">
+              ${truncateUrl(project['link'])}
+            </a>
+          </p>` : ''
+        }
+      `;
+    }
+
+    function generatePhaseTimeline(project) {
+      const phases = [
+        { name: 'Initiatief', start: project['initiatief_begindatum'], end: project['initiatief_einddatum'] },
+        { name: 'Definitie', start: project['definitie_begindatum'], end: project['definitie_einddatum'] },
+        { name: 'Werkvoorbereiding', start: project['werkvoorbereiding_begindatum'], end: project['werkvoorbereiding_einddatum'] },
+        { name: 'Realisatie', start: project['realisatie_begindatum'], end: project['realisatie_einddatum'] },
+        { name: 'Oplevering', start: project['oplevering_nazorg_begin'], end: project['oplevering_nazorg_eind'] },
+        { name: 'On hold', start: project['vervallen_begindatum'], end: project['vervallen_einddatum'] }
+      ];
+
+      const validPhasesHtml = phases.map(phase => {
+        const start = parseDate(phase.start);
+        const end = parseDate(phase.end);
+
+        if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
+          return '';
+        }
+
+        return `
+          <div class="phase-item">
+            <span class="phase-name">${phase.name}:</span>
+            <span class="phase-dates">${formatDutchDate(start)} - ${formatDutchDate(end)}</span>
+          </div>
+        `;
+      }).join('');
+
+      return validPhasesHtml || '<p>Geen faseplanning beschikbaar</p>';
+    }
+
+    function togglePhases() {
+      showPhases = !showPhases;
+      const button = document.getElementById('togglePhases');
+      button.innerHTML = showPhases ? '<span class="icon-layers"></span> Fases verbergen' : '<span class="icon-layers"></span> Fases tonen';
+      filterProjects();
+    }
+
+    function drawChart() {
+      const container = document.getElementById('chart_div');
+      container.innerHTML = '';
+
+      if (!dataTable || dataTable.getNumberOfRows() === 0) {
+        container.innerHTML =
+          '<div class="empty-state fade-in">' +
+          (allProjects.length === 0 ? '<p>Selecteer een CSV-bestand om te beginnen</p>' : '<p>Geen data beschikbaar of geen projecten gevonden met de huidige filter/criteria.</p>') +
+          '</div>';
+        return;
+      }
+
+      try {
+        const chartHeight = Math.max(300, 50 + (dataTable.getNumberOfRows() * 35));
+        const options = {
+          height: chartHeight,
+          gantt: {
+            trackHeight: 30,
+            barHeight: 20,
+            labelStyle: {
+              fontName: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+              fontSize: 12,
+              color: 'var(--text)'
+            },
+            criticalPathEnabled: false,
+            innerGridTrack: { fill: 'var(--bg-secondary)' },
+            innerGridDarkTrack: { fill: 'var(--border)' },
+            barCornerRadius: 3,
+            arrow: {
+              angle: 0,
+              width: 0,
+              color: 'none',
+              radius: 0
+            },
+            bar: {
+              groupWidth: '70%',
+              strokeWidth: 2
+            },
+            timeline: {
+              showBarLabels: false,
+              colorByRowLabel: false,
+              rowLabelStyle: {
+                fontName: 'Segoe UI',
+                fontSize: 12,
+                color: 'var(--text)'
+              }
+            }
+          },
+          tooltip: {
+            isHtml: true,
+            trigger: 'focus'
+          }
+        };
+
+        if (!chart) {
+          chart = new google.visualization.Gantt(container);
+          google.visualization.events.addListener(chart, 'select', function() {
+            const selection = chart.getSelection();
+            if (selection.length > 0) {
+              const row = selection[0].row;
+              const taskId = dataTable.getValue(row, 0);
+              if (taskId.startsWith('project_')) {
+                const projectName = dataTable.getValue(row, 1);
+                const originalProjectData = allProjects.find(p => p['projectnaam'] === projectName);
+                if (originalProjectData) {
+                  const checkboxId = `project-${projectName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')}`;
+                  const checkbox = document.getElementById(checkboxId);
+                  if (checkbox) {
+                    document.getElementById('showAllProjects').checked = false;
+                    document.querySelectorAll('#projectFilter input[type="checkbox"]:not(#showAllProjects)').forEach(cb => cb.checked = false);
+                    checkbox.checked = true;
+                    checkbox.dispatchEvent(new Event('change'));
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        chart.draw(dataTable, options);
+      } catch (error) {
+        console.error('Chart drawing error:', error);
+        container.innerHTML = '<div class="empty-state fade-in"><p>Fout bij het tekenen van het diagram</p></div>';
+      }
+    }
+
+    function resetZoom() {
+      if (chart && dataTable) {
+        drawChart();
+      }
+    }
+
+    function clearSelection() {
+      const showAllCheckbox = document.getElementById('showAllProjects');
+      if (showAllCheckbox) {
+        showAllCheckbox.checked = true;
+      }
+      document.querySelectorAll('#projectFilter input[type="checkbox"]:not(#showAllProjects)').forEach(cb => cb.checked = false);
+      document.getElementById('projectSearch').value = '';
+      setupSearch();
+      currentStatusFilter = 'alle';
+      document.querySelectorAll('.project-tabs .tab').forEach(tab => {
+        if (tab.getAttribute('data-filter-status') === 'alle') {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+      filterProjects();
+      showSelectedProjectsDetails();
+      updateFilterChips();
+    }
+
+    function logCurrentFilterState() {
+      console.log('--- Current Filter State ---');
+      const checkedCheckboxes = document.querySelectorAll('#projectFilter input[type="checkbox"]:checked:not(#showAllProjects)');
+      const selectedProjectNames = Array.from(checkedCheckboxes).map(cb => cb.value);
+      console.log('Selected projects (excluding "Show All"):', selectedProjectNames.length > 0 ? selectedProjectNames : 'None');
+      console.log('"Toon alle projecten" checked:', document.getElementById('showAllProjects')?.checked);
+      console.log('Search term:', document.getElementById('projectSearch').value || 'None');
+      console.log('Status filter:', currentStatusFilter);
+      console.log('All projects count:', allProjects.length);
+      console.log('----------------------------');
+    }
+
+    function validateDataTable() {
+      console.log('--- DataTable Validation ---');
+      if (!dataTable) {
+        console.error('No dataTable exists.');
+        console.log('----------------------------');
+        return false;
+      }
+      console.log('DataTable Rows:', dataTable.getNumberOfRows());
+      const rowsToLog = Math.min(10, dataTable.getNumberOfRows());
+      for (let i = 0; i < rowsToLog; i++) {
+        try {
+          console.log(`Row ${i}:`, {
+            id: dataTable.getValue(i, 0),
+            name: dataTable.getValue(i, 1),
+            start: dataTable.getValue(i, 3),
+            end: dataTable.getValue(i, 4),
+            percent: dataTable.getValue(i, 6),
+            dependencies: dataTable.getValue(i, 7),
+            style: dataTable.getValue(i, 9)
+          });
+        } catch (e) {
+          console.error(`Error accessing data for row ${i}:`, e);
+        }
+      }
+      console.log('----------------------------');
+      return true;
+    }
+  </script>
+</body>
+</html>
