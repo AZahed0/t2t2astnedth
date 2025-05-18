@@ -1,0 +1,2400 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Projectplanning Gantt-diagram</title>
+
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+
+  <style>
+    /* Light theme variables */
+    :root.light {
+      --primary: #014b6b;
+      --text: #1a1a1a;
+      --text-light: #555;
+      --bg: #f5f5f5;
+      --bg-secondary: #eaeaea;
+      --border: #cccccc;
+      --shadow: rgba(0, 0, 0, 0.1);
+      /* Keep status/health colors consistent or define light versions */
+      --success: #4CAF50; /* Example light green */
+      --warning: #FFC107; /* Example light yellow */
+      --danger: #F44336; /* Example light red */
+      --info: #2196F3; /* Example light blue */
+      --unknown: #9E9E9E; /* Example light gray */
+    }
+
+    /* Dark theme variables (default) */
+    :root {
+      --primary: #7fb8e0; /* Pastel blue for primary elements */
+      --text: #f0f0f0; /* Light gray for main text */
+      --text-light: #d0d0d0; /* Lighter gray for secondary text */
+      --bg: #014b6b; /* Dark blue background */
+      --bg-secondary: #026081; /* Slightly lighter blue for panels */
+      --border: #4a8ca8; /* Blue-gray for borders */
+      --shadow: rgba(0,0,0,0.3); /* Soft shadow */
+      --success: #8fd694; /* Pastel green */
+      --warning: #f8d486; /* Pastel yellow */
+      --danger: #f4a7a7; /* Pastel red */
+      --info: #a7c7e8; /* Pastel blue */
+      --unknown: #c5c5c5; /* Pastel gray */
+      --transition-speed: 0.3s;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: clamp(1rem, 5%, 2rem);
+      max-width: 1400px;
+      margin: 0 auto;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+    }
+
+    h1 {
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 0.5rem;
+      font-size: 2rem;
+      transition: color var(--transition-speed), border-bottom-color var(--transition-speed);
+    }
+
+    .container {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .left-panel {
+      width: 100%;
+      max-width: 350px;
+      background-color: var(--bg-secondary);
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px var(--shadow);
+      transition: background-color var(--transition-speed), box-shadow var(--transition-speed);
+    }
+
+    .right-panel {
+      flex: 1;
+    }
+
+    .controls {
+      background-color: var(--bg-secondary);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 12px var(--shadow);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      transition: background-color var(--transition-speed), box-shadow var(--transition-speed);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text);
+      transition: color var(--transition-speed);
+    }
+
+    input[type="file"],
+    input[type="text"],
+    select,
+    input[type="date"] {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 100%;
+      font-size: 1rem;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: border-color var(--transition-speed), background-color var(--transition-speed), color var(--transition-speed);
+    }
+
+    input[type="file"]:hover,
+    input[type="text"]:hover,
+    select:hover,
+    input[type="date"]:hover {
+      border-color: var(--primary);
+    }
+
+    button {
+      background-color: var(--primary);
+      color: var(--bg); /* Button text color to contrast with primary */
+      border: none;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 2px 4px var(--shadow);
+      transition: background-color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed), color var(--transition-speed);
+    }
+
+    button:hover {
+      background-color: #5d9bc8; /* Darker pastel blue */
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .icon-zoom::before { content: "🔍"; }
+    .icon-layers::before { content: "📊"; }
+    .icon-clear::before { content: "❌"; }
+    .icon-pdf::before { content: "📄"; } /* CSS rule for PDF icon */
+    .icon-png::before { content: "🖼️"; } /* CSS rule for PNG icon */
+    .icon-theme::before { content: "🌗"; } /* CSS rule for theme icon */
+
+
+    select[multiple] {
+      min-height: 120px;
+      padding: 0.5rem;
+      border-radius: 6px;
+    }
+
+    select[multiple] option {
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      margin: 0.25rem 0;
+    }
+
+    select[multiple] option:checked {
+      background-color: var(--primary);
+      color: var(--bg);
+    }
+
+    select[multiple] option:hover {
+      background-color: #5d9bc8;
+      color: var(--bg);
+    }
+
+    .project-list li {
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 0.25rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed);
+    }
+
+    .project-list li:hover {
+      background-color: #5d9bc8;
+    }
+
+    .project-list li.selected {
+      background-color: var(--primary);
+      border-left: 4px solid #5d9bc8;
+      font-weight: bold;
+    }
+
+    .project-list li a {
+      flex-grow: 1;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    #chart_div {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 2px 12px var(--shadow);
+      padding: 1.5rem;
+      min-height: 400px;
+      position: relative; /* Needed for centering spinner/empty state */
+      overflow: hidden; /* Prevent chart overflow */
+      transition: background-color var(--transition-speed), border-color var(--transition-speed), box-shadow var(--transition-speed);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 14px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-left: 0.75rem;
+      color: var(--bg);
+    }
+
+    .success { background-color: var(--success); }
+    .warning { background-color: var(--warning); }
+    .danger { background-color: var(--danger); }
+    .info { background-color: var(--info); }
+    .unknown { background-color: var(--unknown); }
+
+    /* Custom bar colors for Gantt Chart */
+    /* These are applied via the 'style' column in the DataTable */
+    .google-visualization-gantt-bar {
+      /* Default bar style, overridden by row style */
+    }
+
+    .initiatief-bar .google-visualization-gantt-bar { background-color: #a7c7e8 !important; }
+    .definitie-bar .google-visualization-gantt-bar { background-color: #b7d7f8 !important; }
+    .werkvoorbereiding-bar .google-visualization-gantt-bar { background-color: #f8e8a8 !important; }
+    .realisatie-bar .google-visualization-gantt-bar { background-color: #f8c898 !important; }
+    .oplevering-bar .google-visualization-gantt-bar { background-color: #a8e8b8 !important; }
+    .onhold-bar .google-visualization-gantt-bar { background-color: var(--danger) !important; } /* Use danger color for on hold */
+
+
+    .health-good { background: var(--success); }
+    .health-warning { background: var(--warning); }
+    .health-critical { background: var(--danger); }
+    .health-unknown { background: var(--unknown); }
+    .health-info { background: var(--info); } /* Added health info color */
+
+
+    .status-indicator {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+
+    .status-active { background-color: var(--warning); }
+    .status-completed { background-color: var(--success); }
+    .status-upcoming { background-color: var(--info); }
+    .status-unknown { background-color: var(--unknown); }
+
+    .spinner {
+      animation: rotate 1s linear infinite;
+      height: 50px;
+      width: 50px;
+      margin: 2rem auto;
+      stroke: var(--primary);
+      display: block; /* Ensure it's centered */
+    }
+
+    @keyframes rotate {
+      100% { transform: rotate(360deg); }
+    }
+
+    .spinner circle {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: 0;
+      stroke-linecap: round;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem;
+      color: var(--text-light);
+      position: absolute; /* Center over chart area */
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+    }
+
+    @media (max-width: 1024px) {
+      .container {
+        flex-direction: column-reverse;
+      }
+
+      .left-panel {
+        width: 100%;
+        max-width: 100%; /* Allow left panel to take full width on smaller screens */
+        margin-top: 1.5rem;
+      }
+    }
+
+    button:focus, select:focus, input:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    /* Google Charts Tooltip Styling */
+    .google-visualization-tooltip {
+      border-radius: 12px !important;
+      box-shadow: 0 4px 16px var(--shadow) !important;
+      border: none !important;
+      background-color: var(--bg-secondary) !important;
+      padding: 1rem !important;
+      color: var(--text) !important;
+    }
+
+    .google-visualization-tooltip h3 {
+      margin-top: 0 !important;
+      margin-bottom: 0.75rem !important;
+      color: var(--primary) !important;
+      font-size: 1.2em !important; /* Adjust tooltip heading size */
+    }
+
+    .google-visualization-tooltip h4 {
+      margin: 0.5rem 0 !important;
+      color: #5d9bc8 !important; /* Use a complementary blue */
+      font-size: 1.1em !important; /* Adjust tooltip subheading size */
+    }
+
+    .google-visualization-tooltip p {
+      margin: 0.5rem 0 !important;
+      font-size: 1em !important; /* Adjust tooltip text size */
+    }
+
+    .google-visualization-tooltip strong {
+      color: var(--text) !important;
+    }
+
+    .project-detail {
+      margin-bottom: 1.5rem;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      border-bottom: 1px dashed var(--border); /* Add separator for details */
+      padding-bottom: 1rem;
+    }
+
+    .project-detail:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+
+    .link-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0.5rem 0;
+    }
+
+    .link-icon::before { content: "🔗"; margin-right: 5px; } /* Add icon with margin */
+
+    .project-detail a {
+      color: var(--primary);
+      text-decoration: none;
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: bottom;
+    }
+
+    .project-detail a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .project-detail a {
+        white-space: normal;
+        display: inline;
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
+      }
+
+      .link-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+    }
+
+    input[type="file"] {
+      color: var(--text);
+      padding: 0.75rem;
+    }
+
+    input[type="file"]::file-selector-button {
+      background-color: var(--bg-secondary);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      margin-right: 1rem;
+      cursor: pointer;
+      transition: background-color var(--transition-speed), border-color var(--transition-speed);
+    }
+
+    input[type="file"]::file-selector-button:hover {
+      background-color: var(--primary);
+      color: var(--bg);
+      border-color: var(--primary);
+    }
+
+    #projectSearch {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    .selected-projects-container {
+      margin-top: 2rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+    }
+
+    .project-detail-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-left: 5px solid var(--primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* Add shadow to detail cards */
+    }
+
+    .project-detail-card h3 {
+      margin-top: 0;
+      color: var(--primary);
+      font-size: 1.3rem; /* Larger heading for detail card */
+    }
+
+    .phase-timeline {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: rgba(0,0,0,0.05);
+      border-radius: 8px;
+    }
+
+    .phase-item {
+      display: flex;
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      flex-wrap: wrap;
+      border-bottom: 1px dashed rgba(255,255,255,0.1); /* Subtle separator */
+    }
+
+    .phase-item:last-child {
+      border-bottom: none;
+    }
+
+    .phase-name {
+      font-weight: 600;
+      width: 180px; /* Slightly wider for phase names */
+      color: var(--text-light);
+      flex-shrink: 0;
+    }
+
+    .phase-dates {
+      flex-grow: 1;
+      word-break: break-word;
+    }
+
+    @media (max-width: 480px) {
+      .phase-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .phase-name {
+        width: auto;
+        margin-bottom: 0.25rem;
+      }
+    }
+
+    .health-indicator {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .projectlijst {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    .project-list-container {
+      max-height: 400px;
+      overflow-y: auto;
+      border-top: 1px solid var(--border); /* Add border above list */
+      padding-top: 1rem;
+    }
+
+    .project-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 0.5rem; /* More padding */
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background-color var(--transition-speed);
+    }
+
+    .project-item:last-child {
+      border-bottom: none;
+    }
+
+    .project-item:hover {
+      background-color: #5d9bc8;
+    }
+
+    .project-item.selected {
+      background-color: var(--primary);
+      color: var(--bg);
+    }
+
+    .project-item.selected .project-name,
+    .project-item.selected .status-badge {
+       color: var(--bg); /* Ensure text is readable on selected background */
+    }
+
+
+    .project-name {
+      flex: 1;
+      color: var(--text);
+      font-weight: 500; /* Slightly less bold than selected */
+    }
+
+    .status-badge {
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: var(--bg);
+      margin-right: 0.5rem;
+      flex-shrink: 0; /* Prevent shrinking */
+    }
+
+    .health-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0; /* Prevent shrinking */
+    }
+
+    .no-projects {
+      color: var(--text-light);
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .filter-chips-container {
+      margin-top: 1rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      min-height: 24px;
+    }
+
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.8rem;
+      background: var(--primary);
+      color: var(--bg);
+      border-radius: 16px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background var(--transition-speed);
+    }
+
+    .filter-chip:hover {
+      background: #5d9bc8;
+    }
+
+    .filter-chip .close-btn {
+      margin-left: 0.5rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .project-details-under-chart {
+      margin-top: 2rem;
+      background-color: var(--bg-secondary);
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px var(--shadow);
+    }
+
+    .project-details-under-chart h2 {
+      color: var(--primary);
+      margin-top: 0;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+    }
+
+    .project-checkbox-list {
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 8px;
+      background-color: var(--bg-secondary);
+    }
+
+    .project-checkbox-list label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      color: var(--text);
+      transition: color var(--transition-speed);
+    }
+
+    .project-checkbox-list label:hover {
+      color: var(--primary);
+    }
+
+    .project-checkbox-list input[type="checkbox"] {
+      margin-right: 0.75rem;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .project-checkbox-list label span {
+      flex-grow: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .project-tabs {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+
+    .project-tabs::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .project-tabs::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+      border-radius: 4px;
+    }
+
+    .project-tabs::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .project-tabs::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    .project-tabs .tab {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: var(--bg-secondary);
+      color: var(--text-light);
+      font-weight: 600;
+      white-space: nowrap;
+      border: 1px solid var(--border);
+      transition: background-color var(--transition-speed), color var(--transition-speed), border-color var(--transition-speed), box-shadow var(--transition-speed);
+    }
+
+    .project-tabs .tab.active {
+      background-color: var(--primary);
+      color: var(--bg);
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .fade-in {
+      animation: fadeIn var(--transition-speed);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .scale-in {
+      animation: scaleIn var(--transition-speed);
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    #fileInfo {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--text-light);
+    }
+
+    .project-list h3 {
+      margin-top: 0;
+      color: var(--primary);
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    #filter-chips-container {
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .button-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      #chart_div {
+        min-height: 300px;
+      }
+
+      .project-detail-card {
+        padding: 1rem;
+      }
+
+      .project-tabs {
+        flex-wrap: wrap;
+      }
+    }
+
+    /* Styles for temporary messages */
+    .temp-message {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      background-color: var(--success);
+      color: var(--bg);
+      box-shadow: 0 4px 12px var(--shadow);
+      z-index: 1000;
+      animation: scaleIn 0.3s ease-out, fadeIn 0.3s ease-out;
+      opacity: 1;
+      transition: opacity 0.3s ease-in-out;
+    }
+
+    .temp-message.success { background-color: var(--success); }
+    .temp-message.danger { background-color: var(--danger); }
+    .temp-message.warning { background-color: var(--warning); }
+    .temp-message.info { background-color: var(--info); }
+
+    .temp-message.fade-out {
+      opacity: 0;
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+     /* Style for the theme toggle button container */
+    .theme-toggle-container {
+      text-align: right;
+      margin-bottom: 1rem;
+    }
+
+    /* Tooltip Styling Centralized */
+    .google-visualization-tooltip .tooltip-content {
+        padding: 12px;
+        max-width: 300px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .google-visualization-tooltip .tooltip-title {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: var(--primary);
+        font-size: 1.2em;
+    }
+    .google-visualization-tooltip .tooltip-phase {
+        margin: 8px 0;
+        color: #5d9bc8;
+        font-size: 1.1em;
+    }
+    .google-visualization-tooltip .tooltip-text {
+        margin: 6px 0;
+        color: var(--text);
+        font-size: 1em;
+    }
+    .google-visualization-tooltip .tooltip-text strong {
+         color: var(--text); /* Ensure strong text is readable */
+    }
+    .google-visualization-tooltip .tooltip-link {
+        color: var(--primary);
+        text-decoration: none;
+    }
+    .google-visualization-tooltip .tooltip-link:hover {
+        text-decoration: underline;
+    }
+
+
+  </style>
+</head>
+<body>
+  <h1>Projectplanning Gantt-diagram</h1>
+
+   <div class="theme-toggle-container">
+    <button id="toggleTheme"><span class="icon-theme"></span> Wissel thema</button>
+  </div>
+
+
+  <div class="controls">
+    <div class="control-group">
+      <label for="csvFile">Selecteer CSV-bestand:</label>
+      <input type="file" id="csvFile" accept=".csv" title="Selecteer een CSV-bestand">
+      <div id="fileInfo" class="file-info">Geen bestand geselecteerd</div>
+    </div>
+
+    <div class="control-group">
+      <label for="projectSearch">Zoek project:</label>
+      <input type="text" id="projectSearch" placeholder="Typ om te zoeken...">
+    </div>
+
+    <div class="control-group">
+      <label for="projectFilter">Selecteer projecten:</label>
+      <div id="projectFilter" class="project-checkbox-list">
+          <label style="font-weight: 600; margin-bottom: 10px;">
+              <input type="checkbox" id="showAllProjects" checked> Toon alle projecten
+          </label>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Acties:</label>
+      <div class="button-group">
+        <button id="resetZoom"><span class="icon-zoom"></span> Reset weergave</button>
+        <button id="togglePhases"><span class="icon-layers"></span> Fases tonen/verbergen</button>
+        <button id="clearSelection"><span class="icon-clear"></span> Selectie wissen</button>
+        <button id="exportPdfBtn"><span class="icon-pdf"></span> Exporteer als PDF</button> <button id="exportPNG"><span class="icon-png"></span> Exporteer als PNG</button> <button id="debugButton">Debug</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="left-panel">
+      <h2>Projecten</h2>
+
+      <div class="project-tabs">
+        <div class="tab active" data-filter-status="alle">Alles</div>
+        <div class="tab" data-filter-status="bezig">Bezig</div>
+        <div class="tab" data-filter-status="toekomstig">Toekomstig</div>
+        <div class="tab" data-filter-status="afgerond">Afgerond</div>
+        <div class="tab" data-filter-status="onbekend">Onbekend</div>
+         <div class="tab" data-filter-status="onhold">On hold</div> </div>
+
+      <div id="filter-chips-container" class="filter-chips-container"></div>
+
+      <div class="projectlijst">
+        <h3>Projectlijst</h3>
+        <div id="project-list" class="project-list-container">
+          <div class="no-projects" style="display: none;">
+            Geen projecten gevonden voor de geselecteerde filters.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div id="chart_div">
+        <div class="empty-state fade-in">
+          <svg class="spinner" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r="20" fill="none" stroke="var(--primary)" stroke-width="5"></circle>
+          </svg>
+          <p>Selecteer een CSV-bestand om te beginnen</p>
+        </div>
+      </div>
+
+      <div class="project-details-under-chart">
+        <h2>Projectdetails</h2>
+        <div id="selected-projects-details" class="selected-projects-container">
+          <p>Selecteer projecten om details te zien</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // FIX: Updated Google Charts load callback and added retry logic
+    let googleChartsLoadRetries = 0;
+    const maxGoogleChartsLoadRetries = 10;
+
+    google.charts.load('current', {
+      packages: ['gantt'],
+      language: 'nl',
+      callback: initialize // Call initialize directly when loaded
+    });
+
+    let chart;
+    let dataTable;
+    let allProjects = []; // Stores all parsed projects
+    let filteredProjects = []; // Stores projects filtered by search/tabs
+    let selectedProjectNames = new Set(); // Stores names of projects selected via checkboxes
+    let showPhases = true;
+    let currentFileName = '';
+    let currentStatusFilter = 'alle';
+    let currentSearchTerm = '';
+
+    // Add jsPDF reference at the top of the script
+    const { jsPDF } = window.jspdf;
+
+    // FIX: initialize function checks if Google Charts is loaded with retry logic
+    function initialize() {
+      if (typeof google === 'undefined' || !google.visualization) {
+        if (googleChartsLoadRetries < maxGoogleChartsLoadRetries) {
+          console.warn(`Google Charts not loaded yet. Retrying (${googleChartsLoadRetries + 1}/${maxGoogleChartsLoadRetries})...`);
+          googleChartsLoadRetries++;
+          setTimeout(initialize, 100); // Try again in 100ms
+          return;
+        } else {
+          console.error('Google Charts failed to load after maximum retries.');
+          showTemporaryMessage('Fout: Google Charts kon niet laden. Controleer uw internetverbinding.', 'danger');
+          document.getElementById('chart_div').innerHTML = `
+            <div class="empty-state fade-in">
+              <p>Fout: Kan diagram niet laden. Probeer later opnieuw.</p>
+            </div>
+          `;
+          return;
+        }
+      }
+      console.log('Google Charts loaded. Initializing...');
+
+      document.getElementById('csvFile').addEventListener('change', handleFileUpload);
+      document.getElementById('resetZoom').addEventListener('click', resetZoom);
+      document.getElementById('togglePhases').addEventListener('click', togglePhases);
+      document.getElementById('clearSelection').addEventListener('click', clearSelection);
+      document.getElementById('exportPdfBtn').addEventListener('click', exportToPdf); // Listener for PDF export
+      document.getElementById('exportPNG').addEventListener('click', exportChartAsPNG); // Listener for PNG export
+      document.getElementById('debugButton').addEventListener('click', () => {
+        logCurrentFilterState();
+        validateDataTable();
+      });
+
+      // Theme Toggle Listener
+      document.getElementById('toggleTheme').addEventListener('click', () => {
+        document.documentElement.classList.toggle('light');
+        // FIX: Redraw chart to apply theme changes
+        if (chart && dataTable && dataTable.getNumberOfRows() > 0) {
+            drawChart();
+        }
+      });
+
+      setupSearch();
+      setupTabs();
+      document.getElementById('fileInfo').textContent = 'Geen bestand geselecteerd';
+      document.getElementById('selected-projects-details').innerHTML = '<p>Selecteer projecten om details te zien</p>';
+      updateFilterChips(); // Initialize filter chips display
+    }
+
+    // --- Date and Duration Helpers ---
+
+    // FIX: parseDate now tries multiple date formats and has better validation
+    function parseDate(dateString) {
+      if (!dateString || typeof dateString !== 'string') return null;
+
+      const formats = [
+        'dd-MM-yyyy', 'dd/MM/yyyy', 'dd.MM.yyyy',
+        'MM-dd-yyyy', 'MM/dd/yyyy', 'MM.dd.yyyy',
+        'yyyy-MM-dd', 'yyyy/MM/dd', 'yyyy.MM.dd'
+      ];
+
+      for (const format of formats) {
+        const parts = dateString.split(/[-/.]/);
+        if (parts.length !== 3) continue;
+
+        let day, month, year;
+
+        if (format.startsWith('dd')) {
+          day = parseInt(parts[0], 10);
+          month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+          year = parseInt(parts[2], 10);
+        } else if (format.startsWith('MM')) {
+          month = parseInt(parts[0], 10) - 1;
+          day = parseInt(parts[1], 10);
+          year = parseInt(parts[2], 10);
+        } else if (format.startsWith('yyyy')) {
+          year = parseInt(parts[0], 10);
+          month = parseInt(parts[1], 10) - 1;
+          day = parseInt(parts[2], 10);
+        }
+
+        // Basic validation of date components
+        if (isNaN(day) || isNaN(month) || isNaN(year) || day < 1 || day > 31 || month < 0 || month > 11) continue;
+
+        const date = new Date(year, month, day);
+        // Check if the date components match the created Date object (handles invalid dates like Feb 30)
+        if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+          return date;
+        }
+      }
+
+      // Fallback to native Date parsing if specific formats fail
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+           console.warn(`Invalid date format encountered: "${dateString}". Returning null.`);
+           return null;
+      }
+      return date;
+    }
+
+
+    function formatDutchDate(date) {
+      if (!date || isNaN(date.getTime())) return 'Onbekend';
+      return date.toLocaleDateString('nl-NL', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    function calculateDurationInDays(start, end) {
+      if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) return 'Onbekend';
+      const ms = Math.abs(end.getTime() - start.getTime());
+      // Add 1 day to include both start and end day
+      return `${Math.ceil(ms / (1000 * 60 * 60 * 24)) + 1} dagen`;
+    }
+
+    function calculateDurationInMonths(start, end) {
+      if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) return 'Onbekend';
+      let months = (end.getFullYear() - start.getFullYear()) * 12;
+      months -= start.getMonth();
+      months += end.getMonth();
+      // Adjust for day difference within the month if needed, or keep it simple
+      // Simple month difference:
+      return `${Math.max(0, months)} maand${Math.max(0, months) !== 1 ? 'en' : ''}`;
+    }
+
+    // --- Project Status and Health ---
+
+    function getProjectStatus(project) {
+      const phaseDates = [
+        parseDate(project['initiatief_begindatum']),
+        parseDate(project['initiatief_einddatum']),
+        parseDate(project['definitie_begindatum']),
+        parseDate(project['definitie_einddatum']),
+        parseDate(project['werkvoorbereiding_begindatum']),
+        parseDate(project['werkvoorbereiding_einddatum']),
+        parseDate(project['realisatie_begindatum']),
+        parseDate(project['realisatie_einddatum']),
+        parseDate(project['oplevering_nazorg_begin']),
+        parseDate(project['oplevering_nazorg_eind']),
+        parseDate(project['vervallen_begindatum']), // Consider 'on hold' dates
+        parseDate(project['vervallen_einddatum'])
+      ].filter(date => date && !isNaN(date.getTime()));
+
+      if (phaseDates.length === 0) {
+         // Log if no valid dates found for status calculation
+         if (project['projectnaam'] && !project['projectnaam'].startsWith('Onbekend project ')) {
+              console.warn(`No valid dates found for status calculation for project: "${project['projectnaam']}".`);
+         }
+         return { text: 'Onbekend', class: 'unknown', key: 'onbekend' };
+      }
+
+
+      const start = new Date(Math.min(...phaseDates.map(d => d.getTime())));
+      const end = new Date(Math.max(...phaseDates.map(d => d.getTime())));
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const vervallenStart = parseDate(project['vervallen_begindatum']);
+      const vervallenEnd = parseDate(project['vervallen_einddatum']);
+
+      if (vervallenStart && (!vervallenEnd || vervallenEnd >= today)) {
+           return { text: 'On hold', class: 'danger', key: 'onhold' }; // Use danger for on hold
+      }
+      if (end < today) return { text: 'Afgerond', class: 'success', key: 'afgerond' };
+      if (start > today) return { text: 'Toekomstig', class: 'info', key: 'toekomstig' };
+
+      // Check if any phase is currently active
+      const now = new Date();
+      const isActive = [
+          { start: 'initiatief_begindatum', end: 'initiatief_einddatum' },
+          { start: 'definitie_begindatum', end: 'definitie_einddatum' },
+          { start: 'werkvoorbereiding_begindatum', end: 'werkvoorbereiding_einddatum' },
+          { start: 'realisatie_begindatum', end: 'realisatie_einddatum' },
+          { start: 'oplevering_nazorg_begin', end: 'oplevering_nazorg_eind' }
+      ].some(phaseKey => {
+          const phaseStart = parseDate(project[phaseKey.start]);
+          const phaseEnd = parseDate(project[phaseKey.end]);
+          return phaseStart && phaseEnd && phaseStart <= now && phaseEnd >= now;
+      });
+
+      if (isActive) {
+           return { text: 'Bezig', class: 'warning', key: 'bezig' };
+      }
+
+
+      return { text: 'Onbekend', class: 'unknown', key: 'onbekend' };
+    }
+
+    function getProjectHealth(project) {
+      // This is a simplified health indicator based on status
+      const status = getProjectStatus(project);
+      switch (status.key) {
+          case 'afgerond': return { class: 'health-good', tooltip: 'Project is afgerond' };
+          case 'bezig': return { class: 'health-warning', tooltip: 'Project is bezig' }; // Warning for active projects
+          case 'toekomstig': return { class: 'health-info', tooltip: 'Project is toekomstig' }; // Use info for upcoming
+          case 'onhold': return { class: 'health-critical', tooltip: 'Project is on hold' };
+          default: return { class: 'health-unknown', tooltip: 'Gezondheid onbekend' };
+      }
+    }
+
+    // --- Data Processing ---
+
+    function truncateUrl(url, maxLength = 40) {
+      if (!url) return '';
+      if (url.length <= maxLength) return url;
+      const cleanUrl = url.replace(/(https?:\/\/)?(www\.)?/, '');
+      if (cleanUrl.length <= maxLength) return cleanUrl;
+      return cleanUrl.substring(0, maxLength) + '...';
+    }
+
+    function cleanProjectData(projects) {
+      return projects.map(project => {
+        const cleanedProject = {};
+        Object.keys(project).forEach(key => {
+          if (typeof project[key] === 'string') {
+            cleanedProject[key] = project[key].trim();
+          } else {
+            cleanedProject[key] = project[key];
+          }
+        });
+        // Ensure a project name exists, use a placeholder if not
+        if (!cleanedProject['projectnaam'] || cleanedProject['projectnaam'].trim() === '') {
+          cleanedProject['projectnaam'] = `Onbekend project ${Math.random().toString(36).substr(2, 5)}`;
+          console.warn(`Assigned placeholder name to project due to missing 'projectnaam'.`);
+        }
+        return cleanedProject;
+      });
+    }
+
+    // FIX: handleFileUpload with improved validation and error handling, including header check
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      const container = document.getElementById('chart_div');
+      if (!file) {
+          document.getElementById('fileInfo').textContent = 'Geen bestand geselecteerd';
+          resetData(); // Use resetData
+          container.innerHTML = `
+              <div class="empty-state fade-in">
+                  <p>Selecteer een CSV-bestand om te beginnen</p>
+              </div>
+          `;
+          return;
+      }
+      currentFileName = file.name;
+      document.getElementById('fileInfo').textContent = `Geselecteerd: ${currentFileName}`;
+      container.innerHTML = `
+          <div class="empty-state fade-in">
+              <svg class="spinner" viewBox="0 0 50 50">
+                  <circle cx="25" cy="25" r="20" fill="none" stroke="var(--primary)" stroke-width="5"></circle>
+              </svg>
+              <p>Bestand wordt geladen...</p>
+          </div>
+      `;
+
+      Papa.parse(file, {
+          header: true,
+          delimiter: ';',
+          skipEmptyLines: true,
+          complete: function(results) {
+              if (results.errors.length > 0) {
+                  console.error('PapaParse Errors:', results.errors);
+                  results.errors.forEach(err => console.warn(`CSV Parse Error at row ${err.row}: ${err.message}`));
+                  showTemporaryMessage('Fouten in CSV-bestand. Controleer de console.', 'danger');
+                  container.innerHTML = `<div class="empty-state fade-in"><p>Fouten bij het laden van het bestand.</p></div>`;
+                  resetData(); // Use resetData
+                  return;
+              }
+
+              // FIX: Validate required headers
+              const requiredHeaders = ['projectnaam', 'initiatief_begindatum', 'initiatief_einddatum'];
+              const headers = results.meta.fields;
+              const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+              if (missingHeaders.length > 0) {
+                  console.error('Missing required headers:', missingHeaders);
+                  showTemporaryMessage(`Ontbrekende kolommen in CSV: ${missingHeaders.join(', ')}`, 'danger');
+                  container.innerHTML = `
+                      <div class="empty-state fade-in">
+                          <p>Ontbrekende vereiste kolommen in CSV.</p>
+                      </div>
+                  `;
+                  resetData();
+                  return;
+              }
+
+
+              const cleanedData = cleanProjectData(results.data);
+
+              // Filter out projects without valid dates immediately after cleaning
+              allProjects = cleanedData.filter(project => {
+                  const hasDates = hasValidDates(project);
+                  if (!hasDates && project['projectnaam'] && !project['projectnaam'].startsWith('Onbekend project ')) {
+                      console.warn(`Project "${project['projectnaam']}" has no valid dates and will be excluded`);
+                  }
+                  return hasDates;
+              });
+
+              if (allProjects.length === 0) {
+                  showTemporaryMessage('Geen projecten met geldige datums gevonden', 'warning');
+                  container.innerHTML = `
+                      <div class="empty-state fade-in">
+                          <p>Geen projecten met geldige datums gevonden.</p>
+                      </div>
+                  `;
+                  resetData(); // Use resetData
+                  return;
+              }
+
+              // Initialize selection
+              currentStatusFilter = 'alle';
+              currentSearchTerm = '';
+              selectedProjectNames.clear();
+
+              // Select all projects by default
+              allProjects.forEach(project => {
+                  if (project['projectnaam'] && project['projectnaam'].trim() !== '' && !project['projectnaam'].startsWith('Onbekend project ')) {
+                      selectedProjectNames.add(project['projectnaam']);
+                  }
+              });
+
+              // Update UI and draw chart
+              // FIX: Ensure showAllProjects checkbox exists before trying to check it
+              const showAllCheckbox = document.getElementById('showAllProjects');
+              if (showAllCheckbox) {
+                 showAllCheckbox.checked = true; // Ensure "Show All" is checked initially
+              }
+              filterProjects();
+
+              // Update file info
+              document.getElementById('fileInfo').textContent =
+                  `Geselecteerd: ${currentFileName} — ${allProjects.length} project(en) geladen`;
+          },
+          error: function(error) {
+              console.error('PapaParse Error:', error);
+              showTemporaryMessage('Fout bij het lezen van CSV-bestand.', 'danger');
+              container.innerHTML = `<div class="empty-state fade-in"><p>Fout bij het lezen van het bestand.</p></div>`;
+              resetData(); // Use resetData
+          }
+      });
+    }
+
+    // hasValidDates checks for *any* valid date field
+    function hasValidDates(project) {
+      const dateFields = [
+        'initiatief_begindatum', 'initiatief_einddatum',
+        'definitie_begindatum', 'definitie_einddatum',
+        'werkvoorbereiding_begindatum', 'werkvoorbereiding_einddatum',
+        'realisatie_begindatum', 'realisatie_einddatum',
+        'oplevering_nazorg_begin', 'oplevering_nazorg_eind',
+        'vervallen_begindatum', 'vervallen_einddatum'
+      ];
+
+      return dateFields.some(field => {
+        const date = parseDate(project[field]);
+        return date && !isNaN(date.getTime());
+      });
+    }
+
+
+    // buildDataTable logs row count and handles missing dates gracefully
+    function buildDataTable(projectsToDraw) {
+      const table = new google.visualization.DataTable();
+      table.addColumn('string', 'Task ID');
+      table.addColumn('string', 'Task Name');
+      table.addColumn('string', 'Resource');
+      table.addColumn('date', 'Start Date');
+      table.addColumn('date', 'End Date');
+      table.addColumn('number', 'Duration');
+      table.addColumn('number', 'Percent Complete');
+      table.addColumn('string', 'Dependencies');
+      table.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
+      table.addColumn({ type: 'string', role: 'style' }); // For custom bar styles
+
+      const sortedProjects = [...projectsToDraw].sort((a, b) => {
+        const nameA = a['projectnaam'] || '';
+        const nameB = b['projectnaam'] || '';
+        return nameA.localeCompare(nameB);
+      });
+
+      sortedProjects.forEach((project, index) => {
+        const projectName = project['projectnaam']; // Guaranteed to exist after cleanProjectData
+        const projectId = `project_${projectName.replace(/\s+/g, '_').replace(/[^\w-]/g, '')}_${index}`; // Create a more robust ID
+
+        // Collect all valid dates for the overall project span
+        const dates = [
+          parseDate(project['initiatief_begindatum']),
+          parseDate(project['initiatief_einddatum']),
+          parseDate(project['definitie_begindatum']),
+          parseDate(project['definitie_einddatum']),
+          parseDate(project['werkvoorbereiding_begindatum']),
+          parseDate(project['werkvoorbereiding_einddatum']),
+          parseDate(project['realisatie_begindatum']),
+          parseDate(project['realisatie_einddatum']),
+          parseDate(project['oplevering_nazorg_begin']),
+          parseDate(project['oplevering_nazorg_eind']),
+          parseDate(project['vervallen_begindatum']),
+          parseDate(project['vervallen_einddatum'])
+        ].filter(date => date && !isNaN(date.getTime()));
+
+         if (dates.length === 0) {
+             console.warn(`Skipping project "${projectName}" in DataTable build - no valid dates found.`);
+             return;
+         }
+
+        const projectStart = new Date(Math.min(...dates.map(d => d.getTime())));
+        const projectEnd = new Date(Math.max(...dates.map(d => d.getTime())));
+        const status = getProjectStatus(project);
+        const health = getProjectHealth(project);
+
+        // Add the main project row
+        table.addRow([
+          projectId,
+          projectName,
+          null, // Resource
+          projectStart,
+          projectEnd,
+          null, // Duration
+          null, // Percent Complete
+          null, // Dependencies
+          createProjectTooltip(project, status, projectStart, projectEnd), // Tooltip
+          'font-weight: bold; color: var(--text);'
+        ]);
+
+        // Add phase rows if showPhases is true
+        if (showPhases) {
+          const phases = [
+            {
+              id: `${projectId}_init`,
+              name: 'Initiatief',
+              start: 'initiatief_begindatum',
+              end: 'initiatief_einddatum',
+              class: 'initiatief-bar'
+            },
+            {
+              id: `${projectId}_def`,
+              name: 'Definitie',
+              start: 'definitie_begindatum',
+              end: 'definitie_einddatum',
+              class: 'definitie-bar'
+            },
+            {
+              id: `${projectId}_werk`,
+              name: 'Werkvoorbereiding',
+              start: 'werkvoorbereiding_begindatum',
+              end: 'werkvoorbereiding_einddatum',
+              class: 'werkvoorbereiding-bar'
+            },
+            {
+              id: `${projectId}_real`,
+              name: 'Realisatie',
+              start: 'realisatie_begindatum',
+              end: 'realisatie_einddatum',
+              class: 'realisatie-bar'
+            },
+            {
+              id: `${projectId}_oplev`,
+              name: 'Oplevering',
+              start: 'oplevering_nazorg_begin',
+              end: 'oplevering_nazorg_eind',
+              class: 'oplevering-bar'
+            },
+             {
+              id: `${projectId}_hold`,
+              name: 'On hold',
+              start: 'vervallen_begindatum',
+              end: 'vervallen_einddatum',
+              class: 'onhold-bar'
+            }
+          ];
+
+          phases.forEach(phase => {
+            const start = parseDate(project[phase.start]);
+            const end = parseDate(project[phase.end]);
+
+            if (start && end && !isNaN(start.getTime()) && !isNaN(end.getTime())) {
+              const phaseTooltip = createPhaseTooltip(projectName, { name: phase.name, start, end });
+              table.addRow([
+                phase.id,
+                `↳ ${phase.name}`, // Indent phase name visually
+                phase.name, // Resource (can be used for grouping/coloring, though we use style here)
+                start,
+                end,
+                null, // Duration
+                null, // Percent Complete
+                projectId, // Dependency on the main project row
+                phaseTooltip, // Tooltip
+                `color: var(--text-light); padding-left: 25px;`
+              ]);
+            }
+          });
+        }
+      });
+
+      console.log(`DataTable built with ${table.getNumberOfRows()} rows.`);
+      return table;
+    }
+
+    // --- Tooltip HTML Generation ---
+
+    // FIX: Centralized tooltip styling using CSS classes
+    function createProjectTooltip(project, status, startDate, endDate) {
+      const projectDetails = allProjects.find(p => p['projectnaam'] === project);
+      const description = projectDetails ? projectDetails['beschrijving'] || 'Geen beschrijving' : 'Geen beschrijving';
+      const link = projectDetails ? projectDetails['link'] || '' : '';
+      let linkHtml = '';
+      if (link) {
+          const displayLink = truncateUrl(link);
+          linkHtml = `<p class="tooltip-text"><span class="link-icon"></span><strong>Link:</strong> <a href="${link}" target="_blank" class="tooltip-link">${displayLink}</a></p>`;
+      }
+      return `
+          <div class="tooltip-content">
+              <h3 class="tooltip-title">${project}</h3>
+              <div class="status-badge ${status.class}" style="margin-left: 0; margin-bottom:12px; color: var(--bg);">${status.text}</div>
+              <p class="tooltip-text"><strong>Startdatum:</strong> ${formatDutchDate(startDate) || 'Onbekend'}</p>
+              <p class="tooltip-text"><strong>Einddatum:</strong> ${formatDutchDate(endDate) || 'Onbekend'}</p>
+              <p class="tooltip-text"><strong>Looptijd:</strong> ${startDate && endDate ? calculateDurationInDays(startDate, endDate) + ' (' + calculateDurationInMonths(startDate, endDate) + ')' : 'Onbekend'}</p>
+              <p class="tooltip-text"><strong>Beschrijving:</strong> ${description}</p>
+              ${linkHtml}
+          </div>`;
+    }
+
+    // FIX: Centralized tooltip styling using CSS classes
+    function createPhaseTooltip(project, phase) {
+      return `
+          <div class="tooltip-content">
+              <h3 class="tooltip-title">${project}</h3>
+              <h4 class="tooltip-phase">Fase: ${phase.name}</h4>
+              <p class="tooltip-text"><strong>Startdatum:</strong> ${formatDutchDate(phase.start) || 'Onbekend'}</p>
+              <p class="tooltip-text"><strong>Einddatum:</strong> ${formatDutchDate(phase.end) || 'Onbekend'}</p>
+              <p class="tooltip-text"><strong>Looptijd:</strong> ${phase.start && phase.end ? calculateDurationInDays(phase.start, phase.end) + ' (' + calculateDurationInMonths(phase.start, phase.end) + ')' : 'Onbekend'}</p>
+          </div>`;
+    }
+
+    // --- UI Updates and Filtering ---
+
+    function updateProjectFilter(projects) {
+      const container = document.getElementById('projectFilter');
+      // FIX: Clear only project-specific checkboxes, keep the "Toon alle" checkbox
+      const projectCheckboxesContainer = container.querySelector('.project-checkboxes-container');
+      if (projectCheckboxesContainer) {
+          projectCheckboxesContainer.remove();
+      }
+
+      if (projects.length === 0) {
+          container.innerHTML = '<p class="no-projects">Geen projecten beschikbaar om te filteren.</p>';
+          container.style.pointerEvents = 'none';
+          container.style.opacity = '0.6';
+          return;
+      }
+
+      container.style.pointerEvents = 'auto';
+      container.style.opacity = '1';
+
+      // Re-add the container for project checkboxes
+      const newProjectCheckboxesContainer = document.createElement('div');
+      newProjectCheckboxesContainer.className = 'project-checkboxes-container';
+      container.appendChild(newProjectCheckboxesContainer);
+
+
+      const uniqueProjects = [...new Set(projects
+        .map(p => p['projectnaam'])
+        .filter(name => name && name.trim() !== '' && !name.startsWith('Onbekend project ')) // Filter out placeholder names
+      )].sort((a, b) => a.localeCompare(b));
+
+      uniqueProjects.forEach(name => {
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = name;
+        checkbox.id = `project-${name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')}`; // Create a valid ID
+        checkbox.checked = selectedProjectNames.has(name); // Set checked state based on selectedProjectNames
+
+        const label = document.createElement('label');
+        label.htmlFor = checkbox.id;
+
+        const labelTextSpan = document.createElement('span');
+        labelTextSpan.textContent = name;
+        label.appendChild(checkbox);
+        label.appendChild(labelTextSpan);
+
+        checkbox.addEventListener('change', () => {
+          const showAll = document.getElementById('showAllProjects');
+          if (checkbox.checked) {
+            selectedProjectNames.add(name);
+            if (showAll) showAll.checked = false; // Uncheck "Show All" if an individual project is selected
+          } else {
+            selectedProjectNames.delete(name);
+            const anyOtherChecked = container.querySelector('input[type="checkbox"]:checked:not(#showAllProjects)');
+            if (!anyOtherChecked && showAll) {
+              showAll.checked = true; // Check "Show All" if no individual projects are selected
+            }
+          }
+
+          // Update the visual state of the list item
+          const listItem = document.querySelector(`#project-list .project-item[data-project-name="${name}"]`);
+          if (listItem) {
+              if (checkbox.checked) {
+                  listItem.classList.add('selected');
+              } else {
+                  listItem.classList.remove('selected');
+              }
+          }
+
+          filterProjects(); // Re-filter and redraw chart based on selection
+          showSelectedProjectsDetails(); // Update details panel
+          updateFilterChips(); // Update filter chips
+        });
+
+        newProjectCheckboxesContainer.appendChild(label); // Append to the new container
+      });
+
+       // Ensure the "Toon alle projecten" checkbox state is correct based on current selection
+       const showAllCheckbox = document.getElementById('showAllProjects');
+       if (showAllCheckbox) {
+           const anyIndividualSelected = Array.from(selectedProjectNames).some(name =>
+               uniqueProjects.includes(name)
+           );
+           showAllCheckbox.checked = !anyIndividualSelected;
+       }
+
+    }
+
+    function updateProjectList(projects) {
+      const projectList = document.getElementById('project-list');
+      projectList.innerHTML = ''; // Clear existing list items
+      const noProjectsMessage = document.createElement('div');
+      noProjectsMessage.className = 'no-projects';
+      noProjectsMessage.style.display = 'none';
+      noProjectsMessage.textContent = 'Geen projecten gevonden voor de geselecteerde filters.';
+      projectList.appendChild(noProjectsMessage);
+
+
+      const projectsWithName = projects
+        .filter(p => p['projectnaam'] && p['projectnaam'].trim() !== '' && !p['projectnaam'].startsWith('Onbekend project ')) // Filter out placeholder names
+        .sort((a, b) => (a['projectnaam'] || '').localeCompare(b['projectnaam'] || ''));
+
+      if (projectsWithName.length === 0) {
+           noProjectsMessage.style.display = 'block';
+      } else {
+           noProjectsMessage.style.display = 'none';
+      }
+
+
+      projectsWithName.forEach((project, index) => {
+        const projectName = project['projectnaam'];
+        const projectItem = document.createElement('div');
+        projectItem.className = 'project-item';
+        projectItem.dataset.projectName = projectName; // Store project name for easy lookup
+        const status = getProjectStatus(project);
+        const health = getProjectHealth(project);
+
+        // Check if this project is currently selected via checkboxes
+        if (selectedProjectNames.has(projectName)) {
+             projectItem.classList.add('selected');
+        }
+
+        projectItem.innerHTML = `
+          <span class="health-indicator ${health.class}" title="${health.tooltip}"></span>
+          <span class="project-name">${projectName}</span>
+          <span class="status-badge ${status.class}" style="color: var(--bg);">${status.text}</span>
+        `;
+        projectItem.addEventListener('click', () => {
+          const checkboxId = `project-${projectName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')}`;
+          const checkbox = document.getElementById(checkboxId);
+          if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change')); // Trigger the change event to update state and UI
+          }
+        });
+        projectList.appendChild(projectItem);
+      });
+    }
+
+
+    // This function is no longer strictly necessary as updateProjectList handles selection class
+    // but keeping it in case of future needs to update selection visually separately.
+    function updateProjectListSelection(selectedProjects) {
+      const projectItems = document.querySelectorAll('#project-list .project-item');
+      projectItems.forEach(item => {
+        const projectName = item.dataset.projectName; // Use data attribute
+        if (selectedProjects.includes(projectName)) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+    }
+
+    function setupSearch() {
+      const searchInput = document.getElementById('projectSearch');
+      // Search input now directly triggers filterProjects which handles updating lists and chart
+      searchInput.addEventListener('input', function() {
+        currentSearchTerm = this.value.toLowerCase().trim();
+        filterProjects(); // Re-filter everything based on new search term
+        showSelectedProjectsDetails(); // Update details panel
+        updateFilterChips(); // Update filter chips
+      });
+    }
+
+    function setupTabs() {
+      const tabs = document.querySelectorAll('.project-tabs .tab');
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          tabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          currentStatusFilter = this.getAttribute('data-filter-status');
+          filterProjects(); // Re-filter everything based on new status filter
+          showSelectedProjectsDetails(); // Update details panel
+          updateFilterChips(); // Update filter chips
+        });
+      });
+    }
+
+    function updateFilterChips() {
+      const container = document.getElementById('filter-chips-container');
+      container.innerHTML = '';
+
+      // Add chip for status filter if not 'alle'
+      if (currentStatusFilter !== 'alle') {
+        const activeTab = document.querySelector(`.project-tabs .tab.active`);
+        if (activeTab) {
+          const chip = document.createElement('span');
+          chip.className = 'filter-chip scale-in';
+          chip.textContent = `Status: ${activeTab.textContent}`;
+          const closeBtn = document.createElement('span');
+          closeBtn.className = 'close-btn';
+          closeBtn.textContent = '×';
+          closeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const allTab = document.querySelector('.project-tabs .tab[data-filter-status="alle"]');
+            if (allTab) {
+              allTab.click(); // Simulate click on "Alles" tab
+            }
+          });
+          chip.appendChild(closeBtn);
+          container.appendChild(chip);
+        }
+      }
+
+      // Add chips for selected projects (excluding "Show All" if it's checked)
+      const showAllChecked = document.getElementById('showAllProjects')?.checked;
+      if (!showAllChecked) {
+          selectedProjectNames.forEach(projectName => {
+            const chip = document.createElement('span');
+            chip.className = 'filter-chip scale-in';
+            chip.textContent = projectName;
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'close-btn';
+            closeBtn.textContent = '×';
+            closeBtn.addEventListener('click', function(e) {
+              e.stopPropagation();
+              const checkboxId = `project-${projectName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')}`;
+              const checkbox = document.getElementById(checkboxId);
+              if (checkbox) {
+                checkbox.checked = false;
+                checkbox.dispatchEvent(new Event('change')); // Trigger change event
+              }
+            });
+            chip.appendChild(closeBtn);
+            container.appendChild(chip);
+          });
+      }
+
+
+      // Add chip for search term if present
+      const searchTerm = document.getElementById('projectSearch').value.trim();
+      if (searchTerm !== '') {
+        const chip = document.createElement('span');
+        chip.className = 'filter-chip scale-in';
+        chip.textContent = `Zoekterm: "${searchTerm}"`;
+        const closeBtn = document.createElement('span');
+        closeBtn.className = 'close-btn';
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', function() {
+          document.getElementById('projectSearch').value = '';
+          currentSearchTerm = ''; // Clear the internal state as well
+          filterProjects(); // Re-filter
+          showSelectedProjectsDetails(); // Update details
+          updateFilterChips(); // Update chips
+        });
+        chip.appendChild(closeBtn);
+        container.appendChild(chip);
+      }
+    }
+
+    // filterProjects now uses setTimeout for drawing and handles empty projectsToDraw
+    function filterProjects() {
+      console.log("--- Filtering Projects ---");
+      const searchTerm = document.getElementById('projectSearch').value.toLowerCase().trim();
+      const showAllChecked = document.getElementById('showAllProjects')?.checked;
+
+      let projectsToConsider = [...allProjects];
+      console.log("Initial projects to consider:", projectsToConsider.length);
+
+      // 1. Filter by Status Tab
+      if (currentStatusFilter !== 'alle') {
+        projectsToConsider = projectsToConsider.filter(project => {
+          const status = getProjectStatus(project).key;
+          return status === currentStatusFilter;
+        });
+        console.log("After status filter:", projectsToConsider.length, "(Status:", currentStatusFilter, ")");
+      }
+
+      // 2. Filter by Search Term (applied to the status-filtered list)
+      if (searchTerm !== '') {
+        projectsToConsider = projectsToConsider.filter(project => {
+          const projectName = (project['projectnaam'] || '').toLowerCase();
+          const description = (project['project_beschrijving'] || '').toLowerCase();
+          return projectName.includes(searchTerm) || description.includes(searchTerm);
+        });
+        console.log("After search filter:", projectsToConsider.length, "(Term:", searchTerm, ")");
+      }
+
+      // FIX: Update filteredProjects after applying status and search filters
+      filteredProjects = projectsToConsider;
+
+      // Update the project list displayed in the left panel based on status and search filters
+      updateProjectList(filteredProjects);
+      updateProjectFilter(filteredProjects);
+
+      // 3. Determine which projects to DRAW on the Gantt chart
+      const projectsToDraw = showAllChecked
+        ? filteredProjects // Use filteredProjects here
+        : filteredProjects.filter(project => selectedProjectNames.has(project['projectnaam'])); // Use filteredProjects here
+
+
+      console.log("Projects selected for drawing:", projectsToDraw.length);
+
+      // 4. Build DataTable and Draw Chart
+      if (projectsToDraw.length > 0) {
+        dataTable = buildDataTable(projectsToDraw);
+        // Use setTimeout to allow UI updates before drawing the chart
+        setTimeout(() => {
+            drawChart();
+            showSelectedProjectsDetails(); // Update details panel after drawing
+            updateFilterChips(); // Update filter chips after drawing
+        }, 100); // Small delay
+      } else {
+        // Handle case where no projects are selected for drawing
+        const container = document.getElementById('chart_div');
+        container.innerHTML = '<div class="empty-state fade-in"><p>Geen projecten gevonden met de huidige filters</p></div>';
+        dataTable = null; // Clear dataTable
+        showSelectedProjectsDetails(); // Update details panel
+        updateFilterChips(); // Update filter chips
+        window.removeEventListener('resize', resizeChart); // Remove resize listener
+        console.warn("filterProjects: No projects to draw. Chart cleared.");
+      }
+      console.log("--- Filtering Complete ---");
+    }
+
+    function showSelectedProjectsDetails() {
+        const detailsDiv = document.getElementById('selected-projects-details');
+        detailsDiv.innerHTML = ''; // Clear existing details
+
+        const showAllChecked = document.getElementById('showAllProjects')?.checked;
+        const searchTerm = document.getElementById('projectSearch').value.toLowerCase().trim();
+
+        let projectsToShowDetails = [];
+
+        // Determine which projects are currently visible in the *filtered* list
+        // (based on status tab and search term)
+        const currentlyVisibleProjectNames = new Set(
+            Array.from(document.querySelectorAll('#project-list .project-item')).map(item => item.dataset.projectName)
+        );
+
+        if (showAllChecked) {
+             // If "Show All" is checked, show details for all projects that passed status/search filter
+             // Use filteredProjects as the source for details when "Show All" is checked
+             projectsToShowDetails = filteredProjects.filter(project => {
+                 const projectName = project['projectnaam'];
+                 return currentlyVisibleProjectNames.has(projectName); // Ensure they are also in the currently visible list
+             });
+
+        } else if (selectedProjectNames.size > 0) {
+            // If individual projects are selected, show details for selected projects
+            // that are also currently visible in the filtered list
+            // Use filteredProjects as the source for details when individual projects are selected
+            projectsToShowDetails = filteredProjects.filter(project =>
+                selectedProjectNames.has(project['projectnaam']) && currentlyVisibleProjectNames.has(project['projectnaam'])
+            );
+        }
+
+        if (projectsToShowDetails.length > 0) {
+            projectsToShowDetails.forEach(project => {
+                const card = document.createElement('div');
+                card.className = 'project-detail-card fade-in';
+                card.innerHTML = generateProjectCardHTML(project);
+                detailsDiv.appendChild(card);
+            });
+        } else {
+            detailsDiv.innerHTML = '<p>Geen projecten geselecteerd of gevonden die voldoen aan de huidige filters.</p>';
+        }
+    }
+
+
+    function generateProjectCardHTML(project) {
+      const startDate = parseDate(project['initiatief_begindatum']);
+      const allDates = [
+        parseDate(project['initiatief_begindatum']),
+        parseDate(project['initiatief_einddatum']),
+        parseDate(project['definitie_begindatum']),
+        parseDate(project['definitie_einddatum']),
+        parseDate(project['werkvoorbereiding_begindatum']),
+        parseDate(project['werkvoorbereiding_einddatum']),
+        parseDate(project['realisatie_begindatum']),
+        parseDate(project['realisatie_einddatum']),
+        parseDate(project['oplevering_nazorg_begin']),
+        parseDate(project['oplevering_nazorg_eind']),
+        parseDate(project['vervallen_begindatum']),
+        parseDate(project['vervallen_einddatum'])
+      ].filter(date => date && !isNaN(date));
+      const endDate = allDates.length > 0 ? new Date(Math.max(...allDates.map(d => d.getTime()))) : null;
+      const status = getProjectStatus(project);
+      const health = getProjectHealth(project);
+
+      return `
+        <h3>${project['projectnaam'] || 'Onbekend project'}</h3>
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+          <span class="status-badge ${status.class}" style="margin-left: 0; margin-right: 10px; color: var(--bg);">${status.text}</span>
+          <span class="health-indicator ${health.class}" title="${health.tooltip}"></span>
+        </div>
+        <p><strong>Project ID:</strong> ${project['project_id'] || 'Onbekend'}</p>
+        <p><strong>Beschrijving:</strong> ${project['project_beschrijving'] || 'Niet beschikbaar'}</p>
+        <p><strong>Projectleider:</strong> ${project['projectleider'] || 'Onbekend'}</p>
+        <p><strong>Opdrachtgever:</strong> ${project['opdrachtgever_naam_bedrijf'] || 'Niet opgegeven'}</p>
+        <p><strong>Opdrachtnemer:</strong> ${project['opdrachtnemer'] || 'Niet opgegeven'}</p>
+        <p><strong>Opgaven:</strong> ${project['opgaven'] || 'Niet gespecificeerd'}</p>
+        <p><strong>Type werkzaamheden:</strong> ${project['type_werkzaamheden'] || 'Niet vermeld'}</p>
+        <p><strong>Wijk:</strong> ${project['wijknaam'] || 'Onbekend'} (${project['wijkcode'] || '-'})</p>
+        <p><strong>Buurt:</strong> ${project['buurtnaam'] || 'Onbekend'} (${project['buurtcode'] || '-'})</p>
+        <p><strong>Postcode:</strong> ${project['meest_voorkomende_postcode'] || 'Onbekend'}</p>
+        <p><strong>Directievoerder:</strong> ${project['directievoerder'] || 'Niet opgegeven'}</p>
+        <p><strong>Toezichthouder:</strong> ${project['toezichthouder'] || 'Niet opgegeven'}</p>
+        <div class="phase-timeline fade-in">
+          <h4>Fase Planning:</h4>
+          ${generatePhaseTimeline(project)}
+        </div>
+        ${project['link'] ? `
+          <p class="link-container">
+            <span class="link-icon"></span>
+            <strong>Projectlink:</strong>
+            <a href="${project['link']}" target="_blank" rel="noopener noreferrer">
+              ${truncateUrl(project['link'])}
+            </a>
+          </p>` : ''
+        }
+      `;
+    }
+
+    function generatePhaseTimeline(project) {
+      const phases = [
+        { name: 'Initiatief', start: project['initiatief_begindatum'], end: project['initiatief_einddatum'] },
+        { name: 'Definitie', start: project['definitie_begindatum'], end: project['definitie_einddatum'] },
+        { name: 'Werkvoorbereiding', start: project['werkvoorbereiding_begindatum'], end: project['werkvoorbereiding_einddatum'] },
+        { name: 'Realisatie', start: project['realisatie_begindatum'], end: project['realisatie_einddatum'] },
+        { name: 'Oplevering', start: project['oplevering_nazorg_begin'], end: project['oplevering_nazorg_eind'] },
+        { name: 'On hold', start: project['vervallen_begindatum'], end: project['vervallen_einddatum'] }
+      ];
+
+      const validPhasesHtml = phases.map(phase => {
+        const start = parseDate(phase.start);
+        const end = parseDate(phase.end);
+
+        if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
+          return '';
+        }
+
+        return `
+          <div class="phase-item">
+            <span class="phase-name">${phase.name}:</span>
+            <span class="phase-dates">${formatDutchDate(start)} - ${formatDutchDate(end)}</span>
+          </div>
+        `;
+      }).join('');
+
+      return validPhasesHtml || '<p>Geen faseplanning beschikbaar</p>';
+    }
+
+    function togglePhases() {
+      showPhases = !showPhases;
+      const button = document.getElementById('togglePhases');
+      button.innerHTML = showPhases ? '<span class="icon-layers"></span> Fases verbergen' : '<span class="icon-layers"></span> Fases tonen';
+      filterProjects(); // Re-filter and redraw to include/exclude phases
+    }
+
+    // drawChart with improved error handling and SVG check
+    function drawChart() {
+      console.log("drawChart() called — rows:", dataTable?.getNumberOfRows?.() || 0);
+      const container = document.getElementById('chart_div');
+
+      // Clear previous chart or spinner state
+      container.innerHTML = '';
+
+      if (!dataTable || dataTable.getNumberOfRows() === 0) {
+        container.innerHTML =
+          '<div class="empty-state fade-in">' +
+          (allProjects.length === 0 ? '<p>Selecteer een CSV-bestand om te beginnen</p>' : '<p>Geen projecten gevonden met de huidige filters.</p>') +
+          '</div>';
+        window.removeEventListener('resize', resizeChart);
+        console.warn("drawChart: Empty or null DataTable. Chart not drawn.");
+        return;
+      }
+
+      try {
+        const chartHeight = Math.max(300, 50 + (dataTable.getNumberOfRows() * 35));
+        const options = {
+          height: chartHeight,
+          gantt: {
+            trackHeight: 30,
+            barHeight: 20,
+            labelStyle: {
+              fontName: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+              fontSize: 12,
+              color: 'var(--text)' // Use CSS variable for theme support
+            },
+            criticalPathEnabled: false,
+            innerGridTrack: { fill: 'var(--bg-secondary)' }, // Use CSS variable
+            innerGridDarkTrack: { fill: 'var(--border)' }, // Use CSS variable
+            barCornerRadius: 3,
+            arrow: {
+              angle: 0,
+              width: 0,
+              color: 'none',
+              radius: 0
+            },
+            bar: {
+              groupWidth: '70%',
+              strokeWidth: 2
+            },
+            timeline: {
+              showBarLabels: false,
+              colorByRowLabel: false,
+              rowLabelStyle: {
+                fontName: 'Segoe UI',
+                fontSize: 12,
+                color: 'var(--text)' // Use CSS variable
+              }
+            },
+             tooltip: { isHtml: true }, // Enable HTML tooltips
+             // Add the today line option
+             currentDate: new Date().getTime(),
+             currentDateStyle: { stroke: '#FF0000', strokeWidth: 2 } // Red line
+          },
+          tooltip: {
+            isHtml: true,
+            trigger: 'focus' // Show tooltip on focus (e.g., hover)
+          },
+           chartArea: {
+                left: 200, // Adjust left margin for labels
+                right: 50,
+                top: 20,
+                bottom: 20,
+                width: '100%',
+                height: '100%' // This height is relative to the container height set above
+            },
+             backgroundColor: 'var(--bg-secondary)', // Set chart background using CSS variable
+             hAxis: {
+                textStyle: { color: 'var(--text-light)' }, // Style horizontal axis text using CSS variable
+                gridlines: { color: 'var(--border)' } // Style grid lines using CSS variable
+            },
+            vAxis: {
+                 textStyle: { color: 'var(--text)' } // Style vertical axis text using CSS variable
+            }
+        };
+
+        if (!chart) {
+          chart = new google.visualization.Gantt(container);
+          // Add event listener for selection
+           google.visualization.events.addListener(chart, 'select', function() {
+               const selection = chart.getSelection();
+               if (selection.length > 0) {
+                   const row = selection[0].row;
+                   const taskId = dataTable.getValue(row, 0);
+                   // Check if it's a main project row (not a phase)
+                   if (taskId.startsWith('project_') && !taskId.match(/_(init|def|werk|real|oplev|hold)$/)) { // Use regex to check it's NOT a phase
+                       const projectName = dataTable.getValue(row, 1);
+                       const checkboxId = `project-${projectName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')}`;
+                       const checkbox = document.getElementById(checkboxId);
+                       if (checkbox) {
+                           // Simulate click on the corresponding checkbox
+                           // Ensure we don't trigger a change if already checked
+                           if (!checkbox.checked) {
+                                // Uncheck "Show All" and all other individual projects first
+                                document.getElementById('showAllProjects').checked = false;
+                                document.querySelectorAll('#projectFilter input[type="checkbox"]:checked:not(#showAllProjects)').forEach(cb => {
+                                    selectedProjectNames.delete(cb.value); // Update the Set
+                                    cb.checked = false;
+                                    // Update list item class immediately
+                                    const listItem = document.querySelector(`#project-list .project-item[data-project-name="${cb.value}"]`);
+                                    if (listItem) listItem.classList.remove('selected');
+                                });
+
+                                checkbox.checked = true;
+                                selectedProjectNames.add(projectName); // Add to the Set
+
+                                // Update list item class immediately
+                                const listItem = document.querySelector(`#project-list .project-item[data-project-name="${projectName}"]`);
+                                if (listItem) listItem.classList.add('selected');
+
+                                filterProjects(); // Re-filter and redraw
+                                showSelectedProjectsDetails(); // Update details panel
+                                updateFilterChips(); // Update filter chips
+
+                           } else {
+                               // If already checked, maybe uncheck it? Or do nothing.
+                               // For now, do nothing if already selected via click on chart.
+                           }
+                       }
+                   }
+               }
+           });
+        }
+
+        // Draw the chart with the current dataTable and options
+        chart.draw(dataTable, options);
+        console.log("chart.draw() called."); // Log after draw call
+
+         // Apply custom CSS classes to the bars after drawing
+         applyCustomBarStyles(container, dataTable);
+
+         // Adjust chart height dynamically on window resize
+         window.removeEventListener('resize', resizeChart); // Remove previous listener
+         window.addEventListener('resize', resizeChart); // Add new listener
+
+         // Add check for SVG content after drawing
+         const svgElement = container.querySelector('svg');
+         if (svgElement) {
+             console.log("Chart rendered successfully. SVG found.");
+         } else {
+             console.warn("No SVG element found after chart.draw().");
+         }
+
+
+      } catch (error) {
+        console.error('Chart drawing error:', error);
+        container.innerHTML = `<div class="empty-state fade-in"><p>Fout bij het tekenen van het diagram: ${error.message}</p></div>`;
+        showTemporaryMessage('Fout bij het tekenen van het diagram', 'danger');
+      }
+    }
+
+     // FIX: Simplified applyCustomBarStyles and corrected phase identification logic
+     function applyCustomBarStyles(container, data) {
+        const taskGroups = container.querySelectorAll('g[clip-path]');
+        taskGroups.forEach((group, rowIndex) => {
+            if (rowIndex >= data.getNumberOfRows()) return;
+            const rowId = data.getValue(rowIndex, 0);
+            const phaseName = data.getValue(rowIndex, 2);
+            let cssClass = '';
+            // FIX: Corrected condition to identify phase rows using regex
+            if (rowId && rowId.match(/_(init|def|werk|real|oplev|hold)$/)) {
+                switch (phaseName) {
+                    case 'Initiatief': cssClass = 'initiatief-bar'; break;
+                    case 'Definitie': cssClass = 'definitie-bar'; break;
+                    case 'Werkvoorbereiding': cssClass = 'werkvoorbereiding-bar'; break;
+                    case 'Realisatie': cssClass = 'realisatie-bar'; break;
+                    case 'Oplevering': cssClass = 'oplevering-bar'; break;
+                    case 'On hold': cssClass = 'onhold-bar'; break;
+                }
+            }
+            if (cssClass) {
+                const barRect = group.querySelector('rect');
+                if (barRect) {
+                    barRect.classList.add(cssClass);
+                }
+            }
+        });
+    }
+
+
+    // FIX: Simplified resizeChart to call drawChart
+    function resizeChart() {
+        if (chart && dataTable && dataTable.getNumberOfRows() > 0) {
+             drawChart(); // Simply redraw the chart
+        }
+    }
+
+
+    // --- Action Button Handlers ---
+
+    function resetZoom() {
+      if (chart && dataTable) {
+         drawChart();
+      }
+    }
+
+    function togglePhases() {
+      showPhases = !showPhases;
+      const button = document.getElementById('togglePhases');
+      button.innerHTML = showPhases ? '<span class="icon-layers"></span> Fases verbergen' : '<span class="icon-layers"></span> Fases tonen';
+      filterProjects(); // Re-filter and redraw to include/exclude phases
+    }
+
+    function clearSelection() {
+      selectedProjectNames.clear();
+      document.querySelectorAll('#projectFilter input[type="checkbox"]:not(#showAllProjects)').forEach(checkbox => {
+        checkbox.checked = false;
+      });
+       const showAllCheckbox = document.getElementById('showAllProjects');
+       if (showAllCheckbox) {
+           showAllCheckbox.checked = true;
+       }
+
+       document.querySelectorAll('#project-list .project-item').forEach(item => {
+           item.classList.remove('selected');
+       });
+
+      document.getElementById('projectSearch').value = '';
+      currentSearchTerm = '';
+
+      currentStatusFilter = 'alle';
+      document.querySelectorAll('.project-tabs .tab').forEach(tab => {
+        if (tab.getAttribute('data-filter-status') === 'alle') {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+
+      filterProjects();
+      showSelectedProjectsDetails();
+      updateFilterChips();
+    }
+
+    // --- Export Functions ---
+
+    // FIX: Enhanced Export Error Handling using finally
+    function exportToPdf() {
+        const container = document.getElementById('chart_div');
+        const originalHeight = container.style.height;
+
+        container.style.height = 'auto';
+
+        const spinnerHtml = `
+            <div class="empty-state export-spinner fade-in">
+                <svg class="spinner" viewBox="0 0 50 50">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="var(--primary)" stroke-width="5"></circle>
+                </svg>
+                <p>PDF aan het genereren...</p>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', spinnerHtml);
+        const spinnerElement = container.querySelector('.export-spinner'); // Get spinner element reference
+
+        setTimeout(() => { // Keep timeout to allow DOM updates
+            html2canvas(container, {
+                scale: 2,
+                logging: false,
+                useCORS: true,
+                allowTaint: true,
+                ignoreElements: (element) => element.classList.contains('export-spinner')
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('landscape', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const imgWidth = pdfWidth - 20;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let position = 10;
+
+                if (imgHeight > pdfHeight - 20) {
+                    let heightLeft = imgHeight;
+                    let pageNum = 1;
+                    let currentCanvasPosition = 0;
+
+                    while (heightLeft > 0) {
+                        if (pageNum > 1) {
+                            pdf.addPage();
+                            position = 10;
+                        }
+
+                        const heightToDraw = Math.min(heightLeft, pdfHeight - 20);
+
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = canvas.width;
+                        tempCanvas.height = (heightToDraw / imgHeight) * canvas.height;
+
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCtx.drawImage(
+                            canvas,
+                            0, currentCanvasPosition, canvas.width, tempCanvas.height,
+                            0, 0, tempCanvas.width, tempCanvas.height
+                        );
+
+                        const tempImgData = tempCanvas.toDataURL('image/png');
+
+                        pdf.addImage(tempImgData, 'PNG', 10, position, imgWidth, heightToDraw);
+
+                        heightLeft -= heightToDraw;
+                        currentCanvasPosition += tempCanvas.height;
+                        pageNum++;
+                    }
+                } else {
+                     const xOffset = (pdfWidth - imgWidth) / 2;
+                     pdf.addImage(imgData, 'PNG', xOffset, position, imgWidth, imgHeight);
+                }
+
+                const fileName = `Gantt-diagram_${new Date().toISOString().slice(0,10)}.pdf`;
+                pdf.save(fileName);
+                showTemporaryMessage('PDF succesvol geëxporteerd', 'success');
+
+            }).catch(error => {
+                console.error('PDF export error:', error);
+                showTemporaryMessage('Fout bij exporteren PDF', 'danger');
+            }).finally(() => { // FIX: Use finally to ensure cleanup
+                 if (spinnerElement) spinnerElement.remove();
+                 container.style.height = originalHeight;
+                 drawChart(); // Redraw chart after export
+            });
+        }, 100); // Small delay
+    }
+
+    // FIX: Enhanced Export Error Handling using finally
+    function exportChartAsPNG() {
+        const chartElement = document.getElementById('chart_div');
+        const spinnerHtml = `
+            <div class="empty-state export-spinner fade-in">
+                <svg class="spinner" viewBox="0 0 50 50">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="var(--primary)" stroke-width="5"></circle>
+                </svg>
+                <p>PNG aan het genereren...</p>
+            </div>
+        `;
+        chartElement.insertAdjacentHTML('beforeend', spinnerHtml);
+        const spinnerElement = chartElement.querySelector('.export-spinner'); // Get spinner element reference
+
+        html2canvas(chartElement, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            ignoreElements: (element) => element.classList.contains('export-spinner')
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `gantt_chart_${new Date().toISOString().slice(0, 10)}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showTemporaryMessage('PNG succesvol geëxporteerd', 'success');
+        }).catch(error => {
+             console.error('Error exporting PNG:', error);
+             showTemporaryMessage('Fout bij exporteren PNG', 'danger');
+        }).finally(() => { // FIX: Use finally to ensure cleanup
+             if (spinnerElement) spinnerElement.remove();
+             drawChart(); // Redraw chart after export
+        });
+    }
+
+
+    // Helper function to show temporary messages
+    function showTemporaryMessage(message, type = 'success') {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `temp-message ${type} scale-in`;
+      messageDiv.textContent = message;
+      document.body.appendChild(messageDiv);
+
+      // Remove after 3 seconds
+      setTimeout(() => {
+        messageDiv.classList.add('fade-out');
+        messageDiv.addEventListener('transitionend', () => messageDiv.remove(), { once: true });
+      }, 3000);
+    }
+
+
+    // --- Debugging Functions ---
+
+    function logCurrentFilterState() {
+      console.log('--- Current Filter State ---');
+      const checkedCheckboxes = document.querySelectorAll('#projectFilter input[type="checkbox"]:checked:not(#showAllProjects)');
+      const selectedProjectNamesArray = Array.from(selectedProjectNames);
+      console.log('Selected projects (excluding "Show All"):', selectedProjectNamesArray.length > 0 ? selectedProjectNamesArray : 'None');
+      console.log('"Toon alle projecten" checked:', document.getElementById('showAllProjects')?.checked);
+      console.log('Search term:', document.getElementById('projectSearch').value || 'None');
+      console.log('Status filter:', currentStatusFilter);
+      console.log('Show Phases:', showPhases);
+      console.log('All projects count:', allProjects.length);
+      if (dataTable) {
+          console.log('DataTable Row Count:', dataTable.getNumberOfRows());
+      } else {
+           console.log('DataTable is null.');
+      }
+      console.log('----------------------------');
+    }
+
+     function validateDataTable() {
+         if (!dataTable) {
+             console.warn('DataTable is null. Cannot validate.');
+             return false;
+         }
+         console.log('--- DataTable Validation ---');
+         const numRows = dataTable.getNumberOfRows();
+         const numCols = dataTable.getNumberOfColumns();
+         console.log(`DataTable has ${numRows} rows and ${numCols} columns.`);
+
+         for (let i = 0; i < numRows; i++) {
+             try {
+                 const taskId = dataTable.getValue(i, 0);
+                 const taskName = dataTable.getValue(i, 1);
+                 const startDate = dataTable.getValue(i, 3);
+                 const endDate = dataTable.getValue(i, 4);
+
+                 if (!startDate || isNaN(startDate.getTime())) {
+                     console.warn(`Row ${i} (ID: ${taskId}, Name: "${taskName}") has invalid Start Date:`, startDate);
+                 }
+                  if (!endDate || isNaN(endDate.getTime())) {
+                     console.warn(`Row ${i} (ID: ${taskId}, Name: "${taskName}") has invalid End Date:`, endDate);
+                 }
+                  if (startDate && endDate && startDate > endDate) {
+                     console.warn(`Row ${i} (ID: ${taskId}, Name: "${taskName}") has Start Date after End Date: ${formatDutchDate(startDate)} - ${formatDutchDate(endDate)}`);
+                 }
+             } catch (e) {
+                 console.error(`Error accessing data for row ${i}:`, e);
+             }
+         }
+         console.log('--- Validation Complete ---');
+         return true;
+     }
+
+    // Added resetData function
+    function resetData() {
+      allProjects = [];
+      filteredProjects = []; // Ensure filteredProjects is also cleared
+      selectedProjectNames.clear();
+      updateProjectFilter([]);
+      updateProjectList([]);
+      showSelectedProjectsDetails();
+      updateFilterChips();
+      dataTable = null; // Explicitly clear dataTable
+      // No need to call drawChart here, as filterProjects or handleFileUpload will handle the empty state
+    }
+
+
+  </script>
+</body>
+</html>
