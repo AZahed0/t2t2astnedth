@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>CSV naar Excel converter</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 800px;
+      margin: 40px auto;
+      box-shadow: 0 10px 15px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+    }
+    .container:hover {
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #1e40af;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+    .file-input-container {
+      position: relative;
+      margin-bottom: 20px;
+      border: 2px dashed #d1d5db;
+      border-radius: 8px;
+      padding: 30px;
+      text-align: center;
+      transition: all 0.3s ease;
+      background-color: #f9fafb;
+    }
+    .file-input-container:hover {
+      border-color: #3b82f6;
+      background-color: #f0f7ff;
+    }
+    .file-input-container.drag-over {
+      border-color: #2563eb;
+      background-color: #e0f2fe;
+    }
+    .file-input-label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    .file-input {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .file-info {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+    .file-name {
+      font-weight: 500;
+      color: #1e40af;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 25px 0;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .preview-btn {
+      background-color: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+    }
+    .preview-btn:hover {
+      background-color: #bae6fd;
+      color: #075985;
+    }
+    .convert-btn {
+      background-color: #3b82f6;
+      color: white;
+      border: 1px solid #3b82f6;
+    }
+    .convert-btn:hover {
+      background-color: #2563eb;
+    }
+    .convert-btn:disabled {
+      background-color: #93c5fd;
+      cursor: not-allowed;
+    }
+    .info-text {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-top: 15px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #previewArea {
+      margin-top: 30px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 20px;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    #previewArea h3 {
+      margin-bottom: 15px;
+      color: #1f2937;
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .table-container {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      margin-top: 10px;
+      max-height: 400px;
+      overflow-y: auto;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    #previewTable {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    #previewTable th, #previewTable td {
+      border: 1px solid #e5e7eb;
+      padding: 12px;
+      text-align: left;
+    }
+    #previewTable th {
+      background-color: #f8fafc;
+      font-weight: 600;
+      color: #374151;
+      position: sticky;
+      top: 0;
+    }
+    #previewTable tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    #previewTable tr:hover {
+      background-color: #f0f4f8;
+    }
+    .progress-container {
+      width: 100%;
+      height: 6px;
+      background-color: #e5e7eb;
+      border-radius: 3px;
+      margin-top: 15px;
+      overflow: hidden;
+      display: none;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #3b82f6;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📊 CSV naar Excel Converter</h2>
+    <p class="info-text">Upload een CSV-bestand waarin de velden gescheiden zijn met puntkomma's (;)</p>
+
+    <div class="file-input-container" id="dropZone">
+      <label class="file-input-label" for="csvFile">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
+        <span class="block mt-2">Klik om bestand te selecteren of sleep het hierheen</span>
+      </label>
+      <input type="file" id="csvFile" accept=".csv" class="file-input">
+      <div class="file-info">
+        Geselecteerd bestand: <span id="fileName" class="file-name">Geen bestand geselecteerd</span>
+      </div>
+    </div>
+
+    <div class="progress-container" id="progressContainer">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="button-container">
+      <button class="preview-btn" onclick="previewCsv()" id="previewBtn" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+        Toon Voorbeeld
+      </button>
+      <button class="convert-btn" onclick="convertToExcel()" id="convertBtn" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Converteer naar Excel
+      </button>
+    </div>
+
+    <p class="info-text">Klik op 'Toon Voorbeeld' om de eerste rijen te zien of 'Converteer naar Excel' om direct te downloaden.</p>
+
+    <div id="messageArea"></div>
+
+    <div id="previewArea" style="display: none;">
+      <h3>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Voorbeeld van de eerste rijen
+      </h3>
+      <div class="table-container">
+        <table id="previewTable"></table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // DOM elements
+    const csvFileInput = document.getElementById('csvFile');
+    const fileNameSpan = document.getElementById('fileName');
+    const previewBtn = document.getElementById('previewBtn');
+    const convertBtn = document.getElementById('convertBtn');
+    const dropZone = document.getElementById('dropZone');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+
+    // File input change handler
+    csvFileInput.addEventListener('change', function() {
+      if (this.files.length > 0) {
+        const file = this.files[0];
+        fileNameSpan.textContent = file.name;
+        previewBtn.disabled = false;
+        convertBtn.disabled = false;
+      } else {
+        fileNameSpan.textContent = 'Geen bestand geselecteerd';
+        previewBtn.disabled = true;
+        convertBtn.disabled = true;
+      }
+    });
+
+    // Drag and drop functionality
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+      dropZone.classList.add('drag-over');
+    }
+
+    function unhighlight() {
+      dropZone.classList.remove('drag-over');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      
+      if (files.length > 0) {
+        const file = files[0];
+        if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+          csvFileInput.files = files;
+          fileNameSpan.textContent = file.name;
+          previewBtn.disabled = false;
+          convertBtn.disabled = false;
+        } else {
+          displayMessage('Alleen CSV-bestanden zijn toegestaan.', 'error');
+        }
+      }
+    }
+
+    /**
+     * Function to handle file selection and initiate preview or conversion.
+     */
+    function handleFileSelect(callback) {
+      const file = csvFileInput.files[0];
+
+      if (!file) {
+        displayMessage('Selecteer een CSV-bestand om verder te gaan.', 'error');
+        return null;
+      }
+
+      // Show progress bar
+      progressContainer.style.display = 'block';
+      progressBar.style.width = '30%';
+
+      const reader = new FileReader();
+      
+      reader.onloadstart = function() {
+        progressBar.style.width = '50%';
+      };
+      
+      reader.onprogress = function(e) {
+        if (e.lengthComputable) {
+          const percentLoaded = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width = `${30 + (percentLoaded * 0.7)}%`;
+        }
+      };
+      
+      reader.onload = function(e) {
+        progressBar.style.width = '100%';
+        setTimeout(() => {
+          progressContainer.style.display = 'none';
+          progressBar.style.width = '0%';
+        }, 500);
+        
+        try {
+          const csvText = e.target.result;
+          // Split text into rows and then each row into columns based on semicolon
+          const rows = csvText.split('\n').map(row => row.trim().split(';'));
+          callback(rows);
+        } catch (error) {
+          displayMessage('Fout bij het lezen van het CSV-bestand: ' + error.message, 'error');
+        }
+      };
+
+      reader.onerror = function() {
+        progressContainer.style.display = 'none';
+        displayMessage('Er is een fout opgetreden bij het lezen van het bestand.', 'error');
+      };
+
+      // Read the file as text with UTF-8 encoding
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    /**
+     * Function to display a preview of the CSV data.
+     */
+    function previewCsv() {
+      // Show loading state
+      const originalText = previewBtn.innerHTML;
+      previewBtn.innerHTML = `<span class="loading-spinner"></span> Verwerken...`;
+      previewBtn.disabled = true;
+      
+      handleFileSelect(function(rows) {
+        // Restore button state
+        previewBtn.innerHTML = originalText;
+        previewBtn.disabled = false;
+        
+        const previewArea = document.getElementById('previewArea');
+        const previewTable = document.getElementById('previewTable');
+
+        // Clear previous preview data
+        previewTable.innerHTML = '';
+        displayMessage('');
+
+        if (!rows || rows.length === 0 || (rows.length === 1 && rows[0].length === 1 && rows[0][0] === "")) {
+          previewArea.style.display = 'none';
+          displayMessage('Het bestand bevat geen gegevens om een voorbeeld van te tonen.', 'error');
+          return;
+        }
+
+        // Display only the first few rows (e.g., 5 rows)
+        const rowsToDisplay = rows.slice(0, Math.min(rows.length, 6));
+
+        // Add table headers (assuming the first row is headers)
+        if (rowsToDisplay.length > 0) {
+          const headerRow = previewTable.insertRow();
+          rowsToDisplay[0].forEach((headerText, index) => {
+            const th = document.createElement('th');
+            th.textContent = headerText || `Kolom ${index + 1}`;
+            headerRow.appendChild(th);
+          });
+
+          // Add data rows
+          for (let i = 1; i < rowsToDisplay.length; i++) {
+            const dataRow = previewTable.insertRow();
+            rowsToDisplay[i].forEach(cellData => {
+              const td = document.createElement('td');
+              td.textContent = cellData;
+              dataRow.appendChild(td);
+            });
+          }
+        }
+
+        // Show the preview area
+        previewArea.style.display = 'block';
+      });
+    }
+
+    /**
+     * Function to convert the CSV to Excel and download.
+     */
+    function convertToExcel() {
+      // Show loading state
+      const originalText = convertBtn.innerHTML;
+      convertBtn.innerHTML = `<span class="loading-spinner"></span> Converteren...`;
+      convertBtn.disabled = true;
+      
+      handleFileSelect(function(rows) {
+        // Restore button state
+        convertBtn.innerHTML = originalText;
+        convertBtn.disabled = false;
+        
+        displayMessage('');
+
+        if (!rows || rows.length === 0 || (rows.length === 1 && rows[0].length === 1 && rows[0][0] === "")) {
+          displayMessage('Het bestand bevat geen gegevens om te converteren.', 'error');
+          return;
+        }
+
+        try {
+          // Create worksheet from array
+          const worksheet = XLSX.utils.aoa_to_sheet(rows);
+
+          // Create a new workbook and append the worksheet
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "Gegevens");
+
+          // Generate filename based on original file name
+          const originalFileName = csvFileInput.files[0].name.replace('.csv', '');
+          const excelFileName = `${originalFileName}.xlsx`;
+
+          // Export to Excel file (.xlsx)
+          XLSX.writeFile(workbook, excelFileName);
+          displayMessage(`Conversie voltooid! Het bestand "${excelFileName}" is gedownload.`, 'success');
+        } catch (error) {
+          displayMessage('Fout bij het converteren: ' + error.message, 'error');
+        }
+      });
+    }
+
+    /**
+     * Function to display messages to the user.
+     */
+    function displayMessage(message, type = 'info') {
+      const messageArea = document.getElementById('messageArea');
+      messageArea.textContent = message;
+      messageArea.className = 'mt-4 p-3 rounded text-center';
+
+      if (message) {
+        switch (type) {
+          case 'success':
+            messageArea.classList.add('bg-green-100', 'text-green-700', 'border', 'border-green-200');
+            break;
+          case 'error':
+            messageArea.classList.add('bg-red-100', 'text-red-700', 'border', 'border-red-200');
+            break;
+          case 'info':
+          default:
+            messageArea.classList.add('bg-blue-100', 'text-blue-700', 'border', 'border-blue-200');
+            break;
+        }
+        messageArea.style.display = 'block';
+      } else {
+        messageArea.style.display = 'none';
+      }
+    }
+
+    // Initially hide the preview area
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('previewArea').style.display = 'none';
+    });
+  </script>
+</body>
+</html>
