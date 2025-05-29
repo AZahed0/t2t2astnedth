@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aardbevingen  </title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              inter: ['Inter', 'sans-serif'],
+            },
+          },
+        },
+      };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.32/"></script>
+
+    <style>
+      /* Zorg ervoor dat de kaartcontainer de volledige hoogte en breedte inneemt */
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        background-color: aliceblue; /* Achtergrondkleur uit de nieuwe stijl */
+        display: flex; /* Gebruik flexbox voor lay-out */
+        flex-direction: column; /* Stapel items verticaal */
+      }
+      /* Aangepaste stijlen uit de nieuwe stijl */
+      #viewDiv {
+        flex-grow: 1; /* Laat de kaart de resterende ruimte innemen */
+        width: 100%;
+      }
+      #viewDiv canvas {
+        filter: drop-shadow(16px 16px 10px rgba(0, 0, 0, 0.5));
+      }
+      .esri-legend {
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+      /* Pas het Inter-lettertype globaal toe */
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/WebScene",
+        "esri/layers/CSVLayer",
+        "esri/views/SceneView"
+      ], (
+        WebScene,
+        CSVLayer,
+        SceneView
+      ) => {
+        // Definieer de URL voor de CSV-gegevens (bijgewerkt)
+        const url = "https://developers.arcgis.com/javascript/latest//sample-code/layers-csv/live/earthquakes.csv";
+
+        // Definieer de pop-up sjabloon voor wanneer op functies wordt geklikt (vertaald naar Nederlands)
+        const template = {
+          title: "Aardbevingsinformatie",
+          content: "Magnitude {mag} {type} trof {place} op {time}."
+        };
+
+        // Maak een nieuw CSVLayer-exemplaar
+        const csvLayer = new CSVLayer({
+          url: url,
+          copyright: "USGS Aardbevingen",
+          popupTemplate: template
+        });
+
+        // Definieer de renderer voor de CSVLayer om de gegevens te symboliseren (bijgewerkt voor 3D)
+        csvLayer.renderer = {
+          type: "simple", // autocasts as new SimpleRenderer()
+          symbol: {
+            type: "point-3d", // autocasts as new PointSymbol3D()
+            // voor dit symbool gebruiken we 2 symboollagen, één voor de buitenste cirkel
+            // en één voor de binnenste cirkel
+            symbolLayers: [
+              {
+                type: "icon", // autocasts as new IconSymbol3DLayer()
+                resource: { primitive: "circle" },
+                material: { color: [255, 84, 54, 1] }, // Kleur van de binnenste cirkel
+                size: 5
+              },
+              {
+                type: "icon", // autocasts as new IconSymbol3DLayer()
+                resource: { primitive: "circle" },
+                material: { color: [255, 84, 54, 0] }, // Buitenste cirkel (transparante vulling)
+                outline: { color: [255, 84, 54, 0.6], size: 1 }, // Omtrek van de buitenste cirkel
+                size: 25
+              }
+            ]
+          }
+        };
+
+        // Maak het WebScene-exemplaar met een portaalitem en de nieuwe basemap
+        const map = new WebScene({
+          portalItem: {
+            id: "a467ef1140de4e88acf34d38df9fb869" // Portaalitem-ID voor het WebScene
+          },
+          basemap: "topo" // <-- Basemap toegevoegd of aangepast
+        });
+
+        // Voeg de CSV-laag toe aan de kaart
+        map.add(csvLayer);
+
+        // Maak het SceneView-exemplaar (bijgewerkt vanuit MapView)
+        const view = new SceneView({
+          container: "viewDiv", // Het DOM-element om de weergave in te renderen
+          map: map, // De weer te geven kaart
+          alphaCompositingEnabled: true, // Alpha-compositing inschakelen voor transparante achtergrond
+          highlights: [ // Definieer highlight-eigenschappen
+            {
+              name: "default",
+              color: "white"
+            }
+          ],
+          constraints: { // Definieer weergavebeperkingen
+            altitude: {
+              min: 700000 // Minimale hoogte voor de camera
+            }
+          },
+          environment: { // Definieer omgevingsinstellingen voor de scène
+            background: {
+              type: "color",
+              color: [0, 0, 0, 0] // Transparante achtergrond
+            },
+            lighting: {
+              type: "virtual" // Virtuele verlichting
+            }
+          }
+        });
+
+        // Geen BasemapToggle of BasemapGallery in deze 3D-scènestijl
+        // Geen aangepaste titel- of beschrijvingsdivs in deze 3D-scènestijl
+      }); // Einde Require
+    </script>
+  </head>
+  <body class="font-inter">
+    <h1 class="text-2xl font-semibold text-center p-4 bg-white shadow-md z-10 absolute top-0 left-0 right-0">
+      Aardbevingen
+    </h1>
+    <div id="viewDiv" class="rounded-lg shadow-xl overflow-hidden mt-20"></div>
+  </body>
+</html>
