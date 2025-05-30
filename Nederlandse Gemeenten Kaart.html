@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nederlandse Gemeenten Kaart</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      background-color: #f9fafb; /* Default background color */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: "Inter", sans-serif; /* Ensure Inter font is applied */
+      transition: background-color 0.3s ease; /* Smooth transition for background color */
+      overflow-x: hidden; /* Prevent horizontal scrollbar due to hidden sidebar */
+    }
+    .map-container {
+      position: relative;
+      width: 90vw;
+      height: 90vh;
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+      transition: transform 0.3s ease;
+    }
+    /* Sidebar styling */
+    .controls-sidebar {
+      position: fixed;
+      top: 0;
+      right: -280px; /* Hide by default, adjust width as needed */
+      width: 280px; /* Width of the sidebar */
+      height: 100vh;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 1.5rem;
+      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+      transition: right 0.3s ease-in-out;
+      z-index: 50; /* Ensure it's above other content */
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      overflow-y: auto; /* Enable scrolling if content overflows */
+    }
+    .controls-sidebar.open {
+      right: 0; /* Show the sidebar */
+    }
+
+    /* Toggle button for sidebar */
+    .sidebar-toggle-btn {
+      position: fixed; /* Fixed position so it's always visible */
+      top: 1rem;
+      right: 1rem;
+      width: 50px; /* Larger button for easier tapping */
+      height: 50px;
+      background: #4f46e5; /* Indigo-600 */
+      color: white;
+      border-radius: 9999px; /* Fully rounded */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.2s ease, transform 0.2s ease;
+      z-index: 60; /* Above the sidebar */
+    }
+    .sidebar-toggle-btn:hover {
+      background-color: #4338ca; /* Indigo-700 */
+      transform: translateY(-2px);
+    }
+    .sidebar-toggle-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Close button inside sidebar */
+    .sidebar-close-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 1.8rem;
+        color: #6b7280;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+    .sidebar-close-btn:hover {
+        color: #1f2937;
+    }
+
+    /* Zoom controls within sidebar */
+    .zoom-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem; /* Space between zoom and color controls */
+    }
+
+    .zoom-btn {
+      width: 40px;
+      height: 40px;
+      background: white;
+      border-radius: 9999px;
+      border: 1px solid #e5e7eb;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1f2937;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      transition: background 0.2s, transform 0.2s;
+      cursor: pointer;
+    }
+    .zoom-btn:hover {
+      background: #e0e7ff;
+      transform: translateY(-2px);
+    }
+    .color-control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin-bottom: 0.5rem; /* Space between color groups */
+    }
+    .color-control-group label {
+        font-size: 0.875rem;
+        color: #374151;
+        font-weight: 500;
+    }
+    .color-input {
+        width: 100%;
+        height: 30px;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        padding: 0;
+        cursor: pointer;
+        background: transparent; /* Ensure background is transparent for color picker */
+    }
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1rem;
+      color: #6b7280;
+    }
+    .deselect-btn {
+        background-color: #ef4444; /* Red-500 */
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        margin-top: 0.5rem; /* Space from color pickers */
+        text-align: center;
+    }
+    .deselect-btn:hover {
+        background-color: #dc2626; /* Red-600 */
+    }
+  </style>
+</head>
+<body>
+  <div class="map-container">
+    <div class="loading" id="loading">Kaart laden...</div>
+  </div>
+
+  <button id="sidebar-toggle-btn" class="sidebar-toggle-btn">☰</button>
+
+  <div id="controls-sidebar" class="controls-sidebar">
+    <button id="sidebar-close-btn" class="sidebar-close-btn">&times;</button>
+    <h1 class="text-2xl font-bold mb-4 text-gray-800">Gemeenten in Nederland</h1>
+    <h2 class="text-xl font-bold mb-4 text-gray-800">Kaart Opties</h2>
+    
+    <div class="zoom-controls">
+      <button id="zoom-in" class="zoom-btn">+</button>
+      <button id="zoom-out" class="zoom-btn">−</button>
+    </div>
+
+    <div class="color-control-group">
+      <label for="hover-color-picker">Hover Kleur:</label>
+      <input type="color" id="hover-color-picker" class="color-input" value="#60a5fa">
+    </div>
+    <div class="color-control-group">
+      <label for="unselected-color-picker">Niet Geselecteerd:</label>
+      <input type="color" id="unselected-color-picker" class="color-input" value="#e5e7eb">
+    </div>
+    <div class="color-control-group">
+      <label for="selected-color-picker">Geselecteerd:</label>
+      <input type="color" id="selected-color-picker" class="color-input" value="#3b82f6">
+    </div>
+    <div class="color-control-group">
+      <label for="background-color-picker">Achtergrond Kleur:</label>
+      <input type="color" id="background-color-picker" class="color-input" value="#f9fafb">
+    </div>
+    <button id="deselect-all-btn" class="deselect-btn">Deselecteer Alles</button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const svgUrl = 'https://upload.wikimedia.org/wikipedia/commons/b/b7/Nederland_gemeenten_2016.svg';
+      const container = document.querySelector('.map-container');
+      const loading = document.getElementById('loading');
+      
+      // Sidebar elements
+      const controlsSidebar = document.getElementById('controls-sidebar');
+      const sidebarToggleButton = document.getElementById('sidebar-toggle-btn');
+      const sidebarCloseButton = document.getElementById('sidebar-close-btn');
+
+      // Controls within sidebar
+      const hoverColorPicker = document.getElementById('hover-color-picker');
+      const unselectedColorPicker = document.getElementById('unselected-color-picker');
+      const selectedColorPicker = document.getElementById('selected-color-picker');
+      const backgroundColorPicker = document.getElementById('background-color-picker');
+      const deselectAllBtn = document.getElementById('deselect-all-btn');
+
+      // Zoom controls (now inside sidebar)
+      const zoomInBtn = document.getElementById('zoom-in');
+      const zoomOutBtn = document.getElementById('zoom-out');
+
+      const bodyElement = document.body; // Reference to the body for background color
+
+      let currentSvg = null;
+      let scale = 1;
+      let isDragging = false;
+      let start = { x: 0, y: 0 };
+      let translate = { x: 0, y: 0 };
+      let selectedPaths = new Set(); // Changed to a Set to store multiple selected paths
+      let currentHoverColor = hoverColorPicker.value;
+      let currentUnselectedColor = unselectedColorPicker.value;
+      let currentSelectedColor = selectedColorPicker.value;
+
+      // --- Sidebar Toggle Logic ---
+      sidebarToggleButton.addEventListener('click', () => {
+          controlsSidebar.classList.toggle('open');
+      });
+
+      sidebarCloseButton.addEventListener('click', () => {
+          controlsSidebar.classList.remove('open');
+      });
+      // --- End Sidebar Toggle Logic ---
+
+
+      fetch(svgUrl)
+        .then(res => res.text())
+        .then(svg => {
+          loading.remove();
+          container.insertAdjacentHTML('beforeend', svg);
+          currentSvg = container.querySelector('svg');
+
+          currentSvg.style.transformOrigin = 'center center';
+          currentSvg.style.cursor = 'grab';
+
+          // Drag setup
+          currentSvg.addEventListener('mousedown', e => {
+            // Prevent dragging if clicking on the sidebar toggle button or controls within sidebar
+            if (e.target === sidebarToggleButton || controlsSidebar.contains(e.target)) {
+                return;
+            }
+            if (e.button !== 0) return;
+            isDragging = true;
+            start = {
+              x: e.clientX - translate.x,
+              y: e.clientY - translate.y
+            };
+            currentSvg.style.cursor = 'grabbing';
+          });
+
+          window.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            translate.x = e.clientX - start.x;
+            translate.y = e.clientY - start.y;
+            updateTransform();
+          });
+
+          window.addEventListener('mouseup', () => {
+            isDragging = false;
+            currentSvg.style.cursor = 'grab';
+          });
+
+          // Zoom with buttons
+          zoomInBtn.addEventListener('click', () => {
+            scale = Math.min(5, scale * 1.2);
+            updateTransform();
+          });
+
+          zoomOutBtn.addEventListener('click', () => {
+            scale = Math.max(0.5, scale / 1.2);
+            updateTransform();
+          });
+
+          // Zoom with double click
+          currentSvg.addEventListener('dblclick', e => {
+            e.preventDefault();
+            scale = Math.min(5, scale * 1.5);
+            updateTransform();
+          });
+
+          // Zoom with mouse wheel
+          currentSvg.addEventListener('wheel', e => {
+            e.preventDefault(); // Prevent page scrolling
+            const zoomAmount = 0.1; // Smaller step for smoother wheel zoom
+            if (e.deltaY < 0) { // Scrolling up (zoom in)
+              scale = Math.min(5, scale * (1 + zoomAmount));
+            } else { // Scrolling down (zoom out)
+              scale = Math.max(0.5, scale * (1 - zoomAmount));
+            }
+            updateTransform();
+          });
+
+
+          // Style paths and add interactivity
+          currentSvg.querySelectorAll('path').forEach(path => {
+            // Set initial fill color to the current unselected color
+            path.style.fill = currentUnselectedColor;
+            path.style.stroke = '#ffffff';
+            path.style.strokeWidth = '0.5';
+            path.style.transition = 'fill 0.3s ease';
+
+            path.addEventListener('mouseover', () => {
+              // Only change color if not already selected
+              if (!selectedPaths.has(path)) {
+                path.style.fill = currentHoverColor; // Use dynamic hover color
+              }
+            });
+
+            path.addEventListener('mouseout', () => {
+              // Only revert color if not selected
+              if (!selectedPaths.has(path)) {
+                path.style.fill = currentUnselectedColor; // Revert to dynamic unselected color
+              }
+            });
+
+            path.addEventListener('click', () => {
+              if (selectedPaths.has(path)) {
+                // If already selected, deselect it
+                selectedPaths.delete(path);
+                path.style.fill = currentUnselectedColor; // Revert to unselected color
+              } else {
+                // If not selected, select it
+                selectedPaths.add(path);
+                path.style.fill = currentSelectedColor; // Set to dynamic selected color
+              }
+            });
+          });
+        })
+        .catch(err => {
+          console.error('Fout bij het laden:', err);
+          loading.textContent = 'Fout bij het laden van de kaart.';
+          loading.classList.add('text-red-500');
+        });
+
+      function updateTransform() {
+        if (currentSvg) {
+          currentSvg.style.transform = `translate(${translate.x}px, ${translate.y}px) scale(${scale})`;
+        }
+      }
+
+      // Event listener for hover color picker
+      hoverColorPicker.addEventListener('input', (e) => {
+          currentHoverColor = e.target.value; // Update the current hover color
+      });
+
+      // Event listener for unselected color picker
+      unselectedColorPicker.addEventListener('input', (e) => {
+          currentUnselectedColor = e.target.value; // Update the current unselected color
+          // Update all paths that are not currently selected or hovered
+          currentSvg.querySelectorAll('path').forEach(path => {
+              if (!selectedPaths.has(path) && !path.matches(':hover')) {
+                  path.style.fill = currentUnselectedColor;
+              }
+          });
+      });
+
+      // Event listener for selected color picker
+      selectedColorPicker.addEventListener('input', (e) => {
+          currentSelectedColor = e.target.value; // Update the current selected color
+          // Update all currently selected paths
+          selectedPaths.forEach(path => {
+              path.style.fill = currentSelectedColor;
+          });
+      });
+
+      // Event listener for background color picker
+      backgroundColorPicker.addEventListener('input', (e) => {
+          bodyElement.style.backgroundColor = e.target.value; // Change body background
+      });
+
+      // Set initial background color from picker value
+      bodyElement.style.backgroundColor = backgroundColorPicker.value;
+
+      // Deselect All Button functionality
+      deselectAllBtn.addEventListener('click', () => {
+          selectedPaths.forEach(path => {
+              path.style.fill = currentUnselectedColor; // Revert color to unselected
+          });
+          selectedPaths.clear(); // Clear the set of selected paths
+      });
+    });
+  </script>
+</body>
+</html>
