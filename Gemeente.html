@@ -9,60 +9,63 @@
   <style>
     body {
       margin: 0;
-      background-color: #f9fafb;
+      background-color: #f9fafb; /* Default body background color */
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      font-family: "Inter", sans-serif;
-      transition: background-color 0.3s ease;
-      overflow-x: hidden;
+      font-family: "Inter", sans-serif; /* Ensure Inter font is applied */
+      transition: background-color 0.3s ease; /* Smooth transition for body background color */
+      overflow-x: hidden; /* Prevent horizontal scrollbar due to hidden sidebar */
     }
     .map-container {
       position: relative;
       width: 90vw;
       height: 90vh;
-      background: white;
+      background: white; /* Default map container background color */
       border-radius: 1rem;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
       overflow: hidden;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.3s ease; /* Smooth transition for map background color */
     }
     svg {
       display: block;
       width: 100%;
       height: 100%;
       cursor: grab;
-      transition: transform 0.3s ease;
+      /* Remove transform transition from SVG itself, it will be on the <g> element */
     }
+    /* Sidebar styling */
     .controls-sidebar {
       position: fixed;
       top: 0;
-      right: -350px;
-      width: 350px;
+      right: -350px; /* Hide by default, adjust width as needed */
+      width: 350px; /* Width of the sidebar */
       height: 100vh;
       background: rgba(255, 255, 255, 0.98);
       padding: 1.5rem;
       box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
       transition: right 0.3s ease-in-out;
-      z-index: 50;
+      z-index: 50; /* Ensure it's above other content */
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      overflow-y: auto;
+      overflow-y: auto; /* Enable scrolling if content overflows */
     }
     .controls-sidebar.open {
-      right: 0;
+      right: 0; /* Show the sidebar */
     }
+
+    /* Toggle button for sidebar */
     .sidebar-toggle-btn {
-      position: fixed;
+      position: fixed; /* Fixed position so it's always visible */
       top: 1rem;
       right: 1rem;
-      width: 50px;
+      width: 50px; /* Larger button for easier tapping */
       height: 50px;
-      background: #4f46e5;
+      background: #4f46e5; /* Indigo-600 */
       color: white;
-      border-radius: 9999px;
+      border-radius: 9999px; /* Fully rounded */
       display: flex;
       justify-content: center;
       align-items: center;
@@ -70,56 +73,43 @@
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       transition: all 0.2s ease;
-      z-index: 60;
+      z-index: 60; /* Above the sidebar */
     }
     .sidebar-toggle-btn:hover {
-      background-color: #4338ca;
+      background-color: #4338ca; /* Indigo-700 */
       transform: translateY(-2px);
     }
     .sidebar-toggle-btn:active {
       transform: translateY(0);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
+
+    /* Close button inside sidebar */
     .sidebar-close-btn {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: none;
-      border: none;
-      font-size: 1.8rem;
-      color: #6b7280;
-      cursor: pointer;
-      transition: color 0.2s ease;
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 1.8rem;
+        color: #6b7280;
+        cursor: pointer;
+        transition: color 0.2s ease;
     }
     .sidebar-close-btn:hover {
-      color: #1f2937;
+        color: #1f2937;
     }
-    .control-group {
-      background: #f9fafb;
-      padding: 1rem;
-      border-radius: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-    .control-group h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #1f2937;
-      margin-bottom: 0.75rem;
-      display: flex;
-      align-items: center;
-    }
-    .control-group h3 svg {
-      width: 18px;
-      height: 18px;
-      margin-right: 0.5rem;
-    }
+
+    /* Zoom controls within sidebar */
     .zoom-controls {
       display: flex;
+      flex-direction: column; /* Changed to column for vertical layout */
       gap: 0.5rem;
-      margin-bottom: 0.5rem;
+      margin-bottom: 1rem; /* Space between zoom and color controls */
     }
+
     .zoom-btn {
-      flex: 1;
+      width: 100%; /* Make buttons take full width of their container */
       height: 40px;
       background: white;
       border-radius: 0.5rem;
@@ -138,15 +128,15 @@
       transform: translateY(-2px);
     }
     .color-control-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      margin-bottom: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin-bottom: 0.75rem; /* Space between color groups */
     }
     .color-control-group label {
-      font-size: 0.875rem;
-      color: #374151;
-      font-weight: 500;
+        font-size: 0.875rem;
+        color: #374151;
+        font-weight: 500;
     }
     .color-input-wrapper {
       display: flex;
@@ -154,44 +144,52 @@
       gap: 0.5rem;
     }
     .color-input {
-      width: 100%;
-      height: 30px;
-      border: 1px solid #d1d5db;
-      border-radius: 0.375rem;
-      padding: 0;
-      cursor: pointer;
-      background: transparent;
+        width: 100%;
+        height: 30px;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        padding: 0;
+        cursor: pointer;
+        background: transparent; /* Ensure background is transparent for color picker */
     }
     .color-hex {
       font-size: 0.75rem;
       color: #6b7280;
       min-width: 60px;
     }
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1rem;
+      color: #6b7280;
+    }
     .action-btn {
-      width: 100%;
-      padding: 0.75rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease-in-out;
-      text-align: center;
-      margin-bottom: 0.5rem;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        text-align: center;
+        margin-bottom: 0.5rem;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
     }
     .action-btn svg {
       width: 16px;
       height: 16px;
     }
-    .deselect-btn {
-      background-color: #ef4444;
-      color: white;
+    .deselect-btn { /* Specific style for deselect button */
+        background-color: #ef4444; /* Red-500 */
+        color: white;
     }
     .deselect-btn:hover {
-      background-color: #dc2626;
+        background-color: #dc2626; /* Red-600 */
     }
     .export-btn {
       background-color: #10b981;
@@ -206,14 +204,6 @@
     }
     .add-label-btn:hover {
       background-color: #2563eb;
-    }
-    .loading {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 1rem;
-      color: #6b7280;
     }
     .legend {
       position: absolute;
@@ -314,6 +304,15 @@
     }
     .map-label:hover .label-delete-btn {
       opacity: 1;
+    }
+
+    /* Fix for sidebar SVG icon sizes */
+    .control-group h3 svg {
+        width: 20px; /* Set a fixed width */
+        height: 20px; /* Set a fixed height */
+        margin-right: 0.5rem; /* Space between icon and text */
+        vertical-align: middle; /* Align with text */
+        display: inline-block; /* Ensure proper box model for alignment */
     }
   </style>
 </head>
@@ -429,9 +428,13 @@
       const svgUrl = 'https://upload.wikimedia.org/wikipedia/commons/b/b7/Nederland_gemeenten_2016.svg';
       const container = document.querySelector('.map-container');
       const loading = document.getElementById('loading');
+      
+      // Sidebar elements
       const controlsSidebar = document.getElementById('controls-sidebar');
       const sidebarToggleButton = document.getElementById('sidebar-toggle-btn');
       const sidebarCloseButton = document.getElementById('sidebar-close-btn');
+
+      // Controls within sidebar
       const hoverColorPicker = document.getElementById('hover-color-picker');
       const unselectedColorPicker = document.getElementById('unselected-color-picker');
       const selectedColorPicker = document.getElementById('selected-color-picker');
@@ -440,22 +443,33 @@
       const deselectAllBtn = document.getElementById('deselect-all-btn');
       const exportBtn = document.getElementById('export-btn');
       const addLabelBtn = document.getElementById('add-label-btn');
+
+      // Hex color display elements
       const hoverColorHex = document.getElementById('hover-color-hex');
       const unselectedColorHex = document.getElementById('unselected-color-hex');
       const selectedColorHex = document.getElementById('selected-color-hex');
       const mapBgColorHex = document.getElementById('map-bg-color-hex');
       const bodyBgColorHex = document.getElementById('body-bg-color-hex');
+
+      // Legend elements
       const legend = document.getElementById('legend');
       const legendToggleBtn = document.getElementById('legend-toggle-btn');
       const selectedLegendColor = document.getElementById('selected-legend-color');
       const unselectedLegendColor = document.getElementById('unselected-legend-color');
       const selectedLegendText = document.getElementById('selected-legend-text');
       const unselectedLegendText = document.getElementById('unselected-legend-text');
+      
+      // Zoom buttons
+      const zoomInBtn = document.getElementById('zoom-in');
+      const zoomOutBtn = document.getElementById('zoom-out');
+
       const bodyElement = document.body;
 
       let currentSvg = null;
+      let transformGroup = null; // Reference to the <g> element for transformations
       let scale = 1;
       let isDragging = false;
+      let hasDragged = false; // New flag to track if a drag occurred
       let start = { x: 0, y: 0 };
       let translate = { x: 0, y: 0 };
       let selectedPaths = new Set();
@@ -476,17 +490,21 @@
       unselectedLegendColor.style.backgroundColor = unselectedColorPicker.value;
 
       // Sidebar Toggle Logic
-      sidebarToggleButton.addEventListener('click', () => {
-        controlsSidebar.classList.toggle('open');
+      sidebarToggleButton.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevent this click from propagating to document or container
+          controlsSidebar.classList.toggle('open');
       });
-      sidebarCloseButton.addEventListener('click', () => {
-        controlsSidebar.classList.remove('open');
+      sidebarCloseButton.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevent this click from propagating
+          controlsSidebar.classList.remove('open');
       });
+      // Close sidebar if clicking outside of it and its toggle button
       document.addEventListener('click', (e) => {
-        if (!controlsSidebar.contains(e.target) && e.target !== sidebarToggleButton) {
+        if (!controlsSidebar.contains(e.target) && e.target !== sidebarToggleButton && controlsSidebar.classList.contains('open')) {
           controlsSidebar.classList.remove('open');
         }
       });
+
 
       // Legend Toggle Logic
       legendToggleBtn.addEventListener('click', () => {
@@ -495,8 +513,6 @@
       });
 
       // Zoom controls
-      const zoomInBtn = document.getElementById('zoom-in');
-      const zoomOutBtn = document.getElementById('zoom-out');
       zoomInBtn.addEventListener('click', () => {
         scale = Math.min(5, scale * 1.2);
         updateTransform();
@@ -563,12 +579,13 @@
             Bezig met exporteren...
           `;
           sidebarToggleButton.style.visibility = 'hidden';
+          controlsSidebar.style.visibility = 'hidden'; // Hide sidebar itself
           legend.style.visibility = 'hidden'; // Hide legend for cleaner export
 
           // Temporarily reset SVG transformations for export
-          const originalTransform = currentSvg ? currentSvg.style.transform : '';
-          if (currentSvg) {
-            currentSvg.style.transform = 'none';
+          const originalTransform = transformGroup ? transformGroup.getAttribute('transform') : '';
+          if (transformGroup) {
+            transformGroup.setAttribute('transform', 'translate(0,0) scale(1)');
           }
 
           const canvas = await html2canvas(container, {
@@ -582,13 +599,16 @@
           const link = document.createElement('a');
           link.download = 'nederlandse-gemeenten-kaart.png';
           link.href = canvas.toDataURL('image/png');
+          document.body.appendChild(link);
           link.click();
+          document.body.removeChild(link);
 
           // Restore visibility and transformations
           sidebarToggleButton.style.visibility = 'visible';
+          controlsSidebar.style.visibility = 'visible'; // Restore sidebar visibility
           legend.style.visibility = 'visible';
-          if (currentSvg) {
-            currentSvg.style.transform = originalTransform;
+          if (transformGroup) {
+            transformGroup.setAttribute('transform', originalTransform);
           }
 
           exportBtn.innerHTML = `
@@ -599,8 +619,26 @@
           `;
         } catch (error) {
           console.error('Export error:', error);
-          alert('Er is een fout opgetreden bij het exporteren van de kaart.');
+          // Use a custom message box instead of alert()
+          const messageBox = document.createElement('div');
+          messageBox.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+          messageBox.innerHTML = `
+              <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4 text-center">
+                  <h3 class="text-xl font-bold mb-2 text-red-600">Fout bij exporteren</h3>
+                  <p class="mb-4 text-gray-700">Er is een fout opgetreden bij het exporteren van de kaart. Probeer het opnieuw.</p>
+                  <div class="flex justify-end">
+                      <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md">
+                          Sluiten
+                      </button>
+                  </div>
+              </div>
+          `;
+          document.body.appendChild(messageBox);
+          messageBox.querySelector('button').addEventListener('click', () => messageBox.remove());
+
+          // Re-show controls even if there's an error
           sidebarToggleButton.style.visibility = 'visible';
+          controlsSidebar.style.visibility = 'visible';
           legend.style.visibility = 'visible';
           exportBtn.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -680,20 +718,31 @@
       // Load and initialize the SVG map
       fetch(svgUrl)
         .then(res => res.text())
-        .then(svg => {
+        .then(svgText => { // Renamed to svgText to avoid confusion with currentSvg
           loading.remove();
-          container.insertAdjacentHTML('afterbegin', svg);
+          container.insertAdjacentHTML('afterbegin', svgText);
           currentSvg = container.querySelector('svg');
-          currentSvg.style.transformOrigin = 'center center';
-          currentSvg.style.cursor = 'grab';
 
-          // Drag setup
+          // Wrap all paths in a group to enable transform
+          const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          // Move all children from currentSvg to the new g element
+          while (currentSvg.firstChild) {
+            g.appendChild(currentSvg.firstChild);
+          }
+          currentSvg.appendChild(g);
+          transformGroup = g; // Assign to the global transformGroup variable
+
+          currentSvg.style.cursor = 'grab'; // Cursor for the overall SVG area
+
+          // Drag setup (listeners on currentSvg)
           currentSvg.addEventListener('mousedown', e => {
+            // Prevent dragging if clicking on the sidebar toggle button or controls within sidebar
             if (e.target === sidebarToggleButton || controlsSidebar.contains(e.target)) {
-              return;
+                return;
             }
             if (e.button !== 0) return;
             isDragging = true;
+            hasDragged = false; // Reset hasDragged on mousedown
             start = {
               x: e.clientX - translate.x,
               y: e.clientY - translate.y
@@ -703,14 +752,30 @@
 
           window.addEventListener('mousemove', e => {
             if (!isDragging) return;
+            // Only set hasDragged to true if the mouse has moved a significant distance
+            // This helps differentiate a click from a drag
+            const dx = e.clientX - (start.x + translate.x);
+            const dy = e.clientY - (start.y + translate.y);
+            if (Math.sqrt(dx * dx + dy * dy) > 5) { // 5 pixels threshold
+                hasDragged = true;
+            }
             translate.x = e.clientX - start.x;
             translate.y = e.clientY - start.y;
             updateTransform();
           });
 
-          window.addEventListener('mouseup', () => {
+          window.addEventListener('mouseup', (e) => { // Added 'e' parameter
             isDragging = false;
             currentSvg.style.cursor = 'grab';
+
+            // Deselect on map background click (only if no drag occurred)
+            // Check if the mouseup target is the SVG itself or the container, and not a path
+            if (!hasDragged && (e.target === currentSvg || e.target === container)) {
+              selectedPaths.forEach(path => {
+                path.style.fill = currentUnselectedColor;
+              });
+              selectedPaths.clear();
+            }
           });
 
           // Zoom with double click
@@ -752,7 +817,7 @@
             });
 
             path.addEventListener('click', (e) => {
-              e.stopPropagation();
+              e.stopPropagation(); // Prevent event from bubbling up to container
               if (selectedPaths.has(path)) {
                 selectedPaths.delete(path);
                 path.style.fill = currentUnselectedColor;
@@ -769,21 +834,12 @@
           loading.classList.add('text-red-500');
         });
 
+      // Function to update the transform attribute on the <g> element
       function updateTransform() {
-        if (currentSvg) {
-          currentSvg.style.transform = `translate(${translate.x}px, ${translate.y}px) scale(${scale})`;
+        if (transformGroup) {
+          transformGroup.setAttribute('transform', `translate(${translate.x}, ${translate.y}) scale(${scale})`);
         }
       }
-
-      // Deselect on map container click
-      container.addEventListener('click', (e) => {
-        if (e.target === container || e.target === currentSvg) {
-          selectedPaths.forEach(path => {
-            path.style.fill = currentUnselectedColor;
-          });
-          selectedPaths.clear();
-        }
-      });
 
       // Update legend text
       selectedLegendText.addEventListener('input', () => {
