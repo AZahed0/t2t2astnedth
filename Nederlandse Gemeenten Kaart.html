@@ -8,23 +8,24 @@
   <style>
     body {
       margin: 0;
-      background-color: #f9fafb; /* Default background color */
+      background-color: #f9fafb; /* Default body background color */
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
       font-family: "Inter", sans-serif; /* Ensure Inter font is applied */
-      transition: background-color 0.3s ease; /* Smooth transition for background color */
+      transition: background-color 0.3s ease; /* Smooth transition for body background color */
       overflow-x: hidden; /* Prevent horizontal scrollbar due to hidden sidebar */
     }
     .map-container {
       position: relative;
       width: 90vw;
       height: 90vh;
-      background: white;
+      background: white; /* Default map container background color */
       border-radius: 1rem;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
       overflow: hidden;
+      transition: background-color 0.3s ease; /* Smooth transition for map background color */
     }
     svg {
       display: block;
@@ -199,8 +200,12 @@
       <input type="color" id="selected-color-picker" class="color-input" value="#3b82f6">
     </div>
     <div class="color-control-group">
-      <label for="background-color-picker">Achtergrond Kleur:</label>
-      <input type="color" id="background-color-picker" class="color-input" value="#f9fafb">
+      <label for="map-background-color-picker">Kaart Achtergrond Kleur:</label>
+      <input type="color" id="map-background-color-picker" class="color-input" value="#FFFFFF">
+    </div>
+    <div class="color-control-group">
+      <label for="body-background-color-picker">Pagina Achtergrond Kleur:</label>
+      <input type="color" id="body-background-color-picker" class="color-input" value="#f9fafb">
     </div>
     <button id="deselect-all-btn" class="deselect-btn">Deselecteer Alles</button>
   </div>
@@ -220,10 +225,11 @@
       const hoverColorPicker = document.getElementById('hover-color-picker');
       const unselectedColorPicker = document.getElementById('unselected-color-picker');
       const selectedColorPicker = document.getElementById('selected-color-picker');
-      const backgroundColorPicker = document.getElementById('background-color-picker');
+      const mapBackgroundColorPicker = document.getElementById('map-background-color-picker'); // New picker for map background
+      const bodyBackgroundColorPicker = document.getElementById('body-background-color-picker'); // Renamed for clarity
       const deselectAllBtn = document.getElementById('deselect-all-btn');
 
-      // Zoom controls (now inside sidebar)
+      // Zoom controls (inside sidebar)
       const zoomInBtn = document.getElementById('zoom-in');
       const zoomOutBtn = document.getElementById('zoom-out');
 
@@ -390,13 +396,19 @@
           });
       });
 
-      // Event listener for background color picker
-      backgroundColorPicker.addEventListener('input', (e) => {
+      // Event listener for map background color picker
+      mapBackgroundColorPicker.addEventListener('input', (e) => {
+          container.style.backgroundColor = e.target.value; // Change map container background
+      });
+
+      // Event listener for body background color picker
+      bodyBackgroundColorPicker.addEventListener('input', (e) => {
           bodyElement.style.backgroundColor = e.target.value; // Change body background
       });
 
-      // Set initial background color from picker value
-      bodyElement.style.backgroundColor = backgroundColorPicker.value;
+      // Set initial background colors from picker values
+      container.style.backgroundColor = mapBackgroundColorPicker.value;
+      bodyElement.style.backgroundColor = bodyBackgroundColorPicker.value;
 
       // Deselect All Button functionality
       deselectAllBtn.addEventListener('click', () => {
