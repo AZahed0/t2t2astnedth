@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>3D Scene - Den Helder: Inkomens & Verkeersongevallen</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <style>
+    html, body, #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      font-family: "Inter", sans-serif;
+    }
+    #title {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background-color: rgba(255, 255, 255, 0.92);
+      padding: 12px 18px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      font-family: "Inter", sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">🚗 Verkeersongevallen in Den Helder (3D)</div>
+  <div id="viewDiv"></div>
+
+  <script>
+    require([
+      "esri/Map",
+      "esri/views/SceneView",
+      "esri/layers/MapImageLayer",
+      "esri/layers/FeatureLayer",
+      "esri/renderers/HeatmapRenderer",
+      "esri/renderers/SimpleRenderer",
+      "esri/geometry/Polygon",
+      "esri/geometry/SpatialReference",
+      "esri/widgets/LayerList",
+      "esri/widgets/BasemapGallery",
+      "esri/widgets/Expand",
+      "esri/symbols/WebStyleSymbol"
+    ], (Map, SceneView, MapImageLayer, FeatureLayer, HeatmapRenderer, SimpleRenderer, Polygon, SpatialReference, LayerList, BasemapGallery, Expand, WebStyleSymbol) => {
+
+      // Define the filter expression for 2023 and onwards
+      const yearFilterExpression = "Jaar_VKL >= 2023";
+
+      // Inkomenslaag
+      const inkomenLayer = new MapImageLayer({
+        url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/Inkomenspercentages_Nederland/MapServer",
+        sublayers: [{ id: 0, title: "Inkomens per buurt", visible: true }]
+      });
+
+      // Heatmap layer: visible from city scale (furthest zoom out) down to a small building level (e.g., 1:2,000)
+      const ongevallenHeatLayer = new FeatureLayer({
+        url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/Verkeersongevallen/FeatureServer/0",
+        title: "Verkeersongevallen - Heatmap",
+        outFields: ["*", "VKL_NUMMER", "GME_NAAM", "ANTL_PTJ", "AP3_CODE", "TYPE_ONGEVAL", "DATUM", "WEGTYP", "Jaar_VKL"],
+        minScale: 0,
+        maxScale: 2000,
+        renderer: new HeatmapRenderer({
+          colorStops: [
+            { ratio: 0, color: "rgba(0, 0, 255, 0)" },
+            { ratio: 0.3, color: "rgba(0, 0, 255, 0.4)" },
+            { ratio: 0.7, color: "rgba(0, 255, 128, 0.6)" },
+            { ratio: 1, color: "rgba(0, 200, 0, 0.8)" }
+          ],
+          blurRadius: 25,
+          maxPixelIntensity: 120,
+          minPixelIntensity: 0
+        }),
+        popupTemplate: {
+          title: "Verkeersongeval {VKL_NUMMER}",
+          content: `
+            <p>Verkeersongeval in {GME_NAAM} in {expression/expr1}.</p>
+            <p>Hierbij waren <span style="font-family:'segoe ui';">{ANTL_PTJ}</span> partijen betrokken.</p>
+            <p>De afloop is <strong>{AP3_CODE}&nbsp;</strong></p>
+            <p><span style="font-family:'segoe ui';"><strong>Betrokken partijen</strong></span></p>
+            <p>{expression/expr0}</p>
+          `,
+          expressionInfos: [
+            {
+              name: "expr1",
+              expression: "return Text($feature.Jaar_VKL);"
+            },
+            {
+              name: "expr0",
+              expression: `
+                var $layer = FeatureSetByRelationshipName($feature, "Partijen");
+                var a = [];
+                var i = 0;
+                for(var f in $layer) {
+                    a[i++] = f.OTE_ID;
+                }
+                return Concatenate(a, '\\n');
+              `
+            }
+          ]
+        },
+        definitionExpression: yearFilterExpression // Apply filter here
+      });
+
+      // Define the WebStyleSymbol for the 3D car
+      const webStyleSymbol = new WebStyleSymbol({
+        name: "Ford_Fusion",
+        styleName: "EsriRealisticTransportationStyle"
+      });
+
+      // Icon layer: visible from small building level (e.g., 1:2,000) to max zoom in
+      const ongevallenIconLayer = new FeatureLayer({
+        url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/Verkeersongevallen/FeatureServer/0",
+        title: "Verkeersongevallen - 3D Iconen",
+        outFields: ["*", "VKL_NUMMER", "GME_NAAM", "ANTL_PTJ", "AP3_CODE", "TYPE_ONGEVAL", "DATUM", "WEGTYP", "Jaar_VKL"],
+        minScale: 2000,
+        maxScale: 0,
+        elevationInfo: {
+          mode: "relative-to-ground"
+        },
+        renderer: new SimpleRenderer({
+          symbol: webStyleSymbol
+        }),
+        popupTemplate: {
+          title: "Verkeersongeval {VKL_NUMMER}",
+          content: `
+            <p>Verkeersongeval in {GME_NAAM} in {expression/expr1}.</p>
+            <p>Hierbij waren <span style="font-family:'segoe ui';">{ANTL_PTJ}</span> partijen betrokken.</p>
+            <p>De afloop is <strong>{AP3_CODE}&nbsp;</strong></p>
+            <p><span style="font-family:'segoe ui';"><strong>Betrokken partijen</strong></span></p>
+            <p>{expression/expr0}</p>
+          `,
+          expressionInfos: [
+            {
+              name: "expr1",
+              expression: "return Text($feature.Jaar_VKL);"
+            },
+            {
+              name: "expr0",
+              expression: `
+                var $layer = FeatureSetByRelationshipName($feature, "Partijen");
+                var a = [];
+                var i = 0;
+                for(var f in $layer) {
+                    a[i++] = f.OTE_ID;
+                }
+                return Concatenate(a, '\\n');
+              `
+            }
+          ]
+        },
+        definitionExpression: yearFilterExpression // Apply filter here
+      });
+
+      const map = new Map({
+        basemap: "satellite",
+        ground: "world-elevation",
+        layers: [inkomenLayer, ongevallenHeatLayer, ongevallenIconLayer]
+      });
+
+      const extentPolygon = new Polygon({
+        rings: [[
+          [4.7555, 52.9596],
+          [4.7555, 52.9556],
+          [4.7668, 52.9556],
+          [4.7668, 52.9596],
+          [4.7555, 52.9596]
+        ]],
+        spatialReference: SpatialReference.WGS84
+      });
+
+      const view = new SceneView({
+        container: "viewDiv",
+        map: map,
+        viewingMode: "local",
+        camera: {
+          position: { x: 4.761, y: 52.9575, z: 800 },
+          tilt: 65
+        },
+        extent: extentPolygon.extent,
+        environment: {
+          lighting: {
+            directShadowsEnabled: true,
+            ambientOcclusionEnabled: true
+          }
+        }
+      });
+
+      view.when(() => {
+        view.goTo({ target: extentPolygon.extent.expand(1.05), tilt: 65 });
+
+        const layerList = new LayerList({ view });
+        const layerListExpand = new Expand({
+          view,
+          content: layerList,
+          expanded: false,
+          icon: "layers"
+        });
+        view.ui.add(layerListExpand, "top-right");
+
+        const basemapGallery = new BasemapGallery({ view });
+        const basemapGalleryExpand = new Expand({
+          view,
+          content: basemapGallery,
+          expanded: false,
+          group: "top-left",
+          icon: "basemap"
+        });
+        view.ui.add(basemapGalleryExpand, "top-left");
+      });
+    });
+  </script>
+</body>
+</html>
