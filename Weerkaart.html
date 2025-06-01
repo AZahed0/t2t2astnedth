@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Live Weerkaart - Den Helder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom styles not easily covered by Tailwind or for Leaflet overrides */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      /* Set Inter font as per instructions */
+      font-family: 'Inter', sans-serif;
+    }
+
+    #map {
+      height: 100%;
+      width: 100%; /* Ensure map takes full width */
+      z-index: 1; /* Ensure map is behind overlays */
+    }
+
+    /* Custom class for weather labels to apply specific Leaflet tooltip styling */
+    .weather-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem; /* Equivalent to text-xs */
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 0.5rem; /* Equivalent to p-2 */
+      border-radius: 0.375rem; /* Equivalent to rounded-md */
+      border: 1px solid #e5e7eb; /* Equivalent to border-gray-200 */
+      white-space: nowrap;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Equivalent to shadow-sm */
+    }
+
+    /* Adjust Leaflet control layers position and size */
+    .leaflet-control-layers {
+      /* Positioned to be part of the right sidebar.
+         Adjust top to stack below other controls in the sidebar. */
+      top: 10rem !important; /* Adjusted to be below the refresh buttons in the sidebar */
+      right: 0.5rem !important; /* Align with the right edge of the sidebar */
+      left: unset !important; /* Override default left positioning */
+      bottom: unset !important; /* Override default bottom positioning */
+      padding: 0.25rem; /* Further reduced padding to make it smaller */
+      font-size: 0.75rem; /* Smaller font size (text-xs) */
+      @apply rounded-md shadow-lg; /* Apply Tailwind styling */
+    }
+
+    /* Styling for the loading spinner */
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left-color: #3b82f6; /* Blue-500 */
+      border-radius: 50%;
+      width: 1rem;
+      height: 1rem;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 0.5rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="font-sans antialiased text-gray-800">
+  <div class="header absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-white bg-opacity-90 p-4 rounded-lg shadow-lg flex items-center space-x-3 md:top-6">
+    <img src="https://www.denhelder.nl/dsresource?objectid=571c93e2-71c1-4168-a4ae-21c0970c48d8" alt="Gemeente Den Helder Logo" class="h-10 w-auto rounded-sm object-contain" onerror="this.onerror=null;this.src='https://placehold.co/80x48/cccccc/333333?text=Logo';" />
+    <h1 class="text-lg font-semibold text-gray-700 md:text-xl">Live Weerkaart - Den Helder</h1>
+  </div>
+
+  <div class="right-sidebar absolute top-4 right-4 z-20 flex flex-col space-y-3 bg-white bg-opacity-90 p-4 rounded-lg shadow-lg md:top-6 md:right-6">
+    <div class="controls flex flex-col space-y-3">
+      <button id="refreshBtn" class="control-btn bg-white bg-opacity-90 border border-gray-200 rounded-md py-2 px-4 shadow-md flex items-center space-x-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200 ease-in-out">
+        <i class="fas fa-sync-alt text-blue-500"></i>
+        <span>Vernieuwen</span>
+        <span id="weatherLoadingSpinner" class="hidden spinner"></span>
+      </button>
+      <button id="refreshRadarBtn" class="control-btn bg-white bg-opacity-90 border border-gray-200 rounded-md py-2 px-4 shadow-md flex items-center space-x-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200 ease-in-out">
+        <i class="fas fa-satellite-dish text-green-500"></i>
+        <span>Radar Vernieuwen</span>
+        <span id="radarLoadingSpinner" class="hidden spinner"></span>
+      </button>
+    </div>
+    </div>
+
+  <div id="map" class="w-full h-screen"></div>
+
+  <div class="last-update absolute bottom-4 left-4 z-20 bg-white bg-opacity-90 p-2 rounded-md shadow-md text-xs text-gray-600 md:bottom-6 md:left-6">
+    Laatst bijgewerkt: <span id="updateTime" class="font-medium text-gray-700">-</span>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Initialize the Leaflet map, ensuring it fills the entire viewport
+    const map = L.map('map', {
+      zoomControl: false // Disable default zoom control to place it manually if needed
+    });
+
+    // Add a custom zoom control to the top left position
+    L.control.zoom({
+      position: 'topleft' // Changed position to 'topleft'
+    }).addTo(map);
+
+    // GeoJSON for the desired map extent focusing on Den Helder area
+    const mapExtentGeoJSON = {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {},
+          "geometry": {
+            "coordinates": [
+              [
+                [4.806236536007134, 52.96729613249897],
+                [4.704499526033459, 52.96729613249897],
+                [4.704499526033459, 52.92528484858832],
+                [4.806236536007134, 52.92528484858832],
+                [4.806236536007134, 52.96729613249897]
+              ]
+            ],
+            "type": "Polygon"
+          }
+        }
+      ]
+    };
+
+    // Extract coordinates from the GeoJSON to set the map's initial bounds
+    const polygonCoordinates = mapExtentGeoJSON.features[0].geometry.coordinates[0];
+    const latLngs = polygonCoordinates.map(coord => [coord[1], coord[0]]);
+    const bounds = L.latLngBounds(latLngs);
+    map.fitBounds(bounds); // Fit the map view to these calculated bounds
+
+    // Define various base map tile layers
+    const googleStreets = L.tileLayer('https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
+      attribution: 'Google Streets',
+      maxZoom: 20
+    });
+
+    const esriLuchtfoto = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri World Imagery'
+    });
+
+    const esriTopo = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri Topographic'
+    });
+
+    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© CartoDB'
+    });
+
+    // Group base maps for the layer control
+    const baseMaps = {
+      "🗺️ Google Streets": googleStreets,
+      "📷 Esri Luchtfoto": esriLuchtfoto,
+      "🌍 Esri Topo": esriTopo,
+      "🧾 Carto Light": cartoLight
+    };
+
+    // Define overlay layers
+    // Bounds for the MET Norway radar image (covers a large Nordic area)
+    const metNorwayBounds = [[30, -25], [75, 45]];
+    const radarOverlay = L.imageOverlay(
+      'https://api.met.no/weatherapi/radar/2.0/5level_reflectivity.png?area=nordic',
+      metNorwayBounds,
+      { opacity: 0.6, attribution: '© MET Norway' }
+    );
+
+    // Group overlay maps for the layer control
+    const overlayMaps = {
+      "📡 Radar (Neerslag)": radarOverlay
+    };
+
+    // Add the default base map to the map
+    esriLuchtfoto.addTo(map);
+
+    // Add Leaflet's layer control to switch between base maps and toggle overlays
+    L.control.layers(baseMaps, overlayMaps, {
+      position: 'topright' // Set layer control position to top right to be near the sidebar
+    }).addTo(map);
+
+    // GeoJSON points for specific weather stations in Den Helder
+    const geojsonPoints = {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": { "naam": "Willemsoord" },
+          "geometry": {
+            "coordinates": [4.77139333766425, 52.95905489555969],
+            "type": "Point"
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "naam": "Gemeentewerf Ambachtsweg" },
+          "geometry": {
+            "coordinates": [4.782092033086741, 52.94207679584642],
+            "type": "Point"
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "naam": "Huisduinen" },
+          "geometry": {
+            "coordinates": [4.726433045645081, 52.95545610209632],
+            "type": "Point"
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "naam": "Julianadorp" },
+          "geometry": {
+            "coordinates": [4.740748297236934, 52.892851035397285],
+            "type": "Point"
+          }
+        }
+      ]
+    };
+
+    // Array to store marker instances for easy access and refresh
+    const markers = [];
+
+    /**
+     * Fetches live weather data for a given latitude and longitude and updates the marker's tooltip.
+     * @param {number} lat - Latitude of the location.
+     * @param {number} lon - Longitude of the location.
+     * @param {string} naam - Name of the weather station.
+     * @param {L.Layer} layer - The Leaflet layer (marker) to bind and update the tooltip for.
+     */
+    async function fetchWeatherForPoint(lat, lon, naam, layer) {
+      // Display a loading message in the tooltip while fetching
+      layer.bindTooltip(`<div class="weather-label"><b>${naam}</b><br>🌦️ Weergegevens laden...</div>`, { permanent: true, direction: 'right', className: 'weather-label' });
+
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,cloud_cover,wind_speed_10m,wind_direction_10m`;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        const weather = data.current;
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('nl-NL');
+        document.getElementById('updateTime').textContent = timeString; // Update global last update time
+
+        // Construct HTML content for the weather label
+        const html = `
+          <div class="weather-label">
+            <b>${naam}</b><br>
+            🌡️ Temperatuur: ${weather.temperature_2m} °C<br>
+            💧 Vochtigheid: ${weather.relative_humidity_2m} %<br>
+            🌧️ Neerslag: ${weather.precipitation} mm<br>
+            ☁️ Bewolking: ${weather.cloud_cover} %<br>
+            💨 Windsnelheid: ${weather.wind_speed_10m} km/u<br>
+            🧭 Windrichting: ${weather.wind_direction_10m}°<br>
+            🕒 Tijd: ${weather.time.replace('T', ' ')}
+          </div>
+        `;
+        layer.setTooltipContent(html); // Update the tooltip content
+      } catch (error) {
+        console.error(`Fout bij laden van weergegevens voor ${naam}:`, error);
+        layer.setTooltipContent(`<div class="weather-label"><b>${naam}</b><br>❌ Fout bij laden van weergegevens: ${error.message}</div>`);
+      }
+    }
+
+    // Add markers to the map based on the geojsonPoints data
+    const weatherStationsLayer = L.geoJSON(geojsonPoints, {
+      pointToLayer: function (feature, latlng) {
+        // Create a marker for each point
+        if (!latlng) {
+          console.error('latlng is not defined for feature:', feature);
+          return L.marker([0, 0]); // Return a dummy marker to prevent errors
+        }
+        const marker = L.marker(latlng);
+        // Store the original station name directly on the marker for easier access during refresh
+        marker.stationName = feature.properties.naam;
+        markers.push(marker); // Add marker to the global array
+        return marker;
+      },
+      onEachFeature: function (feature, layer) {
+        // Fetch weather data and bind tooltip for each marker
+        const naam = feature.properties.naam || "Onbekend punt";
+        const latlng = layer.getLatLng();
+        if (latlng) {
+          fetchWeatherForPoint(latlng.lat, latlng.lng, naam, layer);
+        } else {
+          console.error('Could not retrieve latlng for layer:', feature);
+          layer.bindTooltip(`<div class="weather-label"><b>${naam}</b><br>❌ Locatiegegevens niet beschikbaar</div>`, { permanent: true, direction: 'right', className: 'weather-label' });
+        }
+      }
+    }).addTo(map); // Add the entire GeoJSON layer to the map
+
+    /**
+     * Refreshes all weather data for existing markers.
+     */
+    async function refreshAllWeatherData() {
+      const weatherLoadingSpinner = document.getElementById('weatherLoadingSpinner');
+      weatherLoadingSpinner.classList.remove('hidden'); // Show spinner
+
+      const now = new Date();
+      document.getElementById('updateTime').textContent = now.toLocaleTimeString('nl-NL');
+
+      // Use Promise.all to wait for all fetches to complete
+      await Promise.all(markers.map(async marker => {
+        const latlng = marker.getLatLng();
+        // Use the stored stationName property
+        const naam = marker.stationName || "Onbekend punt";
+        await fetchWeatherForPoint(latlng.lat, latlng.lng, naam, marker);
+      }));
+
+      weatherLoadingSpinner.classList.add('hidden'); // Hide spinner
+      console.log('All weather data refreshed.');
+    }
+
+    /**
+     * Refreshes the radar overlay by updating its URL with a new timestamp to bypass cache.
+     */
+    function refreshRadarOverlay() {
+      const radarLoadingSpinner = document.getElementById('radarLoadingSpinner');
+      radarLoadingSpinner.classList.remove('hidden'); // Show spinner
+
+      const timestamp = new Date().getTime();
+      radarOverlay.setUrl(`https://api.met.no/weatherapi/radar/2.0/5level_reflectivity.png?area=nordic&_=${timestamp}`);
+      document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('nl-NL');
+
+      // The imageOverlay doesn't have a direct 'load' event for content, so we hide spinner after a short delay
+      setTimeout(() => {
+        radarLoadingSpinner.classList.add('hidden'); // Hide spinner
+      }, 1000); // Give it a moment to potentially start loading
+
+      console.log('Radar overlay refreshed.');
+    }
+
+    // Event listeners for the refresh buttons
+    document.getElementById('refreshBtn').addEventListener('click', refreshAllWeatherData);
+    document.getElementById('refreshRadarBtn').addEventListener('click', refreshRadarOverlay);
+
+    // Initial update time display
+    document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('nl-NL');
+
+    // Auto-refresh MET Norway radar overlay every 10 minutes (600,000 ms)
+    setInterval(refreshRadarOverlay, 10 * 60 * 1000);
+
+    // Auto-refresh weather data every 5 minutes (300,000 ms)
+    setInterval(refreshAllWeatherData, 5 * 60 * 1000);
+
+    // Perform an initial fetch of all weather data on load
+    window.onload = () => {
+      refreshAllWeatherData();
+      refreshRadarOverlay(); // Also refresh radar on load
+    };
+  </script>
+</body>
+</html>
