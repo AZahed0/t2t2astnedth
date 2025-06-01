@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <title>Den Helder Buurten</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.32/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.32/"></script>
+    <style>
+      /* Ensure the main container fills the viewport */
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        font-family: Arial, sans-serif; /* A common sans-serif font */
+      }
+
+      /* Main flex container for sidebar and map */
+      #main-container {
+        display: flex;
+        height: 100vh; /* Full viewport height */
+      }
+      
+      /* Custom Sidebar Styling */
+      #sidebar {
+        width: 350px; /* Increased width */
+        background: white;
+        padding: 15px;
+        border-radius: 0 8px 8px 0; /* Rounded on the right side */
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+        z-index: 10; /* Ensure it's above the map */
+        overflow-y: auto; /* Enable scrolling for content */
+        transition: width 0.3s ease-in-out, padding 0.3s ease-in-out;
+        flex-shrink: 0; /* Prevent sidebar from shrinking */
+      }
+
+      /* Styling for the collapse toggle button */
+      #collapseToggle {
+        width: auto; /* Allow button to size to content */
+        margin-bottom: 15px;
+        padding: 8px 12px;
+        background: #0079c1;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        display: block; /* Ensure it takes full width */
+        text-align: center;
+        transition: background-color 0.2s ease-in-out;
+      }
+      
+      #collapseToggle:hover {
+        background: #006ba1;
+      }
+
+      /* General styling for content panels within the sidebar */
+      #sidebar > div {
+        margin-bottom: 20px; /* Space between sections when expanded */
+        /* Add transition for smooth collapse/expand */
+        transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, margin-bottom 0.3s ease-in-out;
+        overflow: hidden; /* Hide overflow content when max-height is reduced */
+        max-height: 500px; /* A sufficiently large max-height for expanded state */
+        opacity: 1;
+        padding-bottom: 0; /* Reset padding-bottom to be controlled by margin-bottom of the div itself */
+      }
+
+      #sidebar > div:last-child {
+        margin-bottom: 0; /* No margin after the last section */
+      }
+
+      #sidebar h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #333;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+      }
+
+      /* Button styling */
+      .action-button {
+        width: 100%; /* Ensure buttons fill their container */
+        margin-bottom: 10px;
+        padding: 8px;
+        background: #0079c1;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+      }
+      
+      .action-button:hover {
+        background: #006ba1;
+      }
+      
+      /* Color picker styling */
+      .color-picker-group {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .color-picker-group label {
+        flex-grow: 1;
+        margin-right: 10px;
+      }
+
+      .color-picker-group input[type="color"] {
+        width: 40px;
+        height: 25px;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        border-radius: 4px; /* Slightly rounded corners */
+      }
+
+      /* Map container */
+      #viewDiv {
+        flex: 1; /* Map takes all remaining space */
+        height: 100%;
+        position: relative; /* Needed for absolute positioning of logo */
+      }
+
+      /* Styles for collapsed content */
+      #sidebar.collapsed {
+        width: 50px; /* Collapsed width */
+        overflow: hidden;
+        padding: 10px 5px;
+      }
+      #sidebar.collapsed #selectionToolsContent,
+      #sidebar.collapsed #colorCustomizationContent,
+      #sidebar.collapsed #layerListContainer {
+        max-height: 0;
+        opacity: 0;
+        margin-bottom: 0; /* Remove margin when collapsed */
+      }
+
+      /* Logo styling - Moved to top right */
+      #logo {
+        position: absolute;
+        top: 20px; /* Distance from top */
+        right: 20px; /* Distance from right */
+        width: 100px; /* Adjust as needed */
+        height: auto;
+        z-index: 100; /* Ensure it's above other map elements */
+        border-radius: 8px; /* Rounded corners for the logo */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+      }
+
+      /* Responsive CSS for smaller screens */
+      @media (max-width: 600px) {
+        #main-container {
+          flex-direction: column; /* Stack sidebar and map vertically */
+        }
+        #sidebar {
+          width: 100%; /* Full width */
+          max-width: 100%; /* Ensure it doesn't exceed screen width */
+          height: auto; /* Height adjusts to content */
+          padding: 10px;
+          border-radius: 0; /* No rounded corners on mobile */
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); /* Shadow on bottom */
+        }
+        #sidebar.collapsed {
+          height: 50px; /* Collapsed height for mobile */
+        }
+        #sidebar h3 {
+          font-size: 1rem;
+          margin-bottom: 10px;
+          padding-bottom: 5px;
+        }
+        .action-button {
+          padding: 6px;
+          font-size: 0.9rem;
+        }
+        .color-picker-group label {
+          font-size: 0.9rem;
+        }
+        .color-picker-group input[type="color"] {
+          width: 30px;
+          height: 20px;
+        }
+        #logo {
+          width: 80px; /* Smaller logo on mobile */
+          top: 10px; /* Adjusted for mobile */
+          right: 10px; /* Adjusted for mobile */
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main-container">
+      <div id="sidebar" class="esri-widget">
+        <button id="collapseToggle" aria-expanded="true" aria-label="Zijbalk inklappen">❮ Inklappen</button>
+
+        <div id="selectionToolsContent">
+          <h3>Selectiegereedschap</h3>
+          <button id="select-button" class="action-button" aria-label="Activeer selectiemodus voor buurten">Selecteer buurten</button>
+          <button id="clear-button" class="action-button" aria-label="Wis geselecteerde buurten" disabled>Wis selectie</button>
+        </div>
+
+        <div id="colorCustomizationContent">
+          <h3>Kleuren aanpassen</h3>
+          <div class="color-picker-group">
+            <label for="defaultColorPicker">Standaard buurt kleur:</label>
+            <input type="color" id="defaultColorPicker" value="#0078c8" />
+          </div>
+          <div class="color-picker-group">
+            <label for="selectedColorPicker">Geselecteerde buurt kleur:</label>
+            <input type="color" id="selectedColorPicker" value="#ff0000" />
+          </div>
+        </div>
+
+        <div id="layerListContainer" class="widget-content-panel">
+          <h3>Kaartlagen</h3>
+        </div>
+      </div>
+
+      <div id="viewDiv">
+        <img id="logo" src="https://cdn.binnenlandsbestuur.nl/styles/imported_hero/cloud-storage/bb_migrate/images/Uploads/2019/2/Logo-Den-Helder1.jpg?itok=U2z4NsEy" alt="Gemeente Den Helder Logo" onerror="this.onerror=null;this.src='https://placehold.co/100x100/A0A0A0/FFFFFF?text=Logo';" />
+      </div>
+    </div>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/layers/TileLayer",
+        "esri/layers/GraphicsLayer",
+        "esri/Graphic",
+        "esri/widgets/LayerList",
+        "esri/Basemap",
+        "esri/geometry/Extent",
+      ], (
+        Map,
+        MapView,
+        FeatureLayer,
+        TileLayer,
+        GraphicsLayer,
+        Graphic,
+        LayerList,
+        Basemap,
+        Extent
+      ) => {
+        // --- State Variables ---
+        let selectedFeatures = []; // Stores currently selected features
+        let selectHandle = null; // Stores the event handler for map clicks
+        let hoverGraphicId = null; // Stores the OBJECTID of the currently hovered graphic
+
+        // --- Helper Functions ---
+
+        /**
+         * Debounces a function call, ensuring it's only executed after a specified delay
+         * since the last invocation. Useful for events like 'input' on color pickers.
+         * @param {function} func - The function to debounce.
+         * @param {number} wait - The delay in milliseconds.
+         * @returns {function} The debounced function.
+         */
+        function debounce(func, wait) {
+          let timeout;
+          return function (...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+          };
+        }
+
+        /**
+         * Converts a hexadecimal color string to an RGBA string.
+         * @param {string} hex - The hexadecimal color string (e.g., "#RRGGBB").
+         * @param {number} alpha - The alpha transparency value (0 to 1).
+         * @returns {string} The RGBA color string (e.g., "rgba(R,G,B,A)").
+         */
+        function hexToRgba(hex, alpha) {
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          return `rgba(${r},${g},${b},${alpha})`;
+        }
+
+        /**
+         * Updates the disabled state and opacity of the clear selection button
+         * based on whether any features are currently selected.
+         */
+        function updateClearButtonState() {
+          const clearButton = document.getElementById("clear-button");
+          clearButton.disabled = selectedFeatures.length === 0;
+          clearButton.style.opacity = selectedFeatures.length === 0 ? 0.5 : 1;
+        }
+
+        /**
+         * Clears existing highlights and redraws highlights for all currently selected features.
+         * The highlight color is based on the 'selectedColorPicker' value.
+         */
+        function updateHighlights() {
+          layers.highlightLayer.removeAll(); // Clear all previous highlights
+
+          selectedFeatures.forEach((feature) => {
+            const highlighted = new Graphic({
+              geometry: feature.geometry,
+              attributes: feature.attributes,
+              symbol: {
+                type: "simple-fill",
+                color: hexToRgba(selectedColorPicker.value, 0.5), // 50% transparent fill
+                outline: {
+                  color: hexToRgba(selectedColorPicker.value, 1), // Opaque outline
+                  width: 2 // Thicker outline for selected features
+                }
+              }
+            });
+            layers.highlightLayer.add(highlighted); // Add the new highlight graphic
+          });
+          updateClearButtonState(); // Update the clear button's state
+        }
+
+        // --- Initialize Layers ---
+        /**
+         * Initializes and returns the FeatureLayers and GraphicsLayers used in the map.
+         * Sets up scale-dependent visibility for labeled and unlabeled neighborhood layers.
+         * @returns {object} An object containing the initialized layers.
+         */
+        function initializeLayers() {
+          // Layer for Den Helder neighborhoods with labels, visible when zoomed in
+          const buurtenLayer = new FeatureLayer({
+            url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/CBS_Buurt_actueel/FeatureServer/0",
+            definitionExpression: "Statcode LIKE 'BU0400%'", // Filter for Den Helder neighborhoods
+            title: "Buurten Den Helder (met labels)",
+            outFields: ["*"], // Include all fields for attributes
+            renderer: {
+              type: "simple",
+              symbol: {
+                type: "simple-fill",
+                color: hexToRgba(document.getElementById("defaultColorPicker").value, 0.3), // Default fill color with transparency
+                outline: {
+                  color: hexToRgba(document.getElementById("defaultColorPicker").value, 1), // Default outline color
+                  width: 1
+                }
+              }
+            },
+            labelingInfo: [{
+              labelExpressionInfo: {
+                expression: "$feature.Statnaam" // Label with neighborhood name
+              },
+              symbol: {
+                type: "text",
+                color: "black",
+                haloColor: "white",
+                haloSize: 1,
+                font: {
+                  size: 8,
+                  weight: "bold"
+                }
+              }
+            }],
+            popupEnabled: false, // Disable default popups
+            featureReduction: null,
+            visible: true // Set to visible by default as per user request
+          });
+
+          // Layer for Den Helder neighborhoods without labels, visible when zoomed out
+          const buurtenNoLabelsLayer = new FeatureLayer({
+            url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/CBS_Buurt_actueel/FeatureServer/0",
+            definitionExpression: "Statcode LIKE 'BU0400%'",
+            title: "Buurten Den Helder (geen labels)",
+            outFields: ["*"],
+            renderer: {
+              type: "simple",
+              symbol: {
+                type: "simple-fill",
+                color: hexToRgba(document.getElementById("defaultColorPicker").value, 0.1), // Lighter fill with more transparency
+                outline: {
+                  color: hexToRgba(document.getElementById("defaultColorPicker").value, 1),
+                  width: 1
+                }
+              }
+            },
+            labelingInfo: [], // No labels for this layer
+            popupEnabled: false,
+            featureReduction: null,
+            visible: false // Initially hidden as per user request
+          });
+
+          // TileLayer for Basiskaart Canvas
+          const basiskaartCanvasLayer = new TileLayer({
+            url: "https://services.arcgisonline.nl/arcgis/rest/services/Basiskaarten/Canvas/MapServer",
+            title: "Basiskaart Canvas",
+            visible: false // Set to invisible by default as per user request
+          });
+
+          // TileLayer for Topografie 2024
+          const topografie2024Layer = new TileLayer({
+            url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/Topografie_2024/MapServer",
+            title: "Topografie 2024",
+            visible: false // Initially hidden
+          });
+
+          // New TileLayer for Luchtfoto Actueel (replaces World Imagery)
+          const luchtfotoActueelLayer = new TileLayer({
+            url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/HR_Luchtfoto_Actueel/MapServer",
+            title: "Luchtfoto Actueel",
+            visible: false // Initially hidden
+          });
+
+          // GraphicsLayer to display selected features
+          const highlightLayer = new GraphicsLayer({
+            title: "Geselecteerde buurten"
+          });
+
+          // GraphicsLayer to display hover effects
+          const hoverLayer = new GraphicsLayer({
+            title: "Hover Highlight"
+          });
+
+          return { buurtenLayer, buurtenNoLabelsLayer, basiskaartCanvasLayer, topografie2024Layer, luchtfotoActueelLayer, highlightLayer, hoverLayer };
+        }
+
+        // --- Initialize Map and View ---
+        /**
+         * Initializes the ArcGIS Map and MapView, setting the initial extent and basemaps.
+         * @param {object} layers - The layers object returned by initializeLayers.
+         * @returns {object} An object containing the MapView instance and available basemaps.
+         */
+        function initializeMap(layers) {
+          // Define custom basemaps for the gallery (still needed for map initialization, even if gallery is removed)
+          const basemapsArray = [
+            new Basemap({
+              baseLayers: [new TileLayer({ url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/Basiskaarten/Canvas/MapServer" })],
+              title: "Canvas Basemap",
+              thumbnailUrl: "https://www.arcgis.com/sharing/rest/content/items/8d00921200234f0e972379374464c20f/info/thumbnail/thumbnail.png"
+            }),
+            new Basemap({
+              baseLayers: [new TileLayer({ url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/Basiskaarten/Topo/MapServer" })],
+              title: "Topografische Kaart",
+              thumbnailUrl: "https://www.arcgis.com/sharing/rest/content/items/d8e12457850249079979727409247656/info/thumbnail/thumbnail.png"
+            }),
+            new Basemap({
+              baseLayers: [new TileLayer({ url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/Luchtfoto/PVH_RGB/MapServer" })],
+              title: "Luchtfoto",
+              thumbnailUrl: "https://www.arcgis.com/sharing/rest/content/content/items/19602f09919d45369c071597f8c0e271/info/thumbnail/thumbnail.png"
+            }),
+            new Basemap({
+              baseLayers: [new TileLayer({ url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/Basiskaarten/Grijs/MapServer" })],
+              title: "Grijze Canvas",
+              thumbnailUrl: "https://www.arcgis.com/sharing/rest/content/items/9c3c1303867c461394f727464010a30b/info/thumbnail/thumbnail.png"
+            })
+          ];
+
+          // Create the map with initial basemap and layers
+          const map = new Map({
+            basemap: basemapsArray[0], // Set the first basemap as default
+            layers: [layers.basiskaartCanvasLayer, layers.topografie2024Layer, layers.luchtfotoActueelLayer, layers.buurtenLayer, layers.buurtenNoLabelsLayer, layers.highlightLayer, layers.hoverLayer] // Updated layers array
+          });
+
+          // Define the extent for Den Helder
+          const denHelderExtent = new Extent({
+            xmin: 4.702209510456612,
+            ymin: 52.87921251079311,
+            xmax: 4.816879514331589,
+            ymax: 52.967199689243074,
+            spatialReference: { wkid: 4326 } // WGS84 spatial reference
+          });
+
+          // Create the MapView
+          const view = new MapView({
+            container: "viewDiv", // HTML element to render the map
+            map: map,
+            extent: denHelderExtent // Set initial map extent to Den Helder
+          });
+
+          return { view, basemaps: basemapsArray };
+        }
+
+        // --- Initialize UI Widgets ---
+        /**
+         * Initializes and places ArcGIS widgets (LayerList) into the sidebar.
+         * @param {esri.views.MapView} view - The MapView instance.
+         * @param {Array<esri.Basemap>} basemaps - An array of Basemap objects.
+         */
+        function initializeWidgets(view, basemaps) {
+          // Initialize LayerList widget and place it in the 'layerListContainer' div
+          const layerList = new LayerList({
+            view: view,
+            container: "layerListContainer",
+          });
+        }
+
+        // --- Initialize Event Listeners ---
+        /**
+         * Sets up all event listeners for user interactions (buttons, color pickers, map clicks, pointer moves).
+         * @param {esri.views.MapView} view - The MapView instance.
+         * @param {object} layers - The layers object containing buurtenLayer, highlightLayer, and hoverLayer.
+         */
+        function initializeEvents(view, layers) {
+          // Get references to HTML elements
+          const selectButton = document.getElementById("select-button");
+          const clearButton = document.getElementById("clear-button");
+          const defaultColorPicker = document.getElementById("defaultColorPicker");
+          const selectedColorPicker = document.getElementById("selectedColorPicker");
+          const sidebar = document.getElementById("sidebar");
+          const collapseToggle = document.getElementById("collapseToggle");
+
+          let isCollapsed = false; // State for sidebar collapse
+
+          // Initial state update for the clear button
+          updateClearButtonState();
+
+          // Event listener for sidebar collapse/expand toggle button
+          collapseToggle.addEventListener("click", () => {
+            isCollapsed = !isCollapsed;
+            if (isCollapsed) {
+              sidebar.classList.add("collapsed"); // Add collapsed class
+              collapseToggle.textContent = "❯"; // Change button text
+              collapseToggle.setAttribute("aria-expanded", "false"); // Update accessibility attribute
+              collapseToggle.setAttribute("aria-label", "Zijbalk uitklappen"); // Update accessibility label
+            } else {
+              sidebar.classList.remove("collapsed"); // Remove collapsed class
+              collapseToggle.textContent = "❮ Inklappen"; // Change button text
+              collapseToggle.setAttribute("aria-expanded", "true"); // Update accessibility attribute
+              collapseToggle.setAttribute("aria-label", "Zijbalk inklappen"); // Update accessibility label
+            }
+          });
+
+          // Event listener for the "Selecteer buurten" button
+          selectButton.addEventListener("click", () => {
+            // Remove any existing click handler to prevent multiple handlers
+            if (selectHandle) {
+              selectHandle.remove();
+            }
+            // Attach a new click handler to the map view for feature selection
+            selectHandle = view.on("click", (event) => {
+              try {
+                view.hitTest(event).then((response) => {
+                  // Find a graphic from the buurten layers that was clicked
+                  const graphic = response.results.find(result =>
+                    result.graphic.layer === layers.buurtenLayer || result.graphic.layer === layers.buurtenNoLabelsLayer
+                  );
+                  if (graphic) {
+                    const objId = graphic.graphic.attributes.OBJECTID;
+                    // Check if the clicked feature is already selected
+                    const existing = selectedFeatures.find(f => f.attributes.OBJECTID === objId);
+                    if (existing) {
+                      // If already selected, remove it from the selection
+                      selectedFeatures = selectedFeatures.filter(f => f.attributes.OBJECTID !== objId);
+                    } else {
+                      // If not selected, add it to the selection
+                      selectedFeatures.push(graphic.graphic);
+                    }
+                    updateHighlights(); // Update the visual highlights on the map
+                  }
+                }).catch((error) => {
+                  console.error("Error during hitTest:", error);
+                });
+              } catch (error) {
+                console.error("Error attaching hitTest listener:", error);
+              }
+            });
+            // Update button text and style to indicate active selection mode
+            selectButton.textContent = "Selectiemodus actief...";
+            selectButton.style.backgroundColor = "#ff6a00"; // Orange color for active state
+          });
+
+          // Event listener for the "Wis selectie" button
+          clearButton.addEventListener("click", () => {
+            // Remove the map click handler if it exists
+            if (selectHandle) {
+              selectHandle.remove();
+              selectHandle = null;
+            }
+            selectedFeatures = []; // Clear all selected features
+            updateHighlights(); // Clear highlights on the map
+            // Reset select button text and style
+            selectButton.textContent = "Selecteer buurten";
+            selectButton.style.backgroundColor = "#0079c1";
+          });
+
+          // Event listener for the default color picker (debounced for performance)
+          defaultColorPicker.addEventListener("input", debounce((event) => {
+            const hex = event.target.value;
+            const newColorOutline = hexToRgba(hex, 1);
+
+            // Update the renderer for the labeled layer
+            layers.buurtenLayer.renderer = {
+              type: "simple",
+              symbol: {
+                type: "simple-fill",
+                color: hexToRgba(hex, 0.3), // Keep 70% transparency for fill
+                outline: { color: newColorOutline, width: 1 }
+              }
+            };
+            // Update the renderer for the unlabeled layer
+            layers.buurtenNoLabelsLayer.renderer = {
+              type: "simple",
+              symbol: {
+                type: "simple-fill",
+                color: hexToRgba(hex, 0.1), // Keep 90% transparency for fill
+                outline: { color: newColorOutline, width: 1 }
+              }
+            };
+          }, 200)); // Debounce by 200ms
+
+          // Event listener for the selected color picker (debounced for performance)
+          selectedColorPicker.addEventListener("input", debounce((event) => {
+            updateHighlights(); // Redraw highlights with the new color
+          }, 200)); // Debounce by 200ms
+
+          // Event listener for pointer movement on the map (for hover effect)
+          view.on("pointer-move", (event) => {
+            view.hitTest(event).then((response) => {
+              // Find a graphic from the buurten layers that is being hovered over
+              const graphic = response.results.find(result =>
+                result.graphic.layer === layers.buurtenLayer || result.graphic.layer === layers.buurtenNoLabelsLayer
+              );
+
+              if (graphic) {
+                const objId = graphic.graphic.attributes.OBJECTID;
+                // Only show hover effect if it's not already selected and it's a new hover target
+                if (objId !== hoverGraphicId && !selectedFeatures.some(f => f.attributes.OBJECTID === objId)) {
+                  layers.hoverLayer.removeAll(); // Clear previous hover graphic
+                  const hoverGraphic = new Graphic({
+                    geometry: graphic.graphic.geometry,
+                    symbol: {
+                      type: "simple-fill",
+                      color: hexToRgba("#00FF00", 0.2), // Green hover color with transparency
+                      outline: {
+                        color: hexToRgba("#00FF00", 0.8), // Opaque green outline
+                        width: 1.5
+                      }
+                    }
+                  });
+                  layers.hoverLayer.add(hoverGraphic); // Add new hover graphic
+                  hoverGraphicId = objId; // Store the ID of the hovered graphic
+                } else if (selectedFeatures.some(f => f.attributes.OBJECTID === objId)) {
+                  // If a selected feature is hovered, remove hover effect
+                  layers.hoverLayer.removeAll();
+                  hoverGraphicId = null;
+                }
+              } else {
+                // If no graphic is hovered, clear the hover layer
+                layers.hoverLayer.removeAll();
+                hoverGraphicId = null;
+              }
+            }).catch((error) => {
+              console.error("Error during pointer-move hitTest:", error);
+            });
+          });
+        }
+
+        // --- Main Initialization ---
+        // Initialize all map layers
+        const layers = initializeLayers();
+        // Initialize the map and view, getting the view instance and basemaps
+        const { view, basemaps } = initializeMap(layers);
+
+        // Once the view is ready, initialize widgets and event listeners
+        view.when(() => {
+          try {
+            initializeWidgets(view, basemaps);
+            initializeEvents(view, layers);
+          } catch (error) {
+            console.error("Error initializing widgets or events:", error);
+          }
+        }).catch((error) => {
+          console.error("Error loading map view:", error);
+        });
+      });
+    </script>
+  </body>
+</html>
