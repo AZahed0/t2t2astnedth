@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Luchtkwaliteit Den Helder - Leaflet Map met uitgebreide info</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+    crossorigin=""
+  />
+  <style>
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
+    .popup-status {
+      font-weight: bold;
+      padding: 4px 8px;
+      border-radius: 5px;
+      color: white;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .good { background: #4caf50; }
+    .moderate { background: #ffeb3b; color: #333; }
+    .unhealthy-sensitive { background: #ff9800; }
+    .unhealthy { background: #f44336; }
+    .very-unhealthy { background: #9c27b0; }
+    .hazardous { background: #7e0023; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    const token = '0d0aa5bd30429956f154578326f2ba37bff3ff5f';
+
+    // Coördinaten Landmetersweg, Den Helder
+    const locationCoords = [52.9298905, 4.7670834];
+
+    // Adresgegevens (hardcoded volgens jouw info)
+    const locationInfo = {
+      city_district: "Den Helder",
+      country: "Netherlands",
+      country_code: "nl",
+      hamlet: "Friese Buurt",
+      house_number: "25",
+      neighbourhood: "Landmetersbuurt",
+      postcode: "1785 HA",
+      road: "Landmetersweg",
+      state: "North Holland",
+      town: "Den Helder",
+      display_name: "Landmetersweg, Landmetersbuurt, Friese Buurt, Den Helder, North Holland, Netherlands, 1785 HA, Netherlands"
+    };
+
+    // Kaart initialiseren
+    const map = L.map('map').setView(locationCoords, 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors',
+    }).addTo(map);
+
+    // AQI status helper functie
+    function getAqiStatus(aqi) {
+      if (aqi <= 50) return { text: 'Goed', className: 'good' };
+      if (aqi <= 100) return { text: 'Matig', className: 'moderate' };
+      if (aqi <= 150) return { text: 'Ongezond voor gevoeligen', className: 'unhealthy-sensitive' };
+      if (aqi <= 200) return { text: 'Ongezond', className: 'unhealthy' };
+      if (aqi <= 300) return { text: 'Zeer ongezond', className: 'very-unhealthy' };
+      return { text: 'Gevaarlijk', className: 'hazardous' };
+    }
+
+    // Helper om pollutant te krijgen (controle of aanwezig)
+    function getPollutant(iaqi, key) {
+      if (iaqi && iaqi[key] && iaqi[key].v !== undefined) {
+        return iaqi[key].v;
+      }
+      return 'n.v.t.';
+    }
+
+    // WAQI API URL voor exacte locatie Landmetersweg, Den Helder
+    const url = `https://api.waqi.info/feed/geo:${locationCoords[0]};${locationCoords[1]}/?token=${token}`;
+
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        if (data.status !== "ok") {
+          alert('Fout bij ophalen AQI data: ' + JSON.stringify(data.data));
+          return;
+        }
+
+        const aqi = data.data.aqi;
+        const stationName = data.data.city.name;
+        const iaqi = data.data.iaqi || {};
+        const status = getAqiStatus(aqi);
+
+        const popupContent = `
+          <div>
+            <div class="popup-status ${status.className}">${status.text}</div><br/>
+            <strong>AQI:</strong> ${aqi}<br/>
+            <strong>Meetstation:</strong> ${stationName}<br/><br/>
+
+            <strong>Adresgegevens:</strong><br/>
+            Straat: ${locationInfo.road} ${locationInfo.house_number}<br/>
+            Buurt: ${locationInfo.neighbourhood}<br/>
+            Wijk: ${locationInfo.hamlet}<br/>
+            Postcode: ${locationInfo.postcode}<br/>
+            Stad: ${locationInfo.town}<br/>
+            Provincie: ${locationInfo.state}<br/>
+            Land: ${locationInfo.country}<br/><br/>
+
+            <strong>Polluenten (μg/m³):</strong><br/>
+            PM2.5: ${getPollutant(iaqi, 'pm25')}<br/>
+            PM10: ${getPollutant(iaqi, 'pm10')}<br/>
+            NO2: ${getPollutant(iaqi, 'no2')}<br/>
+            O3: ${getPollutant(iaqi, 'o3')}<br/>
+            CO: ${getPollutant(iaqi, 'co')}<br/>
+            SO2: ${getPollutant(iaqi, 'so2')}<br/>
+          </div>
+        `;
+
+        L.marker(locationCoords)
+          .addTo(map)
+          .bindPopup(popupContent)
+          .openPopup();
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Fout bij laden luchtkwaliteitsdata.');
+      });
+  </script>
+</body>
+</html>
