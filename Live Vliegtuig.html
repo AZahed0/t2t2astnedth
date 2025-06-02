@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Live Vliegtuig Tracking - Nederlandse Luchtruim</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="https://js.arcgis.com/4.32/esri/themes/light/main.css"
+  />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+    }
+
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.8);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      z-index: 1000;
+      font-size: 1.25rem;
+      color: #374151;
+      user-select: none;
+    }
+
+    .loading-spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3b82f6;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .info-window {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 300px;
+      background-color: white;
+      padding: 15px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+      border-radius: 6px;
+      z-index: 1500;
+      display: none;
+    }
+
+    .info-window h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #2563eb;
+    }
+
+    .info-window p {
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .info-window ul {
+      margin-left: 15px;
+      margin-bottom: 10px;
+    }
+
+    .info-window li {
+      margin-bottom: 5px;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #666;
+    }
+
+    .map-controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 1600;
+    }
+
+    .map-btn {
+      background-color: #2563eb;
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .map-btn:hover {
+      background-color: #1d4ed8;
+    }
+
+    /* Style for the BasemapToggle widget button to match custom buttons */
+    .esri-basemap-toggle .esri-widget--button {
+      background-color: #2563eb;
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      width: 100%; /* Ensure it takes full width of its container */
+      box-shadow: none; /* Remove default shadow */
+      height: auto; /* Adjust height automatically */
+    }
+
+    .esri-basemap-toggle .esri-widget--button:hover {
+      background-color: #1d4ed8;
+    }
+
+    /* Adjust container for BasemapToggle to fit button styling */
+    .basemap-toggle-container {
+      width: 100%; /* Match width of other buttons */
+    }
+  </style>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+
+  <div class="map-controls">
+    <button id="bookmarkBtn" class="map-btn" title="Ga naar Den Helder">Den Helder</button>
+    <div id="basemapToggleWidgetContainer" class="basemap-toggle-container"></div>
+    <button id="infoBtn" class="map-btn" title="Informatie over deze kaart">Info</button>
+  </div>
+
+  <div id="infoWindow" class="info-window">
+    <button class="close-btn" id="closeInfoBtn">×</button>
+    <h3>Over deze kaart</h3>
+    <p>Deze kaart toont live vliegtuigbewegingen in het Nederlandse luchtruim. De vliegtuigen worden elke 30 seconden bijgewerkt.</p>
+    
+    <h3>Functies</h3>
+    <ul>
+      <li>Live vliegtuigposities met roterende symbolen</li>
+      <li>Klik op een vliegtuig voor details</li>
+      <li>Markering van Den Helder gebied</li>
+      <li>Keuze uit verschillende achtergrondkaarten</li>
+    </ul>
+    
+    <h3>Bronnen</h3>
+    <p>Vliegtuigdata wordt geleverd door <a href="https://opensky-network.org/" target="_blank" style="color: #2563eb;">OpenSky Network</a>.</p>
+    <p>Kaarttechnologie: <a href="https://developers.arcgis.com/javascript/" target="_blank" style="color: #2563eb;">ArcGIS API for JavaScript</a>.</p>
+  </div>
+
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="loading-spinner"></div>
+    <p>Vliegtuigdata wordt geladen...</p>
+  </div>
+
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <script>
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/Graphic",
+      "esri/layers/GraphicsLayer",
+      "esri/widgets/BasemapToggle", // Only BasemapToggle is needed now
+      "esri/symbols/PictureMarkerSymbol",
+      "esri/geometry/Polygon"
+    ], function (
+      Map,
+      MapView,
+      Graphic,
+      GraphicsLayer,
+      BasemapToggle, // Reference BasemapToggle
+      PictureMarkerSymbol,
+      Polygon
+    ) {
+      const loadingOverlay = document.getElementById("loadingOverlay");
+      const bookmarkBtn = document.getElementById("bookmarkBtn");
+      const infoBtn = document.getElementById("infoBtn");
+      const infoWindow = document.getElementById("infoWindow");
+      const closeInfoBtn = document.getElementById("closeInfoBtn");
+      const basemapToggleWidgetContainer = document.getElementById("basemapToggleWidgetContainer");
+
+      // Maak de kaart aan
+      const map = new Map({
+        basemap: "streets-navigation-vector" // Initial basemap
+      });
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [4.75, 52.92], // Initial zoom to Den Helder
+        zoom: 11
+      });
+
+      // BasemapToggle widget
+      const basemapToggle = new BasemapToggle({
+        view: view,
+        nextBasemap: "arcgis-imagery", // Switches to aerial photo
+        container: basemapToggleWidgetContainer, // Place it in the custom container
+        label: "Topokaart" // Label for the button, indicating current basemap type
+      });
+      // No need to add to view.ui.add as it's manually placed in the DOM
+
+      // Layer voor vliegtuigen
+      const aircraftLayer = new GraphicsLayer();
+      map.add(aircraftLayer);
+
+      // Layer voor polygon (Den Helder grens)
+      const borderLayer = new GraphicsLayer();
+      map.add(borderLayer);
+
+      // Polygon coördinaten (Den Helder grens)
+      const polygonCoords = [
+        [
+          [4.808276180394756, 52.96714820250688],
+          [4.701139975082555, 52.96714820250688],
+          [4.701139975082555, 52.878841383886794],
+          [4.808276180394756, 52.878841383886794],
+          [4.808276180394756, 52.96714820250688]
+        ]
+      ];
+
+      const polygon = new Polygon({
+        rings: polygonCoords,
+        spatialReference: { wkid: 4326 }
+      });
+
+      const borderGraphic = new Graphic({
+        geometry: polygon,
+        symbol: {
+          type: "simple-fill",
+          color: [0, 0, 0, 0], // transparante vulkleur
+          outline: {
+            color: [0, 0, 0, 0.5], // zwart, 50% transparant
+            width: 0.2
+          }
+        }
+      });
+
+      borderLayer.add(borderGraphic);
+
+      // Bookmark naar Den Helder
+      bookmarkBtn.addEventListener("click", () => {
+        view.goTo({
+          center: [4.75, 52.92], // Den Helder
+          zoom: 11
+        });
+      });
+
+      // Info window
+      infoBtn.addEventListener("click", () => {
+        infoWindow.style.display = "block";
+      });
+
+      closeInfoBtn.addEventListener("click", () => {
+        infoWindow.style.display = "none";
+      });
+
+      // OpenSky bounding box (voor vliegtuigdata)
+      const lamin = 50.5;
+      const lamax = 54.0;
+      const lomin = 3.0;
+      const lomax = 7.5;
+
+      /**
+       * Creates an Esri PictureMarkerSymbol for an airplane.
+       * Uses a detailed SVG path and applies rotation based on heading.
+       * @param {number} heading - The heading of the aircraft in degrees (0-360).
+       * @returns {object} An Esri PictureMarkerSymbol configuration object.
+       */
+      function createAirplaneSymbol(heading) {
+        // More detailed SVG path for an airplane, pointing upwards (0 degrees)
+        // This SVG is designed to point North (upwards) when angle is 0.
+        const svgPath = `M22.25,16.5l-1.5-3.5h-4.5l2-8h-2l-2,8h-4.5l2-8h-2l-2,8h-4.5l-1.5,3.5h-1.5l1.5,3.5h1.5l-1.5,3.5h1.5l1.5,3.5h4.5l-2-8h2l2,8h4.5l-2-8h2l2,8h4.5l1.5-3.5h1.5l-1.5-3.5z`;
+
+        return new PictureMarkerSymbol({
+          url:
+            "data:image/svg+xml;utf8," +
+            encodeURIComponent(
+              `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                <path fill="#2563EB" d="${svgPath}"/>
+              </svg>`
+            ),
+          width: "24px",
+          height: "24px",
+          angle: heading || 0, // Apply rotation directly via symbol property
+          xoffset: 0,
+          yoffset: 0
+        });
+      }
+
+      // Vliegtuigdata ophalen en tekenen
+      async function fetchAircraft() {
+        loadingOverlay.classList.remove("hidden");
+        const url = `https://opensky-network.org/api/states/all?lamin=${lamin}&lomin=${lomin}&lamax=${lamax}&lomax=${lomax}`;
+
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`Netwerkfout: ${response.statusText}`);
+
+          const data = await response.json();
+
+          if (!data.states || data.states.length === 0) {
+            console.log("Geen vliegtuigdata beschikbaar in het gebied.");
+            aircraftLayer.removeAll();
+            loadingOverlay.classList.add("hidden");
+            return;
+          }
+
+          aircraftLayer.removeAll();
+
+          data.states.forEach((state) => {
+            const [
+              icao24,
+              callsign,
+              originCountry,
+              timePosition,
+              lastContact,
+              longitude,
+              latitude,
+              baroAltitude,
+              onGround,
+              velocity,
+              heading, // Use this for rotation
+              verticalRate,
+              sensors,
+              geoAltitude,
+              squawk,
+              spi,
+              positionSource
+            ] = state;
+
+            if (latitude === null || longitude === null) return;
+
+            const point = {
+              type: "point",
+              longitude,
+              latitude
+            };
+
+            // Create the airplane symbol with the correct heading for rotation
+            const symbol = createAirplaneSymbol(heading || 0);
+
+            const speedKmh = velocity !== null ? (velocity * 3.6).toFixed(0) : "n.v.t.";
+            const altitudeM = baroAltitude !== null ? baroAltitude.toFixed(0) : "n.v.t.";
+            const vertRate = verticalRate !== null ? verticalRate.toFixed(0) : "n.v.t.";
+            const lastContactTime = lastContact
+              ? new Date(lastContact * 1000).toLocaleTimeString("nl-NL")
+              : "n.v.t.";
+
+            const popupTemplate = {
+              title: "Vliegtuig Details",
+              content: `
+                <div style="font-family: 'Inter', sans-serif; font-size: 14px;">
+                  <strong>Callsign:</strong> ${callsign ? callsign.trim() : "n.v.t."}<br/>
+                  <strong>Land van oorsprong:</strong> ${originCountry}<br/>
+                  <strong>Snelheid:</strong> ${speedKmh} km/u<br/>
+                  <strong>Hoogte:</strong> ${altitudeM} m<br/>
+                  <strong>Verticale snelheid:</strong> ${vertRate} m/s<br/>
+                  <strong>Heading:</strong> ${heading !== null ? heading.toFixed(0) : "n.v.t."}°<br/>
+                  <strong>Laatste contact:</strong> ${lastContactTime}
+                </div>
+              `
+            };
+
+            const graphic = new Graphic({
+              geometry: point,
+              symbol: symbol,
+              popupTemplate: popupTemplate,
+              attributes: {
+                icao24,
+                callsign,
+                originCountry
+              }
+            });
+
+            aircraftLayer.add(graphic);
+          });
+        } catch (error) {
+          console.error("Fout bij ophalen vliegtuigdata:", error);
+          alert(
+            "Er is een fout opgetreden bij het ophalen van vliegtuigdata. Probeer het later opnieuw."
+          );
+        } finally {
+          loadingOverlay.classList.add("hidden");
+        }
+      }
+
+      fetchAircraft();
+      setInterval(fetchAircraft, 30000);
+    });
+  </script>
+</body>
+</html>
