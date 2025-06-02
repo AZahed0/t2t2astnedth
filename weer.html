@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Live Weerkaart - Den Helder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Base styles for body and map */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden; /* Prevent body scroll when sidebar is open */
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+      z-index: 1;
+    }
+    /* Styling for weather information labels on the map */
+    .weather-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem; /* Adjusted font size for readability */
+      background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white background */
+      padding: 0.75rem; /* Increased padding for better spacing */
+      border-radius: 0.5rem; /* Slightly larger rounded corners */
+      border: 1px solid #e5e7eb; /* Light gray border */
+      white-space: nowrap; /* Prevent text from wrapping */
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15); /* Subtle shadow for depth */
+      min-width: 220px; /* Minimum width for consistency */
+    }
+    /* Styling for Leaflet's layer control when it's inside the sidebar */
+    .leaflet-control-layers {
+      position: relative !important; /* Override Leaflet's default absolute positioning */
+      top: unset !important;
+      right: unset !important;
+      left: unset !important;
+      bottom: unset !important;
+      margin-top: 1.5rem; /* Space from elements above in sidebar */
+      padding: 0.5rem; /* Increased padding */
+      font-size: 0.875rem; /* Larger font (text-sm) */
+      border-radius: 0.5rem; /* Rounded corners */
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15); /* Shadow */
+      background: rgba(255,255,255,0.9); /* Semi-transparent background */
+      width: 100%; /* Take full width of sidebar */
+      box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    }
+    /* Styling for the expanded layer list */
+    .leaflet-control-layers-expanded .leaflet-control-layers-list {
+      padding: 0.75rem; /* Increased padding */
+    }
+    /* Styling for loading spinner */
+    .spinner {
+      border: 3px solid rgba(0, 0, 0, 0.1); /* Light border */
+      border-left-color: #3b82f6; /* Blue loading color */
+      border-radius: 50%; /* Circular shape */
+      width: 1.25rem; /* Slightly larger spinner */
+      height: 1.25rem; /* Slightly larger spinner */
+      animation: spin 1s linear infinite; /* Rotation animation */
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 0.5rem;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    /* Base styling for control buttons (for buttons with text and icons) */
+    .control-btn {
+      transition: transform 0.15s ease, box-shadow 0.15s ease; /* Smooth hover animations */
+      padding: 0.75rem 1rem; /* Larger padding for better touch targets */
+      font-size: 0.9375rem; /* Slightly larger font size (15px) */
+      min-height: 2.75rem; /* Minimum height for touch-friendliness (44px) */
+      border-radius: 0.5rem; /* Consistent rounded corners */
+      gap: 0.5rem; /* Space between icon and text */
+      display: flex;
+      align-items: center;
+      justify-content: space-between; /* Distribute content */
+      background-color: rgba(255, 255, 255, 0.9); /* Default background */
+      border: 1px solid #e5e7eb; /* Default border */
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1); /* Subtle shadow */
+      color: #374151; /* Default text color */
+    }
+    /* Hover effect for control buttons */
+    .control-btn:hover {
+      transform: translateY(-2px) scale(1.01); /* Subtle lift and scale */
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1); /* More pronounced shadow on hover */
+      background-color: rgba(249, 250, 251, 0.95); /* Lighter background on hover */
+    }
+    /* Specific styling for refresh button */
+    #refreshBtn {
+      background-color: #eff6ff; /* blue-50 */
+      border-color: #bfdbfe; /* blue-100 */
+      color: #1e40af; /* blue-800 */
+    }
+    #refreshBtn:hover {
+      background-color: #dbeafe; /* blue-100 */
+    }
+    /* Specific styling for info and theme buttons */
+    #infoBtn, #themeToggleBtn {
+      background-color: #f9fafb; /* gray-50 */
+      border-color: #f3f4f6; /* gray-100 */
+      color: #374151; /* gray-800 */
+    }
+    #infoBtn:hover, #themeToggleBtn:hover {
+      background-color: #f3f4f6; /* gray-100 */
+    }
+    /* Styling for icons within control buttons */
+    .control-btn i {
+      font-size: 1.125rem; /* Larger icon size (18px) */
+    }
+    /* Styling for the collapsible info panel */
+    .info-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out; /* Smooth collapse/expand transition */
+      background-color: rgba(255, 255, 255, 0.95); /* Background for info panel */
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      margin-top: 1rem;
+    }
+    .info-panel.open {
+      max-height: 500px; /* Sufficiently large to show content when open */
+    }
+    /* Styling for custom marker icons */
+    .marker-icon {
+      background-color: #3b82f6; /* Blue background */
+      border-radius: 50%; /* Circular shape */
+      border: 2px solid white; /* White border */
+      width: 14px; /* Slightly larger marker */
+      height: 14px; /* Slightly larger marker */
+    }
+    /* Rotation for chevron icons */
+    .rotate-180 {
+      transform: rotate(180deg);
+    }
+    /* Dark mode specific styles */
+    .dark .weather-label {
+      background-color: rgba(31, 41, 55, 0.95); /* gray-900 semi-transparent */
+      border-color: #4b5563; /* gray-600 */
+      color: #f3f4f6; /* gray-100 */
+    }
+    /* Default dark mode for control buttons */
+    .dark .control-btn {
+      background-color: #1f2937; /* gray-900 */
+      border-color: #374151; /* gray-700 */
+      color: #ffffff; /* Explicit white text */
+    }
+    .dark .control-btn:hover {
+      background-color: #374151; /* gray-700 for hover */
+    }
+    /* Specific dark mode for refresh button */
+    .dark #refreshBtn {
+      background-color: #1a202c; /* Deeper dark blue */
+      border-color: #2c3e50;
+      color: #ffffff; /* Explicit white text */
+    }
+    .dark #refreshBtn:hover {
+      background-color: #2c3e50; /* Slightly lighter dark blue for hover */
+    }
+    /* Specific dark mode for info and theme buttons */
+    .dark #infoBtn, .dark #themeToggleBtn {
+      background-color: #1f2937; /* gray-900 */
+      border-color: #374151; /* gray-700 */
+      color: #ffffff; /* Explicit white text */
+    }
+    .dark #infoBtn:hover, .dark #themeToggleBtn:hover {
+      background-color: #374151; /* gray-700 for hover */
+    }
+    /* Dark mode for info panel content */
+    .dark .info-panel {
+      background-color: #1f2937; /* gray-900 */
+      color: #1a202c; /* Very dark gray/black for text */
+    }
+    .dark .info-panel h3 {
+      color: #000000; /* Pure black for headings */
+    }
+    .dark .info-panel p {
+      color: #1a202c; /* Very dark gray/black for paragraphs */
+    }
+    .dark .header {
+      background-color: rgba(31, 41, 55, 0.95); /* gray-900 semi-transparent */
+    }
+    .dark .last-update {
+      background-color: rgba(31, 41, 55, 0.95); /* gray-900 semi-transparent */
+      color: #f3f4f6; /* gray-100 */
+    }
+    /* Backdrop overlay for sidebar */
+    #sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0,0,0,0.3); /* Semi-transparent black */
+      backdrop-filter: blur(3px); /* Blur effect */
+      z-index: 15; /* Below sidebar, above map */
+      display: none; /* Hidden by default */
+    }
+  </style>
+</head>
+<body class="font-sans antialiased text-gray-800 bg-gray-50">
+  <header class="header absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-white/95 p-3 rounded-xl shadow-lg flex flex-col items-center space-y-2 md:top-6 dark:bg-gray-800/95 dark:text-white">
+    <img src="https://www.denhelder.nl/dsresource?objectid=571c93e2-71c1-4168-a4ae-21c0970c48d8" alt="Gemeente Den Helder Logo" class="max-h-12 w-auto rounded-sm object-contain" onerror="this.onerror=null;this.src='https://placehold.co/80x48/cccccc/333333?text=Logo';" />
+  </header>
+
+  <button id="sidebarToggleBtn" aria-label="Zijbalk tonen of verbergen" title="Zijbalk tonen/verbergen" class="fixed top-4 right-4 z-30 bg-white/95 p-2 rounded-xl shadow-lg flex items-center justify-center w-12 h-12 md:top-6 md:right-6 dark:bg-gray-800/95 dark:text-white hover:scale-[1.02] transition-transform duration-150">
+    <i id="sidebarToggleIcon" class="fas fa-bars text-base text-gray-600 dark:text-gray-300"></i>
+  </button>
+
+  <aside id="rightSidebar" class="fixed top-0 right-0 h-full w-64 bg-white/95 shadow-lg p-4 transform translate-x-full transition-transform duration-300 z-20 md:w-80 dark:bg-gray-800/95">
+    <div class="flex flex-col h-full">
+      <h2 class="text-xl font-bold mb-6 pt-4 text-gray-800 dark:text-white">Opties</h2>
+
+      <div class="flex flex-col space-y-4">
+        <button id="refreshBtn" aria-label="Weergegevens vernieuwen" class="control-btn">
+          <i class="fas fa-sync-alt text-blue-600 dark:text-blue-300 text-lg"></i>
+          <span>Vernieuwen</span>
+          <span id="weatherLoadingSpinner" class="hidden spinner"></span>
+        </button>
+
+        <button id="infoBtn" aria-label="Informatiepaneel tonen of verbergen" class="control-btn">
+          <i class="fas fa-info-circle text-gray-600 dark:text-gray-300 text-lg"></i>
+          <span>Informatie</span>
+          <i id="infoChevron" class="fas fa-chevron-down text-sm text-gray-500 transition-transform dark:text-gray-300"></i>
+        </button>
+
+        <button id="themeToggleBtn" aria-label="Schakel donker/licht thema" class="control-btn">
+          <i id="themeIcon" class="fas fa-moon text-gray-600 dark:text-gray-300 text-lg"></i>
+          <span id="themeText">Donker thema</span>
+        </button>
+      </div>
+
+      <div id="infoPanel" class="info-panel mt-4 text-sm">
+        <div class="space-y-3">
+          <div class="p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
+            <h3 class="font-semibold text-gray-700 mb-2 dark:text-gray-200">Weergegevens</h3>
+            <p class="dark:text-gray-300">Bron: Open-Meteo.com</p>
+            <p class="dark:text-gray-300">Actualisatie: Elke 5 minuten</p>
+            <p class="dark:text-gray-300">Nauwkeurigheid: &plusmn;0.5&deg;C voor temperatuur</p>
+          </div>
+
+          <div class="p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
+            <h3 class="font-semibold text-gray-700 mb-2 dark:text-gray-200">Locaties</h3>
+            <p class="dark:text-gray-300">4 meetpunten in Den Helder</p>
+            <p class="dark:text-gray-300">Positie: GPS nauwkeurig</p>
+          </div>
+        </div>
+      </div>
+      <div id="leaflet-layers-control-container" class="mt-4 flex-grow overflow-y-auto"></div>
+    </div>
+  </aside>
+
+  <div id="sidebar-overlay"></div>
+  <div id="map" class="w-full h-screen"></div>
+
+  <div class="last-update absolute bottom-4 left-4 z-20 bg-white/95 p-3 rounded-lg shadow-md text-sm flex items-center space-x-3 md:bottom-6 md:left-6 dark:bg-gray-800/95 dark:text-gray-300">
+    <i class="fas fa-clock text-gray-500 dark:text-gray-400 text-lg"></i>
+    <div>
+      <div>Laatst bijgewerkt:</div>
+      <span id="updateTime" class="font-medium dark:text-white">-</span>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Dark mode toggle functionality
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const themeIcon = document.getElementById('themeIcon');
+    const themeText = document.getElementById('themeText');
+
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      const isDark = document.documentElement.classList.contains('dark');
+      localStorage.setItem('darkMode', isDark);
+      updateThemeButton(isDark);
+    }
+
+    function updateThemeButton(isDark) {
+      if (isDark) {
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+        themeText.textContent = 'Licht thema';
+      } else {
+        themeIcon.classList.replace('fa-sun', 'fa-moon');
+        themeText.textContent = 'Donker thema';
+      }
+    }
+
+    // Check for saved theme preference on load
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.documentElement.classList.add('dark');
+      updateThemeButton(true);
+    }
+
+    themeToggleBtn.addEventListener('click', toggleDarkMode);
+
+    // Initialize the Leaflet map
+    const map = L.map('map', {
+      zoomControl: false, // Disable default zoom control
+      attributionControl: false, // Disable default attribution control
+      minZoom: 13 // Lock zoom out: user can only zoom in from this level
+    });
+
+    // Add a custom zoom control to the top left position
+    L.control.zoom({
+      position: 'topleft'
+    }).addTo(map);
+
+    // Add custom attribution control to the bottom right
+    L.control.attribution({
+      position: 'bottomright',
+      prefix: '<a href="https://leafletjs.com/" target="_blank">Leaflet</a> | Data © <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>'
+    }).addTo(map);
+
+    // Set initial view for Den Helder with a specific zoom level
+    // Coordinates for Willemsoord (latitude, longitude) and a zoom level of 14
+    map.setView([52.95905489555969, 4.77139333766425], 14);
+
+    // Define various base map tile layers
+    const googleStreets = L.tileLayer('https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
+      attribution: 'Google Streets',
+      maxZoom: 20
+    });
+
+    const esriLuchtfoto = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri World Imagery'
+    });
+
+    const esriTopo = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri Topographic'
+    });
+
+    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© CartoDB'
+    });
+    // Dark mode map layer
+    const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© CartoDB'
+    });
+
+    // Group base maps for the layer control
+    const baseMaps = {
+      "🗺️ Google Streets": googleStreets,
+      "📷 Esri Luchtfoto": esriLuchtfoto,
+      "🌍 Esri Topo": esriTopo,
+      "🧾 Carto Light": cartoLight,
+      "🌑 Carto Dark": cartoDark
+    };
+
+    // Define overlay maps (empty)
+    const overlayMaps = {};
+
+    // Set Esri Topo as the default base map
+    esriTopo.addTo(map);
+
+    // Add Leaflet's layer control to the custom container in the sidebar
+    const layersControl = L.control.layers(baseMaps, overlayMaps, {
+      collapsed: true // Layer list is collapsed by default
+    }).addTo(map);
+
+    // Move the layer control's DOM element into our custom container in the sidebar
+    document.getElementById('leaflet-layers-control-container').appendChild(layersControl.getContainer());
+
+    // Custom marker icon for weather stations
+    const weatherMarkerIcon = L.divIcon({
+      className: 'marker-icon',
+      iconSize: [14, 14] // Slightly larger marker size
+    });
+
+    // GeoJSON points for specific weather stations in Den Helder
+    const geojsonPoints = {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": { "naam": "Willemsoord" },
+          "geometry": {
+            "coordinates": [4.77139333766425, 52.95905489555969],
+            "type": "Point"
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "naam": "Gemeentewerf Ambachtsweg" },
+          "geometry": {
+            "coordinates": [4.782092033086741, 52.94207679584642],
+            "type": "Point"
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "naam": "Huisduinen" },
+          "geometry": {
+            "coordinates": [4.726433045645081, 52.95545610209632],
+            "type": "Point"
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "naam": "Julianadorp" },
+          "geometry": {
+            "coordinates": [4.740748297236934, 52.892851035397285],
+            "type": "Point"
+          }
+        }
+      ]
+    };
+
+    // Array to store marker instances for easy access and refresh
+    const markers = [];
+
+    // Debounce function to limit function calls (e.g., for rapid button clicks)
+    function debounce(func, wait) {
+      let timeout;
+      return function() {
+        const context = this, args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          func.apply(context, args);
+        }, wait);
+      };
+    }
+
+    /**
+     * Fetches live weather data for a given latitude and longitude and updates the marker's tooltip.
+     * @param {number} lat - Latitude of the location.
+     * @param {number} lon - Longitude of the location.
+     * @param {string} naam - Name of the weather station.
+     * @param {L.Layer} layer - The Leaflet layer (marker) to bind and update the tooltip for.
+     */
+    async function fetchWeatherForPoint(lat, lon, naam, layer) {
+      // Display a loading message in the tooltip while fetching
+      layer.bindTooltip(`<div class="weather-label"><b>${naam}</b><br>🌦️ Weergegevens laden...</div>`, {
+         permanent: true,
+         direction: 'right',
+         className: 'weather-label',
+        offset: [10, 0]
+      });
+
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,cloud_cover,wind_speed_10m,wind_direction_10m`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        const weather = data.current;
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('nl-NL');
+        document.getElementById('updateTime').textContent = timeString;
+
+        // Convert wind direction from degrees to compass direction
+        const windDirections = ['N', 'NNO', 'NO', 'ONO', 'O', 'OZO', 'ZO', 'ZZO', 'Z', 'ZZW', 'ZW', 'WZW', 'W', 'WNW', 'NNW'];
+        const windIndex = Math.round(weather.wind_direction_10m / 22.5) % 16;
+        const windDirection = windDirections[windIndex];
+
+        // Construct HTML content for the weather label
+        const html = `
+          <div class="weather-label">
+            <div class="font-bold text-blue-600 mb-1 dark:text-blue-400">${naam}</div>
+            <div class="grid grid-cols-2 gap-1">
+              <div>🌡️Temperatuur: </div>
+              <div class="font-medium">${weather.temperature_2m} °C</div>
+
+              <div>💧Vochtigheid:</div>
+              <div class="font-medium">${weather.relative_humidity_2m}%</div>
+
+              <div>🌧️Neerslag:</div>
+              <div class="font-medium">${weather.precipitation} mm</div>
+
+              <div>☁️Bewolking:</div>
+              <div class="font-medium">${weather.cloud_cover}%</div>
+
+              <div>💨Wind:</div>
+              <div class="font-medium">${weather.wind_speed_10m} km/u ${windDirection}</div>
+            </div>
+            <div class="text-xs text-gray-500 mt-1 dark:text-gray-400">🕒 ${weather.time.replace('T', ' ')}</div>
+          </div>
+        `;
+        layer.setTooltipContent(html);
+      } catch (error) {
+        console.error(`Fout bij laden van weergegevens voor ${naam}:`, error);
+        layer.setTooltipContent(`<div class="weather-label"><b>${naam}</b><br>❌ Fout bij laden van weergegevens: ${error.message}</div>`);
+      }
+    }
+
+    // Add markers to the map based on the geojsonPoints data
+    const weatherStationsLayer = L.geoJSON(geojsonPoints, {
+      pointToLayer: function (feature, latlng) {
+        const marker = L.marker(latlng, {
+          icon: weatherMarkerIcon
+        });
+        marker.stationName = feature.properties.naam; // Store station name on marker
+        markers.push(marker);
+        return marker;
+      },
+      onEachFeature: function (feature, layer) {
+        const naam = feature.properties.naam || "Onbekend punt";
+        const latlng = layer.getLatLng();
+        if (latlng) {
+          fetchWeatherForPoint(latlng.lat, latlng.lng, naam, layer);
+        } else {
+          console.error('Could not retrieve latlng for layer:', feature);
+          layer.bindTooltip(`<div class="weather-label"><b>${naam}</b><br>❌ Locatiegegevens niet beschikbaar</div>`, {
+             permanent: true,
+             direction: 'right',
+             className: 'weather-label'
+           });
+        }
+      }
+    }).addTo(map);
+
+    /**
+     * Refreshes all weather data for existing markers.
+     */
+    const refreshAllWeatherData = debounce(async function() {
+      const weatherLoadingSpinner = document.getElementById('weatherLoadingSpinner');
+      weatherLoadingSpinner.classList.remove('hidden');
+
+      const now = new Date();
+      document.getElementById('updateTime').textContent = now.toLocaleTimeString('nl-NL');
+
+      try {
+        await Promise.all(markers.map(async marker => {
+          const latlng = marker.getLatLng();
+          const naam = marker.stationName || "Onbekend punt";
+          await fetchWeatherForPoint(latlng.lat, latlng.lng, naam, marker);
+        }));
+      } catch (error) {
+        console.error('Error refreshing weather data:', error);
+      } finally {
+        weatherLoadingSpinner.classList.add('hidden');
+      }
+    }, 500); // Debounce to prevent excessive API calls on rapid clicks
+
+    // Get sidebar elements
+    const rightSidebar = document.getElementById('rightSidebar');
+    const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebarToggleIcon = document.getElementById('sidebarToggleIcon'); // Get the icon element
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+    // Function to open sidebar
+    function openSidebar() {
+      rightSidebar.classList.remove('translate-x-full');
+      sidebarOverlay.style.display = 'block'; // Show overlay
+      document.body.style.overflow = 'hidden'; // Prevent body scroll
+      sidebarToggleIcon.classList.replace('fa-bars', 'fa-times'); // Change icon to 'X'
+      sidebarToggleBtn.setAttribute('aria-label', 'Zijbalk sluiten');
+      sidebarToggleBtn.setAttribute('title', 'Zijbalk sluiten');
+    }
+
+    // Function to close sidebar
+    function closeSidebar() {
+      rightSidebar.classList.add('translate-x-full');
+      sidebarOverlay.style.display = 'none'; // Hide overlay
+      document.body.style.overflow = ''; // Allow body scroll
+      sidebarToggleIcon.classList.replace('fa-times', 'fa-bars'); // Change icon back to hamburger
+      sidebarToggleBtn.setAttribute('aria-label', 'Zijbalk tonen of verbergen');
+      sidebarToggleBtn.setAttribute('title', 'Zijbalk tonen/verbergen');
+    }
+
+    // Event listeners for sidebar toggle and close
+    sidebarToggleBtn.addEventListener('click', function() {
+      if (rightSidebar.classList.contains('translate-x-full')) {
+        openSidebar();
+      } else {
+        closeSidebar();
+      }
+    });
+    sidebarOverlay.addEventListener('click', closeSidebar); // Close sidebar when clicking overlay
+
+    // Toggle info panel visibility
+    document.getElementById('infoBtn').addEventListener('click', function() {
+      const panel = document.getElementById('infoPanel');
+      const chevron = document.getElementById('infoChevron');
+
+      panel.classList.toggle('open');
+      chevron.classList.toggle('rotate-180');
+    });
+
+    // Event listener for the refresh button
+    document.getElementById('refreshBtn').addEventListener('click', refreshAllWeatherData);
+
+    // Initial update time display
+    document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('nl-NL');
+
+    // Auto-refresh interval for weather data (every 5 minutes)
+    setInterval(refreshAllWeatherData, 5 * 60 * 1000);
+
+    // Perform an initial fetch of all weather data on window load
+    window.addEventListener('load', () => {
+      refreshAllWeatherData();
+    });
+  </script>
+</body>
+</html>
