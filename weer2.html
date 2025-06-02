@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8" />
+    <title>Live Weerkaart - Den Helder (ArcGIS)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        /* Zorg ervoor dat html, body en de kaartcontainer de volledige hoogte en breedte innemen */
+        html, body, #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            font-family: 'Inter', sans-serif; /* Lettertype instellen op Inter */
+            overflow: hidden; /* Voorkom scrollen indien niet nodig */
+        }
+        /* Styling voor het weerinformatielabel binnen de popup */
+        .weather-label {
+            font-size: 0.85rem;
+            background: white;
+            padding: 1rem; /* Meer opvulling voor betere afstand */
+            border-radius: 0.5rem; /* Afgeronde hoeken */
+            border: 1px solid #e5e7eb; /* Lichte rand */
+            min-width: 220px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Zachtere schaduw */
+        }
+        /* Positionering en styling voor de weergave van de update tijd */
+        #updateTime {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            z-index: 10; /* Zorg ervoor dat het boven de kaart ligt */
+            background: rgba(255,255,255,0.9); /* Semi-transparante witte achtergrond */
+            padding: 0.625rem 1rem; /* Opvulling voor de tekst */
+            border-radius: 0.375rem; /* Licht afgeronde hoeken */
+            font-size: 0.875rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Subtiele schaduw */
+        }
+        /* Styling voor het Den Helder logo */
+        #appLogo {
+            position: absolute;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%); /* Centreer het logo horizontaal */
+            z-index: 20; /* Zorg ervoor dat het boven andere elementen ligt */
+            height: 3rem; /* Vaste hoogte voor het logo */
+            max-width: 90%; /* Zorg ervoor dat het responsief is op kleinere schermen */
+            border-radius: 0.5rem; /* Afgeronde hoeken voor de logo-achtergrond */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Zachte schaduw */
+            background: white; /* Witte achtergrond voor de logo-afbeelding */
+            padding: 0.5rem; /* Opvulling rond het logo */
+            object-fit: contain; /* Zorg ervoor dat de afbeelding binnen de grenzen past */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <img src="https://www.denhelder.nl/dsresource?objectid=571c93e2-71c1-4168-a4ae-21c0970c48d8" alt="Logo Gemeente Den Helder" id="appLogo">
+
+    <div id="updateTime">Laatst bijgewerkt: -</div>
+    <div id="viewDiv"></div>
+
+    <script src="https://js.arcgis.com/4.29/"></script>
+    <script>
+        // Gebruik de require-functie om ArcGIS modules te laden
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/Graphic",
+            "esri/layers/GraphicsLayer",
+            "esri/PopupTemplate",
+            "esri/symbols/TextSymbol", // Vereist voor het weergeven van tekstlabels
+            "esri/widgets/BasemapGallery", // Voor het wijzigen van basiskaarten
+            "esri/widgets/Expand"         // Voor het inklappen/uitklappen van widgets
+        ], function(Map, MapView, Graphic, GraphicsLayer, PopupTemplate, TextSymbol,
+                    BasemapGallery, Expand) {
+
+            // Definieer de geografische coördinaten voor weerstations in Den Helder
+            const stationPoints = [
+                { name: "Willemsoord", lat: 52.95905, lon: 4.77139 },
+                { name: "Gemeentewerf Ambachtsweg", lat: 52.94208, lon: 4.78209 },
+                { name: "Huisduinen", lat: 52.95546, lon: 4.72643 },
+                { name: "Julianadorp", lat: 52.89285, lon: 4.74075 }
+            ];
+
+            // Maak een GraphicsLayer om de weerstationmarkers en labels te bevatten
+            const weatherLayer = new GraphicsLayer();
+
+            // Initialiseer de kaart met een standaard basiskaart en de weer graphics laag
+            const map = new Map({
+                basemap: "topo-vector", // Standaard lichte basiskaart
+                layers: [weatherLayer]
+            });
+
+            // Initialiseer de MapView, koppel deze aan de kaart en een container div
+            const view = new MapView({
+                container: "viewDiv",
+                map: map,
+                center: [4.77139, 52.95905], // Gecentreerd op Den Helder (Willemsoord)
+                zoom: 14 // Initieel zoomniveau
+            });
+
+            /**
+             * Converteert windgraden naar een kardinale of interkardinale richtingstring.
+             * @param {number} degrees - Windrichting in graden (0-360).
+             * @returns {string} - Afgekort windrichting (bijv. 'N', 'ZO').
+             */
+            function windDir(degrees) {
+                // Uitgebreide richtingenarray voor meer precisie
+                const dirs = ['N', 'NNO', 'NO', 'ONO', 'O', 'OZO', 'ZO', 'ZZO', 'Z', 'ZZW', 'ZW', 'WZW', 'W', 'WNW', 'NW', 'NNW'];
+                // Bereken de index door graden gedeeld door 22.5 (360/16 richtingen) af te ronden
+                return dirs[Math.round(degrees / 22.5) % 16];
+            }
+
+            /**
+             * Haalt weergegevens op voor een gegeven station en werkt de popup-sjabloon van de graphic bij.
+             * @param {object} station - Het stationsobject met naam, lat en lon.
+             * @param {Graphic} graphic - Het ArcGIS Graphic object gekoppeld aan het station.
+             */
+            async function fetchWeather(station, graphic) {
+                // Open-Meteo API URL voor actuele weergegevens
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${station.lat}&longitude=${station.lon}&current=temperature_2m,relative_humidity_2m,precipitation,cloud_cover,wind_speed_10m,wind_direction_10m&forecast_days=1`;
+
+                try {
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    const w = data.current; // Actuele weergegevens
+
+                    // Maak een PopupTemplate met dynamische inhoud
+                    graphic.popupTemplate = new PopupTemplate({
+                        title: station.name,
+                        content: `
+                            <div class='weather-label'>
+                                <p>🌡️ Temperatuur: <span class="font-semibold">${w.temperature_2m} °C</span></p>
+                                <p>💧 Vochtigheid: <span class="font-semibold">${w.relative_humidity_2m}%</span></p>
+                                <p>🌧️ Neerslag: <span class="font-semibold">${w.precipitation} mm</span></p>
+                                <p>☁️ Bewolking: <span class="font-semibold">${w.cloud_cover}%</span></p>
+                                <p>💨 Wind: <span class="font-semibold">${w.wind_speed_10m} km/u ${windDir(w.wind_direction_10m)}</span></p>
+                                <p class="text-xs text-gray-500 mt-2">🕒 ${w.time.replace('T', ' ')}</p>
+                            </div>`
+                    });
+
+                    // Update de "Laatst bijgewerkt" tijdstempel op de pagina
+                    document.getElementById("updateTime").innerText =
+                        "Laatst bijgewerkt: " + new Date().toLocaleTimeString("nl-NL");
+
+                } catch (e) {
+                    // Log eventuele fouten tijdens het ophalen van weergegevens
+                    console.error(`Fout bij ophalen weerdata voor ${station.name}:`, e);
+                }
+            }
+
+            /**
+             * Vernieuwt alle weergegevens op de kaart.
+             * Verwijdert bestaande graphics, voegt nieuwe markers en labels toe, en haalt verse gegevens op voor elk.
+             */
+            function refreshWeatherData() {
+                weatherLayer.removeAll(); // Verwijder bestaande markers en labels
+                // Tekst- en halokleuren zijn nu statisch
+                const textColor = "black";
+                const haloColor = "white";
+
+                stationPoints.forEach(station => {
+                    // Definieer puntgeometrie voor het station
+                    const pt = {
+                        type: "point",
+                        longitude: station.lon,
+                        latitude: station.lat
+                    };
+
+                    // Maak een nieuwe graphic voor de stationsmarker
+                    const marker = new Graphic({
+                        geometry: pt,
+                        symbol: {
+                            type: "simple-marker",
+                            style: "circle",
+                            color: "#3b82f6", // Blauwe marker kleur
+                            size: 10,
+                            outline: { color: "white", width: 1 }
+                        },
+                        attributes: station // Sla stationsgegevens op als attributen
+                    });
+                    weatherLayer.add(marker); // Voeg marker toe aan de graphics laag
+                    fetchWeather(station, marker); // Haal weergegevens op voor dit station
+
+                    // Maak een nieuwe graphic voor het tekstlabel
+                    const textGraphic = new Graphic({
+                        geometry: pt,
+                        symbol: new TextSymbol({
+                            text: station.name,
+                            color: textColor, // Statische kleur
+                            haloColor: haloColor, // Statische halo kleur
+                            haloSize: "1px",
+                            font: { // autocast as new Font()
+                                size: 10,
+                                family: "Inter",
+                                weight: "bold"
+                            },
+                            yoffset: 15 // Positioneer de tekst iets boven de marker
+                        })
+                    });
+                    weatherLayer.add(textGraphic); // Voeg de tekstgraphic toe aan de laag
+                });
+            }
+
+            // Initiële gegevens ophalen wanneer de applicatie laadt
+            // Zorg ervoor dat dit wordt uitgevoerd nadat de weergave gereed is
+            view.when(function() {
+                refreshWeatherData();
+            });
+
+            // Stel auto-vernieuwing in elke 5 minuten (300.000 milliseconden)
+            setInterval(refreshWeatherData, 5 * 60 * 1000);
+
+            // --- Widgets ---
+
+            // 1. Basemap Gallery Widget
+            const basemapGallery = new BasemapGallery({
+                view: view,
+                container: document.createElement("div") // Maak een div voor de widget
+            });
+            const bgExpand = new Expand({
+                view: view,
+                content: basemapGallery.container,
+                expandIconClass: "esri-icon-basemap",
+                label: "Basiskaarten" // Label voor de widget
+            });
+            view.ui.add(bgExpand, "top-left"); // Voeg toe aan de linkerbovenhoek van de weergave
+        });
+    </script>
+</body>
+</html>
