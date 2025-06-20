@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .question-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative; /* Nodig voor absolute positionering van de verwijderknop */
+        }
+        .question-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .question-card.selected {
+            border: 3px solid #3b82f6;
+            background-color: #f0f7ff;
+        }
+        .question-card.answered {
+            opacity: 0.6;
+            background-color: #f0fdf4;
+        }
+        .question-card.incorrect { /* Nieuwe stijl voor incorrect beantwoorde kaarten */
+            opacity: 0.6;
+            background-color: #ffe0e0; /* Lichtrood */
+            border: 3px solid #ef4444; /* Rode rand */
+        }
+        .hint-item {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+        .hint-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .answer-section {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+        .answer-section.visible {
+            max-height: 100px;
+        }
+        .progress-bar {
+            height: 10px;
+            background-color: #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #10b981;
+            transition: width 0.5s ease;
+        }
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .delete-card-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: #ef4444; /* Rode kleur voor verwijderen */
+            color: white;
+            padding: 4px 8px;
+            border-radius: 9999px; /* Volledig rond */
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            line-height: 1;
+            transition: background-color 0.2s;
+            z-index: 10;
+        }
+        .delete-card-button:hover {
+            background-color: #dc2626;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-100 p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="text-center mb-10">
+            <img src="https://images.squarespace-cdn.com/content/v1/64aff4916524ed1c158ca2ab/fdf3f50f-846e-4534-a223-480f21fb2aa8/vertel+es+vierkant+z+achtergr+.png?format=1500w"
+                 alt="Vertel Eens Logo"
+                 class="mx-auto mb-4 w-32 h-32 object-contain rounded-full shadow-lg">
+            <h1 class="text-4xl md:text-5xl font-bold text-blue-800 mb-4">Quiz Game met Hennie</h1>
+            <p class="text-lg text-gray-700">Kies een vraag en onthul de hints één voor één!</p>
+        </header>
+
+        <div class="mb-6">
+            <div class="flex justify-between items-center mb-2">
+                <span class="font-medium">Jouw voortgang:</span>
+                <span id="progress-text">0/0 vragen beantwoord</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between items-center mt-4 text-sm font-medium">
+                <span>✅ Kende: <span id="known-count">0</span></span>
+                <span>❌ Niet kende: <span id="unknown-count">0</span></span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="questions-container">
+            <!-- Questions will be loaded here -->
+        </div>
+
+        <div id="selected-question-container" class="mt-8 hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="selected-question-category" class="text-xl font-bold"></h2>
+                    <span id="hints-counter" class="text-sm text-gray-500">Hint 0/0</span>
+                </div>
+                
+                <ol id="hints-list" class="space-y-2 mb-6">
+                    <!-- Hints will be loaded here -->
+                </ol>
+                
+                <div class="flex flex-wrap gap-3">
+                    <button id="show-hint-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition">
+                        Volgende Hint
+                    </button>
+                    <button id="show-answer-btn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition">
+                        Toon Antwoord
+                    </button>
+                    <button id="mark-correct-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg transition hidden">
+                        Ik wist het antwoord!
+                    </button>
+                    <button id="mark-incorrect-btn" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition hidden">
+                        Ik wist het antwoord niet
+                    </button>
+                    <button id="load-next-questions-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition hidden">
+                        Volgende Vragen
+                    </button>
+                    <button id="new-game-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition hidden">
+                        Nieuwe Quiz
+                    </button>
+                </div>
+                
+                <div id="answer-section" class="answer-section mt-4">
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <p class="font-medium">Antwoord:</p>
+                        <p id="answer-text" class="text-lg font-bold text-blue-800"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben een app",
+                    "Ik ben gelanceerd in 2020",
+                    "Ik ben vooral populair onder jongeren",
+                    "Je krijgt van mij na elke melding maar twee minuten de tijd",
+                    "Bij mij draait het om authenticiteit"
+                ],
+                answer: "BeReal"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik heb een lange nek",
+                    "Men is dol op mijn superzachte vacht",
+                    "Ik lig als knuffeldier ook vaak in kinderbedden",
+                    "Ik word in de bergen van Peru als boerderijdier gehouden",
+                    "Ik word soms verward met een lama"
+                ],
+                answer: "Alpaca"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben een socialemedia-app",
+                    "Ik kan ervoor zorgen dat oude muziek weer populair wordt",
+                    "Ik kan mensen transformeren van gewone burger naar wereldwijde superster",
+                    "Mensen dansen er vaak bij mij op los",
+                    "Bij mij draait alles om video's"
+                ],
+                answer: "TikTok"
+            },
+            {
+                category: "Wie",
+                hints: [
+                    "Ik ben een Amerikaanse acteur",
+                    "I'm the king of the world!",
+                    "Ik redde niet alleen Rose, dat probeer ik ook met onze planeet.",
+                    "K3 verwijst met hun nummer 'Leonardo' naar mij",
+                    "Door mijn hoofdrol in 'Titanic' werd ik een tieneridool"
+                ],
+                answer: "Leonardo DiCaprio"
+            },
+            {
+                category: "Waar",
+                hints: [
+                    "Ik ben vernoemd naar de Romeinse god van de oorlog",
+                    "Er zijn mensen die mij weleens willen bezoeken.",
+                    "Ik ben de vierde planeet van het zonnestelsel",
+                    "Na de aarde ben ik de meest leefbare planeet van het zonnestelsel",
+                    "Ik word ook wel de rode planeet genoemd."
+                ],
+                answer: "Mars"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben de sfeermaker bij een kampvuur",
+                    "Ik word vaak bespeeld",
+                    "Je kunt bij mij wel snel een gevoelige snaar raken",
+                    "Soms ben ik vals, daar kan ik niets aan doen.",
+                    "Ik ben zowel akoestisch als elektrisch verkrijgbaar"
+                ],
+                answer: "Gitaar"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben meestal roze",
+                    "Behalve als ik door de modder heb gerold.",
+                    "Men herkent mij aan mijn krulstaart",
+                    "Ik kan soms knorrig zijn",
+                    "Ik leef op een boerderij"
+                ],
+                answer: "Varken"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben een sterrenbeeld.",
+                    "Ik ben hip in de mode en het interieur",
+                    "Ik leef zowel in de zee als in rivieren",
+                    "Je kunt maar beter oppassen voor mijn klauwen.",
+                    "Je eet mij in luxe restaurants"
+                ],
+                answer: "Kreeft"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben onvoorspelbaar",
+                    "Ik kan je humeur maken of juist breken.",
+                    "Ik ben het dagelijkse onderwerp bij het koffiezetapparaat",
+                    "Ik word elke dag in het nieuws vermeld",
+                    "Piet Paulusma kon altijd veel over mij vertellen"
+                ],
+                answer: "Het weer"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben een bedreigde diersoort",
+                    "Ik heb een zachte, witte vacht",
+                    "Het broeikaseffect is mijn vijand",
+                    "Ik ben de koning van de Noordpool",
+                    "Ik ben een synoniem voor onrustig heen en weer lopen."
+                ],
+                answer: "IJsbeer"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik heb wel benen, maar geen armen",
+                    "Je kunt op mij wedden",
+                    "Je kunt op mijn rug zitten",
+                    "Je moet niet in mijn bek kijken.",
+                    "Ik ben een edel dier."
+                ],
+                answer: "Paard"
+            },
+            {
+                category: "Wie",
+                hints: [
+                    "Ik ben een wereldbekende zangeres",
+                    "Ik heb meer dan 30 Grammy Awards gewonnen",
+                    "Ik heb drie dochters, waarvan een tweeling",
+                    "Mijn partner is ook een bekende artiest",
+                    "Mijn grootste hit is 'Single Ladies'"
+                ],
+                answer: "Beyoncé"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Men gooit mij na één keer gebruiken weg",
+                    "Mijn kop is zwart",
+                    "Ik ben een vurig en aanstekelijk type",
+                    "Ik bevat zwavel",
+                    "Mijn naam is ook de naam van een tv-serie"
+                ],
+                answer: "Lucifer"
+            },
+            {
+                category: "Wie",
+                hints: [
+                    "Ik heb in 1964 de Nobelprijs voor de Vrede ontvangen.",
+                    "In de Verenigde Staten is een nationale feestdag naar mij vernoemd",
+                    "Ik was een bekende Amerikaanse dominee",
+                    "Ik voerde strijd voor gelijke rechten zonder het gebruik van geweld.",
+                    "Ik had een droom die de wereld heeft veranderd"
+                ],
+                answer: "Martin Luther King"
+            },
+            {
+                category: "Waar",
+                hints: [
+                    "Ik ben het oudste monument van Nederland",
+                    "Ik ben zelfs prehistorisch",
+                    "Ik heb vaak archeologen op bezoek gehad",
+                    "In het huidige Drenthe begon mijn geschiedenis",
+                    "Ik ben een restant van een prehistorische grafkamer"
+                ],
+                answer: "De Hunebedden"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik kan zorgen voor voldoening.",
+                    "Maar ik kan je ook misselijk maken",
+                    "Ik ben behoorlijk zuur",
+                    "En ik kan ook knorrig zijn",
+                    "Je hebt mij nodig voor de spijsvertering"
+                ],
+                answer: "Maag"
+            },
+            {
+                category: "Waar",
+                hints: [
+                    "Voor mij moet je goed getraind zijn",
+                    "Extra kleding en zuurstof is bij mij geen slecht idee",
+                    "Je kunt beter geen hoogtevrees hebben als je mij bezoekt",
+                    "Ik ben onderdeel van het Himalayagebergte,",
+                    "Ik ben de hoogste berg ter wereld."
+                ],
+                answer: "Mount Everest"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Mijn naam is een samenstelling van twee woorden",
+                    "Je vindt mij in de vorm van een poortje op de luchthaven",
+                    "Ik zit ook in stoplichten en slagbomen",
+                    "Ik maak soms piepende geluiden",
+                    "Ik kan verborgen schatten opsporen"
+                ],
+                answer: "Metaaldetector"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben draadloos",
+                    "Ik heb sensoren om obstakels te detecteren",
+                    "Met een druk op de knop of via een app start ik mijn taak",
+                    "Dankzij mijn compacte formaat pas ik onder meubels",
+                    "Ik eet graag vuil en stof"
+                ],
+                answer: "Robotstofzuiger"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Mijn oprichter blijft tot op heden anoniem",
+                    "Mijn waarde wordt bepaald door vraag en aanbod",
+                    "Ik heb een beperkte voorraad van 21 miljoen munten, waardoor ik schaarser ben dan goud",
+                    "Ik ben een virtuele munt die je niet vast kunt houden.",
+                    "Ik ben een cryptovaluta"
+                ],
+                answer: "Bitcoin"
+            },
+            {
+                category: "Waar",
+                hints: [
+                    "Je vindt me in het hart van Rome",
+                    "Mijn naam staat op het vijf eurocent muntje",
+                    "Ik was ooit het toneel van gladiatorengevechten",
+                    "Ik ben het grootste amfitheater van het Romeinse rijk"
+                ],
+                answer: "Colosseum"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Normaal gesproken besta ik uit 88 delen",
+                    "Voor mij moet je echt even gaan zitten",
+                    "Ik ben behoorlijk zwart-wit",
+                    "Soms heb ik een vleugel",
+                    "Ik ben een muziekinstrument"
+                ],
+                answer: "Piano"
+            },
+            {
+                category: "Wie",
+                hints: [
+                    "Ik leefde in de 19e eeuw",
+                    "Mijn lievelingskleur was geel",
+                    "Ik schreef brieven naar mijn broer",
+                    "Op een aantal zelfportretten zie je dat ik een oor mis",
+                    "Eén van mijn beroemdste werken is 'De Sterrennacht'"
+                ],
+                answer: "Vincent van Gogh"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "De opwarming van de aarde is mijn aartsvijand",
+                    "Ik neem je mee langs pittoreske steden in Friesland",
+                    "Mijn laatste editie was in 1997",
+                    "Men hoopt elk jaar dat ik nog een keer kan worden georganiseerd",
+                    "Ik sta synoniem voor de 'Tocht der tochten'"
+                ],
+                answer: "De Elfstedentocht"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik hang aan de muur.",
+                    "Mijn Italiaanse naam is La Gioconda",
+                    "Elke dag kijken er zo'n 20.000 mensen naar mij",
+                    "Ik glimlach altijd",
+                    "Leonardo Da Vinci heeft mij geschilderd"
+                ],
+                answer: "Mona Lisa"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben er elke dag",
+                    "Het is meestal stil als ik er ben.",
+                    "Bepaalde dieren worden wakker als ik er ben",
+                    "Sommige mensen hebben dienst als ik er ben",
+                    "Volgens de Nederlandse wet geluidhinder ben ik er tussen 23:00 uur en 7:00 uur"
+                ],
+                answer: "Nacht"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben in 1608 uitgevonden",
+                    "Ik word vaak gebruikt tijdens het jagen",
+                    "En men gebruikt mij in de astronomie",
+                    "Mijn synoniem is een prismakijker",
+                    "Door mij kun je opeens heel ver kijken"
+                ],
+                answer: "Verrekijker"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Je vindt mij meestal in de keuken.",
+                    "Ik ben een expert in het maken van popcorn",
+                    "Er gaat een fabel rond dat ik gevaarlijk en ongezond zou zijn",
+                    "Ik maak voedsel warm.",
+                    "Ik kan geluid maken: 'Ping!'"
+                ],
+                answer: "Magnetron"
+            },
+            {
+                category: "Wie",
+                hints: [
+                    "Ik geloof in karma.",
+                    "Ik en mijn volgelingen zijn vaak kaal",
+                    "Meestal zien mensen mij zittend",
+                    "Een religieuze stroming uit India is vernoemd naar mij",
+                    "Ik ben de spiritueel leider van het Boeddhisme."
+                ],
+                answer: "Boeddha"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik weet hoe lang je bent",
+                    "Ik help je de wereld over te reizen.",
+                    "Zonder mij heb je een probleem.",
+                    "Ik word vaak gecontroleerd.",
+                    "Ik ben niet geldig buiten de Europese Unie"
+                ],
+                answer: "ID-kaart"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben onzichtbaar.",
+                    "Vaak kom ik onverwachts op bezoek",
+                    "Maar men is nooit blij met mij",
+                    "De wereld stond twee jaar lang op z'n kop door mij",
+                    "Door mij werd 'anderhalvemetersamenleving' het woord van het jaar in 2020"
+                ],
+                answer: "Het coronavirus"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik besta in allerlei vormen en maten",
+                    "Je vindt mij zowel binnen als buiten",
+                    "Ik kan soms stinken.",
+                    "Holle Bolle Gijs is een populaire jongen onder ons.",
+                    "Ik ben de plek waar al je goede voornemens na januari belanden"
+                ],
+                answer: "Prullenbak"
+            },
+            {
+                category: "Wie",
+                hints: [
+                    "Ik ben een avonturier in hart en nieren",
+                    "Je kunt wel zeggen dat ik zeebenen had.",
+                    "Men associeert mij met een ei",
+                    "Santa Maria was de naam van mijn schip",
+                    "Ik ontdekte in 1492 Amerika."
+                ],
+                answer: "Christoffel Columbus"
+            },
+            {
+                category: "Wie",
+                hints: [
+                    "Ik ben in 1769 geboren in Frankrijk",
+                    "Ik ben een kleine man met grote ambities",
+                    "Ik kroonde mezelf tot keizer.",
+                    "Mijn doel was om de wereld te veroveren",
+                    "Waterloo werd helaas mijn ondergang"
+                ],
+                answer: "Napoleon Bonaparte"
+            },
+            {
+                category: "Wie",
+                hints: [
+                    "Ik ben opgegroeid in extreme armoede",
+                    "En uitgegroeid tot een wereldbekende multimiljardair",
+                    "Mijn bank heeft meer sterren gezien dan het heelal.",
+                    "Ik ben de koningin van de talkshows",
+                    "Ik verstop graag cadeautjes onder mensen hun stoelen"
+                ],
+                answer: "Oprah Winfrey"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik besta uit vier ruimtes",
+                    "Ik ben onmisbaar in het leven",
+                    "Een octopus heeft mij in drievoud",
+                    "Soms klop ik wat harder als ik iemand leuks zie",
+                    "Ik sta symbool voor de liefde."
+                ],
+                answer: "Het hart"
+            },
+            {
+                category: "Waar",
+                hints: [
+                    "Mensen staan soms erg lang voor mij in de rij",
+                    "Ik kan mensen misselijk of zelfs bang maken",
+                    "Ik ben vernoemd naar een slang",
+                    "Je vindt mij in Kaatsheuvel",
+                    "Ik ben de oudste achtbaan van de Efteling"
+                ],
+                answer: "De Python van de Efteling"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik heb twee vleugels",
+                    "Je hebt mij in verschillende maten en vormen",
+                    "Ik kan me ergens insteken.",
+                    "En ik kan ook ergens lucht van krijgen.",
+                    "Door mij kun je ruiken"
+                ],
+                answer: "Neus"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben een echte uitblinker",
+                    "Ik word veel gelimiteerd",
+                    "Ik ben niet goedkoop",
+                    "Sporters strijden om mij",
+                    "Men drukt mij uit in karaat."
+                ],
+                answer: "Goud"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben een vrouw van steen.",
+                    "Ik verwelkom iedereen die aan land komt",
+                    "Ik ben 46 meter hoog.",
+                    "Ik draag een kroon op mijn hoofd",
+                    "Ik ben een symbool van de Verenigde Staten"
+                ],
+                answer: "Vrijheidsbeeld"
+            },
+            {
+                category: "Wie",
+                hints: [
+                    "Ik ben een snelheidsduivel",
+                    "Ik ben al meerdere keren kampioen geweest.",
+                    "Men nam in 2022 massaal een Viaplay-abonnement om mij te kunnen zien",
+                    "De slogan van mijn team is 'Red Bull Gives You Wings'",
+                    "Ik ben de bekendste Nederlandse autocoureur"
+                ],
+                answer: "Max Verstappen"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik behoor tot het ochtendritueel van velen",
+                    "Ik kan zorgen voor een energieboost",
+                    "Maar ik kan je ook uit je slaap houden",
+                    "Ik kan behoorlijk bitter zijn",
+                    "Ik ben een warme drank."
+                ],
+                answer: "Koffie"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik ben altijd uniek",
+                    "Ik blijf overal achter",
+                    "Ik ben ook bekend bij de politie",
+                    "Met handschoenen aan kun je mij niet krijgen",
+                    "Je kunt mij met zwarte inkt maken"
+                ],
+                answer: "Vingerafdruk"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Ik heb twee kanten",
+                    "Ik ben zeer aantrekkelijk, al zeg ik het zelf",
+                    "Ik heb een noord- en zuidpool",
+                    "Ik ben gemaakt van ijzer",
+                    "Veel mensen verzamelen varianten van mij op hun koelkast"
+                ],
+                answer: "Magneet"
+            },
+            {
+                category: "Waar",
+                hints: [
+                    "Ik schitter in de stad van de liefde: Parijs",
+                    "Ik ben één van de grootste schatkamers ter wereld",
+                    "Ik ben een bezoekje waard, miljoenen mensen gingen je al voor",
+                    "Bij mij kun je de Mona Lisa bewonderen",
+                    "Je betreedt mij via een piramide van glas"
+                ],
+                answer: "Het Louvre"
+            },
+            {
+                category: "Waar",
+                hints: [
+                    "Je vindt mij op een bergtop",
+                    "De Inca's woonden hier vroeger.",
+                    "Ik werd in de 15e eeuw gebouwd en in de 16e eeuw verlaten",
+                    "Ik behoor tot één van de zeven wereldwonderen",
+                    "Ik ben een ruïnestad in Peru"
+                ],
+                answer: "Machu Picchu"
+            },
+            {
+                category: "Waar",
+                hints: [
+                    "Ik ben ontstaan door het water van de Colorado-rivier",
+                    "Ik ben de thuishaven van ongeveer 355 vogelsoorten",
+                    "Ik sta sinds 1979 op de Werelderfgoedlijst van UNESCO",
+                    "Ik ben ongeveer 446 kilometer lang",
+                    "Ik ben een van de eerste nationale parken van de Verenigde Staten"
+                ],
+                answer: "Grand Canyon"
+            },
+            {
+                category: "Wie",
+                hints: [
+                    "Zingen deed ik het allerliefst",
+                    "Maar op vrijdag de 13e trad ik nooit op",
+                    "Amsterdam was mijn stad",
+                    "Ik was een volkszanger in hart en nieren",
+                    "Mijn zoon heeft dezelfde passie"
+                ],
+                answer: "André Hazes"
+            },
+            {
+                category: "Wat",
+                hints: [
+                    "Je kijkt dwars door me heen.",
+                    "Je hebt er twee van mij nodig",
+                    "Ik kan hard of zacht zijn",
+                    "Mij verliezen is best onhandig",
+                    "Door mij kun je beter zien."
+                ],
+                answer: "Contactlens"
+            },
+            {
+                category: "Wie",
+                hints: [
+                    "Mijn achternaam is een synoniem voor grote intelligentie",
+                    "Ik ben geboren in Duitsland",
+                    "Kenmerkend waren mijn snor en warrige haren",
+                    "Ik kreeg in 1921 de Nobelprijs voor Natuurkunde",
+                    "Ik was een wereldberoemde wetenschapper"
+                ],
+                answer: "Albert Einstein"
+            }
+        ];
+
+        // Game state
+        let gameState = {
+            currentQuestions: [],
+            selectedQuestion: null,
+            shownHints: 0,
+            answeredQuestions: 0,
+            knownQuestions: 0, // Nieuwe teller: aantal vragen die de gebruiker wist
+            unknownQuestions: 0, // Nieuwe teller: aantal vragen die de gebruiker niet wist
+            totalQuestions: quizData.length,
+            answeredQuestionIds: new Set()
+        };
+
+        // DOM elements
+        const questionsContainer = document.getElementById('questions-container');
+        const selectedQuestionContainer = document.getElementById('selected-question-container');
+        const selectedQuestionCategory = document.getElementById('selected-question-category');
+        const hintsList = document.getElementById('hints-list');
+        const showHintBtn = document.getElementById('show-hint-btn');
+        const showAnswerBtn = document.getElementById('show-answer-btn');
+        const markCorrectBtn = document.getElementById('mark-correct-btn');
+        const markIncorrectBtn = document.getElementById('mark-incorrect-btn'); 
+        const loadNextQuestionsBtn = document.getElementById('load-next-questions-btn');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const answerSection = document.getElementById('answer-section');
+        const answerText = document.getElementById('answer-text');
+        const hintsCounter = document.getElementById('hints-counter');
+        const progressText = document.getElementById('progress-text');
+        const progressFill = document.getElementById('progress-fill');
+        const knownCountSpan = document.getElementById('known-count'); // Nieuw DOM-element
+        const unknownCountSpan = document.getElementById('unknown-count'); // Nieuw DOM-element
+
+        // Initialize the game
+        function initGame() {
+            gameState.answeredQuestions = 0;
+            gameState.knownQuestions = 0; // Reset
+            gameState.unknownQuestions = 0; // Reset
+            gameState.answeredQuestionIds = new Set();
+            updateProgress();
+            loadRandomQuestions();
+        }
+
+        // Load 3 random questions (that haven't been answered yet)
+        function loadRandomQuestions() {
+            // Reset selected question
+            gameState.selectedQuestion = null;
+            gameState.shownHints = 0;
+            selectedQuestionContainer.classList.add('hidden');
+            
+            // Filter out answered questions
+            const availableQuestions = quizData.filter(q => !gameState.answeredQuestionIds.has(q.answer));
+            
+            // If less than 3 questions left, show what's available
+            const questionCount = Math.min(3, availableQuestions.length);
+            
+            // Get random unique questions
+            const shuffled = [...availableQuestions].sort(() => 0.5 - Math.random());
+            gameState.currentQuestions = shuffled.slice(0, questionCount);
+            
+            renderQuestionCards();
+            
+            // Show "Nieuwe Quiz" button if no questions available in total
+            if (availableQuestions.length === 0) {
+                newGameBtn.classList.remove('hidden');
+                questionsContainer.innerHTML = '<p class="col-span-3 text-center text-gray-600">Alle vragen zijn beantwoord! Klik op "Nieuwe Quiz" om opnieuw te beginnen.</p>';
+            } else {
+                newGameBtn.classList.add('hidden');
+            }
+
+            // Hide the "Volgende Vragen" button initially or when a new set is loaded
+            loadNextQuestionsBtn.classList.add('hidden');
+        }
+
+        // Render question cards
+        function renderQuestionCards() {
+            questionsContainer.innerHTML = '';
+            
+            gameState.currentQuestions.forEach((question, index) => {
+                const card = document.createElement('div');
+                card.className = 'question-card pulse';
+                card.dataset.index = index;
+                
+                let icon = '❓';
+                if (question.category === 'Wie') icon = '🧑';
+                if (question.category === 'Waar') icon = '🌍';
+                
+                card.innerHTML = `
+                    <button class="delete-card-button">X</button>
+                    <div class="flex items-center mb-2">
+                        <span class="text-2xl mr-2">${icon}</span>
+                        <h3 class="font-bold text-lg">${question.category}</h3>
+                    </div>
+                    <p class="text-gray-600">Klik om deze vraag te selecteren</p>
+                `;
+                
+                card.querySelector('.delete-card-button').addEventListener('click', (event) => {
+                    event.stopPropagation(); // Voorkom dat de kaart wordt geselecteerd bij het klikken op de verwijderknop
+                    deleteQuestionCard(question, card);
+                });
+
+                card.addEventListener('click', () => selectQuestion(index));
+                questionsContainer.appendChild(card);
+            });
+        }
+
+        // Delete a question card
+        function deleteQuestionCard(questionToDelete, cardElement) {
+            // Add the question's answer to answeredQuestionIds so it's not picked again
+            gameState.answeredQuestionIds.add(questionToDelete.answer);
+            
+            // Remove the card from the DOM
+            cardElement.remove();
+
+            // If the deleted card was the currently selected one, clear the selected question view
+            if (gameState.selectedQuestion && gameState.selectedQuestion.answer === questionToDelete.answer) {
+                gameState.selectedQuestion = null;
+                gameState.shownHints = 0;
+                selectedQuestionContainer.classList.add('hidden');
+            }
+
+            // Update the progress to reflect the total number of questions that can still be answered
+            // (Note: This button doesn't increment 'answeredQuestions' count, just removes it from play)
+            updateProgress(); // Call to re-evaluate what's left
+            
+            // If all currently displayed cards are removed, load new ones
+            if (questionsContainer.children.length === 0 && gameState.answeredQuestionIds.size < quizData.length) {
+                loadRandomQuestions();
+            } else if (gameState.answeredQuestionIds.size === quizData.length) {
+                // All questions in the quiz are now "answered" or "deleted"
+                newGameBtn.classList.remove('hidden');
+                questionsContainer.innerHTML = '<p class="col-span-3 text-center text-gray-600">Alle vragen zijn beantwoord! Klik op "Nieuwe Quiz" om opnieuw te beginnen.</p>';
+            }
+        }
+
+
+        // Select a question
+        function selectQuestion(index) {
+            // Update UI
+            document.querySelectorAll('.question-card').forEach(card => {
+                card.classList.remove('selected', 'pulse');
+            });
+            document.querySelector(`.question-card[data-index="${index}"]`).classList.add('selected');
+            
+            // Set selected question
+            gameState.selectedQuestion = gameState.currentQuestions[index];
+            gameState.shownHints = 0;
+            
+            // Update question display
+            selectedQuestionCategory.textContent = `${gameState.selectedQuestion.category === 'Wat' ? '❓ Wat' : 
+                                                gameState.selectedQuestion.category === 'Wie' ? '🧑 Wie' : '🌍 Waar'}`;
+            
+            // Clear hints and answer
+            hintsList.innerHTML = '';
+            answerSection.classList.remove('visible');
+            answerText.textContent = '';
+            
+            // Update hints counter
+            updateHintsCounter();
+            
+            // Show the selected question container
+            selectedQuestionContainer.classList.remove('hidden');
+            
+            // Reset buttons
+            showHintBtn.disabled = false;
+            showAnswerBtn.classList.remove('hidden');
+            markCorrectBtn.classList.add('hidden');
+            markIncorrectBtn.classList.add('hidden'); 
+            loadNextQuestionsBtn.classList.remove('hidden'); 
+        }
+
+        // Show next hint
+        function showNextHint() {
+            if (!gameState.selectedQuestion || 
+                gameState.shownHints >= gameState.selectedQuestion.hints.length) {
+                return;
+            }
+            
+            const hintItem = document.createElement('li');
+            hintItem.className = 'hint-item';
+            hintItem.textContent = gameState.selectedQuestion.hints[gameState.shownHints];
+            
+            hintsList.appendChild(hintItem);
+            
+            // Trigger animation
+            setTimeout(() => {
+                hintItem.classList.add('visible');
+            }, 10);
+            
+            gameState.shownHints++;
+            updateHintsCounter();
+            
+            // Disable button if all hints shown
+            if (gameState.shownHints >= gameState.selectedQuestion.hints.length) {
+                showHintBtn.disabled = true;
+            }
+        }
+
+        // Show answer
+        function showAnswer() {
+            answerText.textContent = gameState.selectedQuestion.answer;
+            answerSection.classList.add('visible');
+            showAnswerBtn.classList.add('hidden');
+            markCorrectBtn.classList.remove('hidden');
+            markIncorrectBtn.classList.remove('hidden'); 
+            loadNextQuestionsBtn.classList.remove('hidden'); 
+        }
+
+        // Mark question as answered correctly
+        function markCorrect() {
+            gameState.answeredQuestions++;
+            gameState.knownQuestions++; // Increment known count
+            gameState.answeredQuestionIds.add(gameState.selectedQuestion.answer);
+            updateProgress();
+            
+            // Mark the card as answered
+            const index = gameState.currentQuestions.indexOf(gameState.selectedQuestion);
+            if (index !== -1) {
+                const card = document.querySelector(`.question-card[data-index="${index}"]`);
+                if (card) {
+                    card.classList.add('answered');
+                    card.classList.remove('selected');
+                    card.classList.remove('pulse');
+                    card.innerHTML = `
+                        <button class="delete-card-button" style="display: none;">X</button> 
+                        <div class="flex items-center mb-2">
+                            <span class="text-2xl mr-2">✅</span>
+                            <h3 class="font-bold text-lg">Beantwoord</h3>
+                        </div>
+                        <p class="text-gray-600">${gameState.selectedQuestion.answer}</p>
+                    `;
+                }
+            }
+            
+            // Hide the answer section and selected question container
+            answerSection.classList.remove('visible');
+            selectedQuestionContainer.classList.add('hidden');
+
+            // Load new questions if the current set is empty or all questions are answered
+            if (gameState.currentQuestions.filter(q => !gameState.answeredQuestionIds.has(q.answer)).length === 0 || gameState.answeredQuestionIds.size === quizData.length) {
+                loadRandomQuestions();
+            } else {
+                // Otherwise, just re-render cards to reflect the changes (e.g., answered status)
+                loadRandomQuestions(); 
+            }
+        }
+
+        // Mark question as answered incorrectly (new function)
+        function markIncorrect() {
+            gameState.unknownQuestions++; // Increment unknown count
+            gameState.answeredQuestionIds.add(gameState.selectedQuestion.answer); 
+            updateProgress(); 
+
+            const index = gameState.currentQuestions.indexOf(gameState.selectedQuestion);
+            if (index !== -1) {
+                const card = document.querySelector(`.question-card[data-index="${index}"]`);
+                if (card) {
+                    card.classList.add('incorrect'); 
+                    card.classList.remove('selected');
+                    card.classList.remove('pulse');
+                    card.innerHTML = `
+                        <button class="delete-card-button" style="display: none;">X</button>
+                        <div class="flex items-center mb-2">
+                            <span class="text-2xl mr-2">❌</span>
+                            <h3 class="font-bold text-lg">Niet geweten</h3>
+                        </div>
+                        <p class="text-gray-600">${gameState.selectedQuestion.answer}</p>
+                    `;
+                }
+            }
+
+            answerSection.classList.remove('visible');
+            selectedQuestionContainer.classList.add('hidden');
+
+            if (gameState.currentQuestions.filter(q => !gameState.answeredQuestionIds.has(q.answer)).length === 0 || gameState.answeredQuestionIds.size === quizData.length) {
+                loadRandomQuestions();
+            } else {
+                loadRandomQuestions();
+            }
+        }
+
+        // Update hints counter
+        function updateHintsCounter() {
+            if (gameState.selectedQuestion) {
+                hintsCounter.textContent = `Hint ${gameState.shownHints}/${gameState.selectedQuestion.hints.length}`;
+            }
+        }
+
+        // Update progress bar and counters
+        function updateProgress() {
+            const percentage = (gameState.answeredQuestions / gameState.totalQuestions) * 100;
+            progressFill.style.width = `${percentage}%`;
+            progressText.textContent = `${gameState.answeredQuestions}/${gameState.totalQuestions} vragen beantwoord`;
+            knownCountSpan.textContent = gameState.knownQuestions; // Update known count
+            unknownCountSpan.textContent = gameState.unknownQuestions; // Update unknown count
+        }
+
+        // Event listeners
+        showHintBtn.addEventListener('click', showNextHint);
+        showAnswerBtn.addEventListener('click', showAnswer);
+        markCorrectBtn.addEventListener('click', markCorrect);
+        markIncorrectBtn.addEventListener('click', markIncorrect); 
+        loadNextQuestionsBtn.addEventListener('click', loadRandomQuestions);
+        newGameBtn.addEventListener('click', initGame);
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>
