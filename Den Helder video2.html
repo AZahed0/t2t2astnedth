@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <title> Den Helder</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet EasyButton CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.css">
+    <!-- Leaflet Fullscreen CSS -->
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css" />
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Algemene styling */
+        :root {
+            --primary-color: #3182CE;
+            --primary-hover: #2b6cb0;
+            --secondary-color: #4a5568;
+            --light-bg: #f0f4f8;
+            --sidebar-width: 600px;
+            --sidebar-mobile-width: 95vw;
+            --transition-speed: 0.3s;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Inter", sans-serif;
+            overflow: hidden;
+            background-color: var(--light-bg);
+            color: var(--secondary-color);
+        }
+        
+        /* Kaart container */
+        #map {
+            width: 100%;
+            height: 100vh;
+            transition: margin-right var(--transition-speed) ease;
+            border-radius: 8px;
+        }
+        
+        /* Zijbalk styling */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            right: calc(var(--sidebar-width) * -1);
+            width: var(--sidebar-width);
+            height: 100%;
+            background-color: #ffffff;
+            box-shadow: -8px 0 20px rgba(0, 0, 0, 0.25);
+            z-index: 1000;
+            overflow-y: auto;
+            transition: right var(--transition-speed) ease;
+            padding: 30px 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+        
+        #sidebar.open {
+            right: 0;
+        }
+        
+        /* Responsieve aanpassingen */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: var(--sidebar-mobile-width);
+                right: calc(var(--sidebar-mobile-width) * -1);
+                padding: 20px 15px;
+                border-radius: 0;
+            }
+            
+            #sidebar.open {
+                right: 0;
+            }
+            
+            #map.shifted {
+                margin-right: var(--sidebar-mobile-width);
+            }
+        }
+        
+        /* Inhoud zijbalk */
+        #sidebar-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #sidebar-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #edf2f7;
+            border: none;
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--secondary-color);
+            border-radius: 50%;
+            transition: all var(--transition-speed);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #sidebar-close:hover {
+            background-color: #cbd5e0;
+            color: #2d3748;
+            transform: rotate(90deg);
+        }
+        
+        /* Video container */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 25px 0;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            background: #000;
+        }
+        
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        /* Inhoud styling */
+        .sidebar-title {
+            color: #2d3748;
+            font-size: 2.2em;
+            margin: 10px 0 18px;
+            font-weight: 700;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .sidebar-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: var(--primary-color);
+        }
+        
+        .sidebar-text {
+            color: #4a5568;
+            font-size: 1.15em;
+            line-height: 1.7;
+            margin-bottom: 25px;
+        }
+        
+        .links-list {
+            list-style: none;
+            padding: 0;
+            margin: 30px 0 0;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+        }
+        
+        .links-list li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .links-list a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all var(--transition-speed);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .links-list a:hover {
+            color: var(--primary-hover);
+            transform: translateX(5px);
+        }
+        
+        .links-list i {
+            font-size: 1.2em;
+        }
+        
+        .sidebar-footer {
+            color: #a0aec0;
+            margin-top: 30px;
+            font-size: 0.9em;
+            text-align: center;
+        }
+        
+        /* Styling van gemeentegrenzen */
+        .municipality-boundary {
+            stroke-width: 2px;
+            stroke: var(--primary-color);
+            fill: #63b3ed;
+            fill-opacity: 0.25;
+            stroke-opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+        
+        .municipality-boundary:hover {
+            stroke-width: 3px;
+            stroke-opacity: 1;
+            fill-opacity: 0.35;
+        }
+        
+        /* Hoofdactieknop */
+        #open-denhelder-info {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #open-denhelder-info:hover {
+            background-color: var(--primary-hover);
+            transform: translateX(-50%) scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
+        
+        /* Laadspinner */
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            background: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--secondary-color);
+            font-weight: 500;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        #loading::before {
+            content: '';
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Aangepaste marker popup styling */
+        .leaflet-popup-content {
+            font-family: "Inter", sans-serif;
+            font-size: 14px;
+        }
+        
+        .leaflet-popup-content-wrapper {
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        /* Aangepaste bedieningselementen */
+        .leaflet-bar {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .leaflet-bar a {
+            width: 36px;
+            height: 36px;
+            line-height: 36px;
+            font-size: 18px;
+        }
+        
+        /* Animaties */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Markers van bezienswaardigheden */
+        .poi-marker {
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            width: 12px;
+            height: 12px;
+            border: 2px solid white;
+            animation: pulse 2s infinite;
+        }
+        
+        /* Aangepast infopaneel */
+        .info-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            max-width: 300px;
+            display: none;
+        }
+        
+        .info-panel h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.2em;
+        }
+        
+        .info-panel p {
+            margin-bottom: 0;
+            font-size: 0.9em;
+        }
+        
+        .close-info {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: var(--secondary-color);
+        }
+
+        /* Aangepaste basiskaart knop */
+        #basemap-toggle-button {
+            position: absolute;
+            bottom: 10px; /* Onderin */
+            left: 10px; /* Links */
+            z-index: 999;
+            background-color: #fff;
+            border: none;
+            width: 36px; 
+            height: 36px;
+            border-radius: 4px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        #basemap-toggle-button:hover {
+            background-color: #f0f4f8;
+            transform: scale(1.05);
+        }
+        #basemap-toggle-button i {
+            font-size: 20px; 
+            color: #4a5568;
+        }
+
+        /* Basiskaart selectiemodal */
+        #basemap-modal {
+            position: absolute;
+            bottom: calc(10px + 36px + 10px); /* Boven de basiskaartknop met marge */
+            left: 10px;
+            z-index: 1000;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            padding: 10px;
+            display: none; /* Standaard verborgen */
+            flex-direction: column;
+            gap: 5px;
+            min-width: 180px;
+        }
+        #basemap-modal.open {
+            display: flex;
+        }
+        #basemap-modal button {
+            background-color: #fff;
+            color: #4a5568;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        #basemap-modal button:hover {
+            background-color: #e2e8f0;
+            color: #2d3748;
+        }
+        #basemap-modal button.active {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Kaart container -->
+    <div id="map"></div>
+
+    <!-- Zijbalk voor inhoud weergeven -->
+    <div id="sidebar">
+        <button id="sidebar-close" aria-label="Zijbalk sluiten"><i class="fas fa-times"></i></button>
+        <div id="sidebar-content"></div>
+    </div>
+
+    <!-- Hoofdactieknop -->
+    <button id="open-denhelder-info">
+        <i class="fas fa-map-marked-alt"></i>
+        Ontdek Den Helder
+    </button>
+
+    <!-- Aangepaste basiskaart knop -->
+    <button id="basemap-toggle-button" title="Wijzig Basiskaart">
+        <i class="fas fa-layer-group"></i> <!-- Kaartsymbool -->
+    </button>
+
+    <!-- Basiskaart selectiemodal -->
+    <div id="basemap-modal">
+        <!-- Basiskaartopties worden hier dynamisch ingevoegd -->
+    </div>
+
+    <!-- Infopaneel -->
+    <div class="info-panel" id="info-panel">
+        <button class="close-info" aria-label="Infopaneel sluiten"><i class="fas fa-times"></i></button>
+        <h3>Welkom in Den Helder</h3>
+        <p>Klik op de kaart of de grens om meer over deze maritieme stad te ontdekken.</p>
+    </div>
+
+    <!-- Laadspinner -->
+    <div id="loading">Kaartgegevens laden...</div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Providers plugin -->
+    <script src="https://unpkg.com/leaflet-providers@1.13.0/leaflet-providers.js"></script>
+    <!-- Leaflet EasyButton JS -->
+    <script src="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.js"></script>
+    <!-- Leaflet Fullscreen JS -->
+    <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js"></script>
+    
+    <script>
+        // Initialiseer de kaart gecentreerd op Den Helder, Nederland
+        const map = L.map('map', {
+            zoomControl: false, 
+            preferCanvas: true 
+        }).setView([52.9599, 4.7593], 13);
+        
+        // Voeg aangepaste zoomregelaar toe
+        L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        
+        // Definieer basiskaarten
+        const baseMaps = {
+            "Google Maps": L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                maxZoom: 19,
+                attribution: 'Google Maps'
+            }),
+            "Satelliet": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: 'Esri World Imagery'
+            }),
+            "Topografisch": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: 'Esri Topographic'
+            }),
+            "OpenStreetMap": L.tileLayer.provider('OpenStreetMap.Mapnik'),
+            "Licht": L.tileLayer.provider('CartoDB.Positron'),
+            "Donker": L.tileLayer.provider('CartoDB.DarkMatter')
+        };
+        
+        let activeBasemapLayer = baseMaps["Google Maps"].addTo(map); 
+        
+        // DOM-elementen
+        const sidebar = document.getElementById('sidebar');
+        const sidebarContent = document.getElementById('sidebar-content');
+        const sidebarCloseButton = document.getElementById('sidebar-close');
+        const mapContainer = document.getElementById('map');
+        const openDenHelderInfoButton = document.getElementById('open-denhelder-info');
+        const loadingSpinner = document.getElementById('loading');
+        const infoPanel = document.getElementById('info-panel');
+        const basemapToggleButton = document.getElementById('basemap-toggle-button');
+        const basemapModal = document.getElementById('basemap-modal');
+        
+        // YouTube video
+        const youtubeVideoId = 's8OPuG3AEW8';
+        const youtubeEmbedUrl = `https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0`; 
+        
+        // Gegevens van bezienswaardigheden
+        const pointsOfInterest = [
+            {
+                name: "Marinmuseum",
+                position: [52.9619, 4.7591],
+                description: "Het Marinemuseum toont de maritieme geschiedenis van Nederland.",
+                icon: "anchor"
+            },
+            {
+                name: "Fort Kijkduin",
+                position: [52.9472, 4.7286],
+                description: "Een historisch fort met een aquarium en ondergrondse tunnels.",
+                icon: "archway" // Changed to match Font Awesome icon
+            },
+            {
+                name: "Vuurtoren Lange Jaap",
+                position: [52.9644, 4.7447],
+                description: "De hoogste gietijzeren vuurtoren van Nederland met 63,5 meter.",
+                icon: "lightbulb"
+            },
+            {
+                name: "Marinehaven",
+                position: [52.9592, 4.7814],
+                description: "De marinehaven van Den Helder, thuisbasis van de Koninklijke Marine.",
+                icon: "ship"
+            },
+            {
+                name: "Veerhaven Texel",
+                position: [52.9628, 4.8003],
+                description: "Vertrekpunt voor veerboten naar het eiland Texel.",
+                icon: "ferry"
+            }
+        ];
+        
+        // Icoon mapping voor bezienswaardigheden (gebruikt Font Awesome klassen)
+        const iconMapping = {
+            anchor: "fas fa-anchor",
+            archway: "fas fa-archway", // Corrected Font Awesome icon
+            lightbulb: "fas fa-lightbulb",
+            ship: "fas fa-ship",
+            ferry: "fas fa-ferry"
+        };
+        
+        let denHelderBoundaryLayer = null;
+        let initialMapCenter = map.getCenter();
+        
+        // Inhoud zijbalk
+        const denHelderContent = {
+            title: 'Den Helder: Maritieme Hoofdstad van de Noordkop',
+            video: `
+                <div class="video-container">
+                    <iframe 
+                        src="${youtubeEmbedUrl}" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            `,
+            description: `
+                <p>Den Helder is de meest noordelijke gemeente op het vasteland van Noord-Holland en de thuishaven van de Koninklijke Marine. 
+                Als een echte "Stad aan Zee", biedt het een rijke maritieme geschiedenis, uitgestrekte bollenvelden en 
+                een unieke verbinding met het Waddeneiland Texel.</p>
+                
+                <p>De stad staat bekend om haar marine-erfgoed, prachtige stranden en strategische ligging op het puntje van Noord-Holland. 
+                Den Helder dient als de belangrijkste veerhaven naar het eiland Texel en heeft verschillende interessante musea en historische 
+                locaties die verband houden met haar maritieme verleden.</p>
+            `,
+            links: `
+                <ul class="links-list">
+                    <li>
+                        <a href="https://nl.wikipedia.org/wiki/Den_Helder" target="_blank">
+                            <i class="fas fa-book-open"></i> Wikipedia over Den Helder
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.denhelder.nl/" target="_blank">
+                            <i class="fas fa-city"></i> Gemeente Den Helder
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.denhelder.online/" target="_blank">
+                            <i class="fas fa-info-circle"></i> Citymarketing Den Helder
+                        </a>
+                    </li>
+                </ul>
+            `,
+            footer: 'Klik op bezienswaardigheden op de kaart om meer te leren'
+        };
+
+        /**
+         * Vult en toont de basiskaart selectiemodal.
+         */
+        function populateBasemapModal() {
+            basemapModal.innerHTML = ''; // Vorige opties wissen
+            for (const name in baseMaps) {
+                const button = document.createElement('button');
+                button.textContent = name;
+                button.dataset.basemapName = name; // Basiskaartnaam opslaan
+                // Controleer of de URL van de basemap overeenkomt om de actieve te markeren
+                if (activeBasemapLayer && baseMaps[name] && activeBasemapLayer._url === baseMaps[name]._url) {
+                    button.classList.add('active'); // Markeer actieve basiskaart
+                }
+                button.addEventListener('click', () => {
+                    switchBasemap(name);
+                    basemapModal.classList.remove('open'); // Modal sluiten na selectie
+                });
+                basemapModal.appendChild(button);
+            }
+        }
+
+        /**
+         * Schakelt de actieve basiskaartlaag op de kaart.
+         * @param {string} newBasemapName - De naam van de basiskaart waarnaar moet worden overgeschakeld.
+         */
+        function switchBasemap(newBasemapName) {
+            if (activeBasemapLayer) {
+                map.removeLayer(activeBasemapLayer); // Huidige basiskaart verwijderen
+            }
+            activeBasemapLayer = baseMaps[newBasemapName];
+            activeBasemapLayer.addTo(map); // Nieuwe basiskaart toevoegen
+            // Actieve status in modal-knoppen bijwerken
+            Array.from(basemapModal.children).forEach(button => {
+                if (button.dataset.basemapName === newBasemapName) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
+        
+        /**
+         * Opent de zijbalk en vult deze met de opgegeven inhoud.
+         * Past de kaartmarge aan en pannen de kaart om de zijbalk te accommoderen, zodat het focusgebied zichtbaar blijft.
+         * @param {object} content - Het inhoudsobject voor de zijbalk.
+         */
+        function openSidebar(content) {
+            sidebarContent.innerHTML = `
+                <h3 class="sidebar-title">${content.title}</h3>
+                ${content.video}
+                <div class="sidebar-text">
+                    ${content.description}
+                </div>
+                ${content.links}
+                <div class="sidebar-footer">
+                    ${content.footer}
+                </div>
+            `;
+            
+            sidebar.classList.add('open'); 
+            openDenHelderInfoButton.style.display = 'none'; 
+            infoPanel.style.display = 'none';
+            basemapModal.classList.remove('open'); // Sluit basiskaartmodal als deze open is
+            
+            const sidebarWidth = window.innerWidth <= 768 ? window.innerWidth * 0.95 : 600;
+            mapContainer.style.marginRight = `${sidebarWidth}px`;
+            mapContainer.classList.add('shifted');
+            
+            if (denHelderBoundaryLayer) {
+                map.flyToBounds(denHelderBoundaryLayer.getBounds(), {
+                    duration: 0.8,
+                    paddingTopLeft: [0, 0],
+                    paddingBottomRight: [sidebarWidth + 50, 0]
+                });
+            } else {
+                map.panBy([-sidebarWidth / 2, 0], { animate: true, duration: 0.4 }); 
+            }
+            map.invalidateSize(); 
+        }
+        
+        /**
+         * Sluit de zijbalk en reset de kaartmarge en pannen.
+         */
+        function closeSidebar() {
+            sidebar.classList.remove('open'); 
+            mapContainer.style.marginRight = '0'; 
+            mapContainer.classList.remove('shifted');
+            openDenHelderInfoButton.style.display = 'flex'; // Toon de knop wanneer de zijbalk sluit
+            
+            map.flyTo(initialMapCenter, map.getZoom(), { 
+                animate: true, 
+                duration: 0.8 
+            });
+            
+            map.invalidateSize(); 
+        }
+        
+        // Eventlisteners
+        sidebarCloseButton.addEventListener('click', closeSidebar);
+        
+        openDenHelderInfoButton.addEventListener('click', () => {
+            openSidebar(denHelderContent);
+        });
+
+        // Toggle basiskaartmodal zichtbaarheid
+        basemapToggleButton.addEventListener('click', () => {
+            populateBasemapModal(); // Zorg ervoor dat opties up-to-date zijn
+            basemapModal.classList.toggle('open');
+        });
+
+        // Verberg basiskaartmodal bij klikken buiten de modal
+        map.on('click', () => {
+            if (basemapModal.classList.contains('open')) {
+                basemapModal.classList.remove('open');
+            }
+        });
+        
+        // Toon infopaneel bij eerste interactie
+        function showInfoPanel() {
+            infoPanel.style.display = 'block';
+            setTimeout(() => {
+                infoPanel.style.opacity = '1';
+            }, 100);
+            
+            // Verberg na 8 seconden
+            setTimeout(() => {
+                infoPanel.style.opacity = '0';
+                setTimeout(() => {
+                    infoPanel.style.display = 'none';
+                }, 300);
+            }, 8000);
+        }
+        
+        // Sluit infopaneel
+        document.querySelector('.close-info').addEventListener('click', () => {
+            infoPanel.style.opacity = '0';
+            setTimeout(() => {
+                infoPanel.style.display = 'none';
+            }, 300);
+        });
+        
+        // Eerste interactie met de kaart
+        let firstInteraction = true;
+        map.on('click', function() {
+            if (firstInteraction) {
+                showInfoPanel();
+                firstInteraction = false;
+            }
+        });
+        
+        // Ophalen van Den Helder grensgegevens
+        loadingSpinner.style.display = 'flex';
+        
+        fetch(`https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/CBS_Gemeente_actueel/FeatureServer/0/query?where=STATNAAM='Den Helder'&outFields=*&f=geojson`)
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP fout! status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                loadingSpinner.style.display = 'none';
+                
+                if (data.features && data.features.length > 0) {
+                    denHelderBoundaryLayer = L.geoJSON(data, {
+                        style: {
+                            className: 'municipality-boundary'
+                        },
+                        onEachFeature: function(feature, layer) {
+                            layer.on('click', function() {
+                                openSidebar(denHelderContent);
+                            });
+                            
+                            layer.bindTooltip("Gemeente Den Helder", {
+                                permanent: false,
+                                direction: 'top',
+                                className: 'custom-tooltip'
+                            });
+                        }
+                    }).addTo(map);
+                    
+                    map.fitBounds(denHelderBoundaryLayer.getBounds());
+                    initialMapCenter = map.getCenter();
+                    
+                    // Voeg bezienswaardigheden toe nadat de grens is geladen
+                    addPointsOfInterest();
+                }
+            })
+            .catch(error => {
+                loadingSpinner.style.display = 'none';
+                console.error("Fout bij het ophalen van Den Helder grensgegevens:", error);
+                addPointsOfInterest();
+            });
+        
+        // Voeg bezienswaardigheden toe aan de kaart
+        function addPointsOfInterest() {
+            pointsOfInterest.forEach(poi => {
+                const marker = L.circleMarker(poi.position, {
+                    radius: 8,
+                    fillColor: "#3182CE",
+                    color: "#fff",
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8,
+                    className: 'poi-marker'
+                }).addTo(map);
+                
+                marker.bindPopup(`
+                    <div style="min-width: 200px;">
+                        <h3 style="margin: 0 0 5px 0; color: #3182CE; display: flex; align-items: center; gap: 8px;">
+                            <i class="${iconMapping[poi.icon]}" style="font-size: 1.2em;"></i>
+                            ${poi.name}
+                        </h3>
+                        <p style="margin: 0;">${poi.description}</p>
+                    </div>
+                `);
+                
+                marker.on('click', function() {
+                    // Kleine vertraging om pop-up te laten openen vóór de zijbalk
+                    setTimeout(() => {
+                        openSidebar({
+                            title: poi.name,
+                            video: `
+                                <div style="background: #f0f4f8; border-radius: 12px; padding: 15px; margin-bottom: 15px; 
+                                display: flex; justify-content: center; align-items: center; height: 150px;">
+                                    <i class="${iconMapping[poi.icon]}" style="font-size: 3em; color: #3182CE;"></i>
+                                </div>
+                            `,
+                            description: `
+                                <p>${poi.description}</p>
+                                <p>Klik op de kaart om deze locatie te zien.</p>
+                            `,
+                            links: `
+                                <ul class="links-list">
+                                    <li>
+                                        <a href="https://www.google.com/maps?q=${poi.position[0]},${poi.position[1]}" target="_blank">
+                                            <i class="fas fa-map-marked-alt"></i> Bekijk op Google Maps
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://nl.wikipedia.org/wiki/Den_Helder" target="_blank">
+                                            <i class="fas fa-book-open"></i> Meer over Den Helder
+                                        </a>
+                                    </li>
+                                </ul>
+                            `,
+                            footer: 'Locatie: ' + poi.position[0].toFixed(4) + ', ' + poi.position[1].toFixed(4)
+                        });
+                    }, 100);
+                });
+            });
+        }
+        
+        // Vensterformaat wijzigen handler
+        window.addEventListener('resize', () => {
+            if (sidebar.classList.contains('open')) {
+                const sidebarWidth = window.innerWidth <= 768 ? window.innerWidth * 0.95 : 600;
+                mapContainer.style.marginRight = `${sidebarWidth}px`;
+                
+                if (denHelderBoundaryLayer) {
+                    map.flyToBounds(denHelderBoundaryLayer.getBounds(), {
+                        duration: 0.1,
+                        paddingTopLeft: [0, 0],
+                        paddingBottomRight: [sidebarWidth + 50, 0]
+                    });
+                }
+            }
+            
+            map.invalidateSize();
+        });
+        
+        // Voeg fullscreen bediening toe
+        map.addControl(new L.Control.Fullscreen({
+            position: 'topleft',
+            title: 'Schermvullend', 
+            titleCancel: 'Verlaat schermvullend' 
+        }));
+        
+        // Voeg geolocatiebediening toe
+        L.easyButton('<i class="fas fa-location-arrow"></i>', function() {
+            map.locate({setView: true, maxZoom: 15});
+        }, 'Lokaliseer mij').addTo(map); 
+        
+        // Afhandeling locatie gevonden
+        map.on('locationfound', function(e) {
+            L.circleMarker(e.latlng, {
+                radius: 8,
+                fillColor: "#48BB78",
+                color: "#fff",
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map).bindPopup("U bent hier").openPopup(); 
+        });
+        
+        // Afhandeling locatie fout
+        map.on('locationerror', function(e) {
+            console.error("Locatietoegang geweigerd. Standaardweergave wordt gebruikt:", e.message);
+        });
+        
+        // Toon infopaneel nadat kaart is geladen
+        map.whenReady(function() {
+            setTimeout(showInfoPanel, 1500);
+        });
+    </script>
+</body>
+</html>
