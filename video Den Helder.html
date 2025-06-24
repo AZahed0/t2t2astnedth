@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaflet Map - Den Helder</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet EasyButton CSS for custom buttons -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.css">
+    <!-- Leaflet Fullscreen CSS for fullscreen control -->
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css" />
+    
+    <style>
+        /* General body and HTML styling */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Inter", sans-serif;
+            overflow: hidden; /* Prevent body scroll when sidebar is open */
+            background-color: #f0f4f8; /* Light background for the overall page */
+        }
+        /* Map container styling */
+        #map {
+            width: 100%;
+            height: 100vh; /* Full viewport height */
+            transition: margin-right 0.4s ease; /* Smooth transition for map shift */
+            border-radius: 8px; /* Slightly rounded corners for the map */
+        }
+        /* Sidebar container styling */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            right: -600px; /* Initially off-screen */
+            width: 600px; /* Default width for larger screens */
+            height: 100%;
+            background-color: #ffffff; /* White background for the sidebar */
+            box-shadow: -8px 0 20px rgba(0, 0, 0, 0.25); /* Stronger, softer shadow */
+            z-index: 1000;
+            overflow-y: auto; /* Allow scrolling for long content */
+            transition: right 0.4s ease; /* Smooth transition for sidebar movement */
+            padding: 30px 25px; /* Increased padding */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            border-top-left-radius: 12px; /* Rounded corners for the sidebar */
+            border-bottom-left-radius: 12px;
+        }
+        /* State when sidebar is open */
+        #sidebar.open {
+            right: 0;
+        }
+
+        /* Responsive adjustments for sidebar on smaller screens */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 95vw; /* Take up most of the viewport width */
+                right: -95vw; /* Adjust initial position */
+                padding: 20px 15px; /* Slightly less padding */
+                border-radius: 0; /* No rounded corners on small screens for full width */
+            }
+            #sidebar.open {
+                right: 0;
+            }
+            #map.shifted { /* Class added to map when sidebar is open on small screens */
+                margin-right: 95vw;
+            }
+        }
+
+        /* Close button for the sidebar */
+        #sidebar-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #edf2f7; /* Lighter background */
+            border: none;
+            font-size: 32px; /* Larger icon */
+            cursor: pointer;
+            color: #4a5568; /* Darker text color */
+            padding: 6px 12px; /* Adjusted padding */
+            border-radius: 50%; /* Perfect circle */
+            transition: background-color 0.2s, color 0.2s, transform 0.2s; /* Added transform for hover effect */
+            line-height: 1;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Clearer shadow */
+            display: flex; /* Center the 'x' */
+            justify-content: center;
+            align-items: center;
+        }
+        #sidebar-close:hover {
+            background-color: #cbd5e0; /* Hover background */
+            color: #2d3748; /* Hover text color */
+            transform: scale(1.05); /* Slight scale on hover */
+        }
+
+        /* Video styling */
+        .video-responsive {
+            overflow: hidden;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            position: relative;
+            height: 0;
+            width: 100%;
+            border-radius: 12px; /* Rounded corners for the video container */
+            background-color: #000;
+            margin-top: 25px; /* Increased margin */
+            margin-bottom: 20px; /* Increased margin */
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3); /* Deeper shadow */
+        }
+        .video-responsive iframe {
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            border: none;
+        }
+
+        /* Content styling */
+        #sidebar-content h3 {
+            color: #2d3748;
+            font-size: 2.2em; /* Larger heading */
+            margin-bottom: 18px; /* Adjusted margin */
+            margin-top: 10px; /* Space from top of sidebar content */
+            font-weight: 700; /* Bolder */
+            letter-spacing: -0.5px; /* Slightly tighter letter spacing */
+        }
+        #sidebar-content p {
+            color: #4a5568;
+            font-size: 1.15em; /* Slightly larger text */
+            line-height: 1.7; /* Improved line spacing for readability */
+            margin-bottom: 25px; /* Adjusted margin */
+            text-align: left;
+            width: 100%;
+            max-width: 500px; /* Max width for readability */
+        }
+        #sidebar-content ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 30px 0 0 0; /* More space above links */
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px; /* More padding above border */
+            width: 100%;
+            text-align: left;
+            max-width: 500px; /* Match paragraph max width */
+        }
+        #sidebar-content li {
+            margin-bottom: 12px; /* More space between list items */
+        }
+        #sidebar-content a {
+            color: #3182CE;
+            text-decoration: none;
+            font-weight: 600; /* Slightly less bold than h3 */
+            transition: color 0.2s ease, text-decoration 0.2s ease;
+        }
+        #sidebar-content a:hover {
+            color: #2b6cb0;
+            text-decoration: underline;
+        }
+        #sidebar-content small {
+            color: #a0aec0;
+            display: block;
+            margin-top: 20px; /* More space for the small text */
+            font-size: 0.9em;
+            text-align: center; /* Center align this specific text */
+        }
+
+        /* Custom style for the municipality boundary */
+        .municipality-boundary {
+            stroke-width: 2px; /* Constant stroke width */
+            stroke: #4299e1; /* Consistent blue stroke */
+            fill: #63b3ed; /* Lighter blue fill */
+            fill-opacity: 0.25; /* Consistent transparency */
+            stroke-opacity: 0.8;
+            /* Removed transition and hover effects for stability */
+        }
+        
+        /* New custom button for basemap toggle */
+        #basemap-toggle-button {
+            position: absolute;
+            top: calc(82px + 5px); /* Position below zoom controls with reduced margin */
+            left: 10px; /* Align with zoom controls */
+            z-index: 999; /* Ensure it's above the map */
+            background-color: #fff;
+            border: none;
+            width: 24px; /* Matches zoom control width */
+            height: 24px; /* Matches zoom control height */
+            border-radius: 4px; /* Consistent rounded corners */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        #basemap-toggle-button:hover {
+            background-color: #f0f4f8;
+            transform: scale(1.05);
+        }
+        #basemap-toggle-button svg {
+            width: 16px; /* Size of the SVG icon */
+            height: 16px; /* Size of the SVG icon */
+            fill: #4a5568; /* Icon color */
+        }
+
+        /* Basemap selection modal/dropdown styling */
+        #basemap-modal {
+            position: absolute;
+            top: calc(82px + 5px + 24px + 5px); /* Below the toggle button with some spacing */
+            left: 10px;
+            z-index: 1000;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            padding: 10px;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            gap: 5px;
+            min-width: 180px; /* Minimum width for readability */
+        }
+        #basemap-modal.open {
+            display: flex;
+        }
+        #basemap-modal button {
+            background-color: #fff;
+            color: #4a5568;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        #basemap-modal button:hover {
+            background-color: #e2e8f0;
+            color: #2d3748;
+        }
+        #basemap-modal button.active {
+            background-color: #4299e1;
+            color: white;
+            font-weight: bold;
+        }
+
+
+        /* Position the layers control visually below the zoom control (now custom button) */
+        /* This rule is now effectively replaced by #basemap-toggle-button positioning */
+        /* .leaflet-control-zoom + .leaflet-control-layers {
+            margin-top: 5px; 
+        } */
+
+        /* New button for opening Den Helder info */
+        #open-denhelder-info {
+            position: absolute;
+            top: 20px; /* Position below Leaflet default controls */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999; /* Ensure it's above the map but below sidebar */
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        #open-denhelder-info:hover {
+            background-color: #2b6cb0;
+            transform: translateX(-50%) scale(1.03);
+        }
+        /* Adjust button position on smaller screens */
+        @media (max-width: 768px) {
+            #open-denhelder-info {
+                top: 15px; /* Slightly higher on mobile */
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+        }
+
+        /* Loading spinner styling */
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            background: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #4a5568;
+            font-weight: 500;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        #loading::before {
+            content: '';
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4299e1;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Map container -->
+    <div id="map"></div>
+
+    <!-- Sidebar for displaying video and content -->
+    <div id="sidebar">
+        <button id="sidebar-close" aria-label="Close sidebar">&times;</button>
+        <div id="sidebar-content">
+            <!-- Content will be injected here dynamically -->
+        </div>
+    </div>
+
+    <!-- Button to manually open Den Helder info sidebar -->
+    <button id="open-denhelder-info">Explore Den Helder</button>
+
+    <!-- Custom basemap toggle button -->
+    <button id="basemap-toggle-button" title="Change Basemap">
+        <!-- SVG for map icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        </svg>
+    </button>
+
+    <!-- Basemap selection modal/dropdown -->
+    <div id="basemap-modal">
+        <!-- Basemap options will be dynamically inserted here -->
+    </div>
+
+    <!-- Loading spinner display -->
+    <div id="loading">Loading map data...</div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Providers plugin for additional basemaps -->
+    <script src="https://unpkg.com/leaflet-providers@1.13.0/leaflet-providers.js"></script>
+    <!-- Leaflet EasyButton JS for custom buttons -->
+    <script src="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.js"></script>
+    <!-- Leaflet Fullscreen JS for fullscreen control -->
+    <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js"></script>
+    
+    <script>
+        // Initialize the map centered on Den Helder, Netherlands
+        const map = L.map('map').setView([52.9599, 4.7593], 13);
+        
+        // Define base maps with different tile layers
+        const baseMaps = {
+            "Google Maps": L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                maxZoom: 19,
+                attribution: 'Google Maps'
+            }),
+            "Esri World Imagery": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+            }),
+            "Esri Topographic": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+            }),
+            "OpenStreetMap": L.tileLayer.provider('OpenStreetMap.Mapnik'),
+            "Carto Light": L.tileLayer.provider('CartoDB.Positron'), 
+            "Carto Dark": L.tileLayer.provider('CartoDB.DarkMatter') 
+        };
+
+        let activeBasemapLayer = baseMaps["Google Maps"].addTo(map); // Keep track of the currently active basemap layer
+
+        // Get references to sidebar elements and the "Explore Den Helder" button
+        const sidebar = document.getElementById('sidebar');
+        const sidebarContent = document.getElementById('sidebar-content');
+        const sidebarCloseButton = document.getElementById('sidebar-close');
+        const mapContainer = document.getElementById('map'); 
+        const openDenHelderInfoButton = document.getElementById('open-denhelder-info');
+        const loadingSpinner = document.getElementById('loading');
+        const basemapToggleButton = document.getElementById('basemap-toggle-button');
+        const basemapModal = document.getElementById('basemap-modal');
+
+        // YouTube video ID for Den Helder
+        const youtubeVideoId = 's8OPuG3AEW8'; 
+        const youtubeEmbedUrl = `https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0`; 
+
+        let denHelderBoundaryLayer = null; 
+        let initialMapCenter = map.getCenter(); 
+
+        // Define the content for the Den Helder sidebar once
+        const denHelderTitle = 'Den Helder: Maritieme Hoofdstad van de Noordkop';
+        const denHelderVideoHtml = `
+            <iframe 
+                src="${youtubeEmbedUrl}" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
+            </iframe>
+        `;
+        const denHelderDescription = `
+            Den Helder is de meest noordelijke gemeente op het vasteland van Noord-Holland en de thuishaven van de Koninklijke Marine. 
+            Als een echte "Stad aan Zee" en "Zeestad" biedt het een rijke maritieme geschiedenis, uitgestrekte bollenvelden en 
+            een unieke verbinding met het Waddeneiland Texel.
+        `;
+        const denHelderLinksHtml = `
+            <ul>
+                <li><a href="https://nl.wikipedia.org/wiki/Den_Helder" target="_blank">Wikipedia over Den Helder</a></li>
+                <li><a href="https://www.denhelder.nl/" target="_blank">Website Gemeente Den Helder</a></li>
+                <li><a href="https://www.denhelder.online/" target="_blank">Citymarketing Den Helder</a></li>
+            </ul>
+        `;
+
+        /**
+         * Populates and displays the basemap selection modal.
+         */
+        function populateBasemapModal() {
+            basemapModal.innerHTML = ''; // Clear previous options
+            for (const name in baseMaps) {
+                const button = document.createElement('button');
+                button.textContent = name;
+                button.dataset.basemapName = name; // Store basemap name
+                if (activeBasemapLayer && activeBasemapLayer._url === baseMaps[name]._url) {
+                    button.classList.add('active'); // Mark active basemap
+                }
+                button.addEventListener('click', () => {
+                    switchBasemap(name);
+                    basemapModal.classList.remove('open'); // Close modal after selection
+                });
+                basemapModal.appendChild(button);
+            }
+        }
+
+        /**
+         * Switches the active basemap layer on the map.
+         * @param {string} newBasemapName - The name of the basemap to switch to.
+         */
+        function switchBasemap(newBasemapName) {
+            if (activeBasemapLayer) {
+                map.removeLayer(activeBasemapLayer); // Remove current basemap
+            }
+            activeBasemapLayer = baseMaps[newBasemapName];
+            activeBasemapLayer.addTo(map); // Add new basemap
+            // Update active state in modal buttons
+            Array.from(basemapModal.children).forEach(button => {
+                if (button.dataset.basemapName === newBasemapName) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
+
+        /**
+         * Opens the sidebar and populates it with provided content.
+         * Adjusts map margin and pans the map to accommodate the sidebar, keeping the focus area visible.
+         * @param {string} title - The main title for the sidebar content.
+         * @param {string} videoEmbedHtml - HTML string for the embedded video.
+         * @param {string} description - Descriptive text for the location.
+         * @param {string} linksHtml - HTML string for external links.
+         */
+        function openSidebar(title, videoEmbedHtml, description, linksHtml) {
+            sidebarContent.innerHTML = `
+                <h3>${title}</h3>
+                <div class="video-responsive">
+                    ${videoEmbedHtml}
+                </div>
+                <p>${description}</p>
+                ${linksHtml}
+                <small>Klik op de video om af te spelen.</small>
+            `;
+            sidebar.classList.add('open'); 
+            openDenHelderInfoButton.style.display = 'none'; 
+            basemapModal.classList.remove('open'); // Close basemap modal if open
+
+            let sidebarWidth;
+            if (window.innerWidth <= 768) {
+                sidebarWidth = window.innerWidth * 0.95; 
+                mapContainer.style.marginRight = '95vw'; 
+            } else {
+                sidebarWidth = 600; 
+                mapContainer.style.marginRight = '600px'; 
+            }
+            mapContainer.classList.add('shifted');
+
+            if (denHelderBoundaryLayer) {
+                map.flyToBounds(denHelderBoundaryLayer.getBounds(), {
+                    duration: 0.8, 
+                    paddingTopLeft: L.point(0, 0), 
+                    paddingBottomRight: L.point(sidebarWidth + 50, 0) 
+                });
+            } else {
+                map.panBy([-sidebarWidth / 2, 0], { animate: true, duration: 0.4 }); 
+            }
+            map.invalidateSize(); 
+        }
+
+        /**
+         * Closes the sidebar and resets map margin and pan.
+         */
+        function closeSidebar() {
+            sidebar.classList.remove('open'); 
+            mapContainer.style.marginRight = '0'; 
+            mapContainer.classList.remove('shifted');
+            openDenHelderInfoButton.style.display = 'block'; 
+            
+            map.flyTo(initialMapCenter, map.getZoom(), { animate: true, duration: 0.8 });
+            map.invalidateSize(); 
+        }
+
+        // Event listeners
+        sidebarCloseButton.addEventListener('click', closeSidebar);
+        openDenHelderInfoButton.addEventListener('click', () => {
+            openSidebar(denHelderTitle, denHelderVideoHtml, denHelderDescription, denHelderLinksHtml);
+        });
+
+        // Toggle basemap modal visibility
+        basemapToggleButton.addEventListener('click', () => {
+            populateBasemapModal(); // Ensure options are fresh
+            basemapModal.classList.toggle('open');
+        });
+
+        // Hide basemap modal if clicking outside
+        map.on('click', () => {
+            if (basemapModal.classList.contains('open')) {
+                basemapModal.classList.remove('open');
+            }
+        });
+
+        // ArcGIS FeatureServer URL for Dutch municipalities
+        const arcgisFeatureServerUrl = 'https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/CBS_Gemeente_actueel/FeatureServer/0/query';
+
+        loadingSpinner.style.display = 'flex';
+
+        fetch(`${arcgisFeatureServerUrl}?where=STATNAAM='Den Helder'&outFields=*&f=geojson`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json(); 
+            })
+            .then(data => {
+                loadingSpinner.style.display = 'none';
+
+                if (data.features && data.features.length > 0) {
+                    denHelderBoundaryLayer = L.geoJSON(data, {
+                        style: function (feature) {
+                            return {
+                                className: 'municipality-boundary'
+                            };
+                        },
+                        onEachFeature: function (feature, layer) {
+                            layer.on('click', function() {
+                                openSidebar(denHelderTitle, denHelderVideoHtml, denHelderDescription, denHelderLinksHtml);
+                            });
+                        }
+                    }).addTo(map);
+
+                    map.fitBounds(denHelderBoundaryLayer.getBounds());
+                    initialMapCenter = map.getCenter(); 
+                }
+            })
+            .catch(error => {
+                loadingSpinner.style.display = 'none';
+                console.error("Error fetching Den Helder boundary data:", error);
+            });
+
+        window.addEventListener('resize', () => {
+            if (sidebar.classList.contains('open')) {
+                let sidebarWidth;
+                if (window.innerWidth <= 768) {
+                    sidebarWidth = window.innerWidth * 0.95;
+                    mapContainer.style.marginRight = '95vw';
+                } else {
+                    sidebarWidth = 600;
+                    mapContainer.style.marginRight = '600px';
+                }
+                if (denHelderBoundaryLayer) {
+                    map.flyToBounds(denHelderBoundaryLayer.getBounds(), {
+                        duration: 0.1, 
+                        paddingTopLeft: L.point(0, 0),
+                        paddingBottomRight: L.point(sidebarWidth + 50, 0)
+                    });
+                }
+            }
+            map.invalidateSize(); 
+        });
+
+        // Add Leaflet Fullscreen control
+        map.addControl(new L.Control.Fullscreen({
+            position: 'topleft' 
+        }));
+
+    </script>
+</body>
+</html>
