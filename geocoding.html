@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>OpenLayers + CSV + PDOK met Sidebar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.1.0/ol.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ol@v10.1.0/dist/ol.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/shp-write@0.5.0/shpwrite.min.js"></script>
+  <!-- JSZip voor KMZ export -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      font-family: "Inter", sans-serif;
+      background-color: #f9fafb;
+      overflow: hidden; /* Prevent scrollbars from main layout */
+    }
+    .container {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      box-sizing: border-box; /* Include padding in element's total width and height */
+    }
+    #map {
+      flex-grow: 1; /* Map takes available space */
+      height: 100vh; /* Map fills vertical space */
+      background-color: white;
+      box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
+      border-radius: 0.5rem; /* Added border-radius for consistency */
+      margin: 1rem; /* Added margin for visual separation */
+      overflow: hidden; /* Ensures rounded corners apply correctly */
+    }
+    .sidebar {
+      width: 320px; /* Fixed width for the sidebar */
+      min-width: 320px; /* Prevent shrinking */
+      background: white;
+      border-left: 1px solid #ddd;
+      padding: 1rem;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem; /* Space between elements */
+      overflow-y: auto; /* Enable scrolling for content */
+      box-shadow: 0 4px 10px rgb(0 0 0 / 0.1); /* Added shadow for consistency */
+      border-radius: 0.5rem; /* Added border-radius for consistency */
+      margin: 1rem; /* Added margin for visual separation */
+    }
+    .header-text {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1e40af;
+      margin-bottom: 0.5rem;
+      user-select: none;
+    }
+    .file-input-container, select, button {
+      margin-bottom: 0; /* Adjusted margin as gap handles spacing */
+      padding: 0.5rem 1rem;
+      border: 2px solid #3b82f6;
+      border-radius: 0.375rem;
+      width: 100%;
+      max-width: 100%;
+      cursor: pointer;
+      transition: border-color 0.3s ease;
+      font-size: 1rem;
+    }
+    .file-input-container:hover, select:hover, button:hover {
+      border-color: #2563eb;
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      font-weight: 600;
+      transition: background-color 0.25s ease;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    .feature-info {
+      overflow-y: auto;
+      flex-grow: 1; /* Allows info div to take remaining space */
+      border: 1px solid #cbd5e1;
+      border-radius: 0.375rem;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+      background-color: #f9fafb;
+    }
+    .feature-info table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .feature-info td {
+      padding: 0.25rem 0.5rem;
+      vertical-align: top;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .feature-info tr:nth-child(odd) {
+      background-color: #f3f4f6;
+    }
+    /* Toast melding stijl */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #22c55e;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.6);
+      font-weight: 600;
+      font-size: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      z-index: 1500;
+      user-select: none;
+      max-width: 90vw;
+      text-align: center;
+    }
+    #toast.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    /* Custom message box for errors/warnings */
+    .custom-message-box {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        z-index: 2000; /* Ensure it's on top */
+        max-width: 80vw;
+        text-align: center;
+        color: white;
+        font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    .custom-message-box.error {
+        background-color: #ef4444; /* Red-500 */
+    }
+    .custom-message-box.warning {
+        background-color: #f59e0b; /* Yellow-500 */
+    }
+    .custom-message-box button {
+        background-color: rgba(0,0,0,0.2); /* Slightly darker than parent */
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .custom-message-box button:hover {
+        background-color: rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="map"></div>
+    <div class="sidebar">
+      <h1 class="header-text">📍 Upload CSV met adres</h1>
+      <input type="file" id="fileInput" accept=".csv" class="file-input-container" />
+      <label for="addressColumn">Kies adres kolom:</label>
+      <select id="addressColumn" class="file-input-container">
+        <option value="adres" selected>adres</option>
+      </select>
+      
+      <label for="formatSelect">Kies export formaat:</label>
+      <select id="formatSelect" class="file-input-container">
+        <option value="geojson">GeoJSON</option>
+        <option value="kml">KML</option>
+        <option value="kmz">KMZ</option>
+        <option value="shp">Shapefile (ZIP)</option>
+      </select>
+      <button id="downloadBtn">Download</button>
+
+      <h2 class="header-text mt-4">Feature info</h2>
+      <div class="feature-info" id="featureInfo">
+        Klik op een punt om details te zien.
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notificatie -->
+  <div id="toast">📍 Alle punten zijn succesvol toegevoegd!</div>
+
+  <script>
+    const map = new ol.Map({
+      target: 'map',
+      layers: [
+        new ol.layer.Tile({ source: new ol.source.OSM() })
+      ],
+      view: new ol.View({
+        center: ol.proj.fromLonLat([4.7578, 52.9583]),
+        zoom: 8
+      })
+    });
+
+    const vectorSource = new ol.source.Vector();
+    const vectorLayer = new ol.layer.Vector({ source: vectorSource });
+    map.addLayer(vectorLayer);
+
+    const addressColumnSelect = document.getElementById('addressColumn');
+    const featureInfoDiv = document.getElementById('featureInfo');
+    const formatSelect = document.getElementById('formatSelect'); // Get the new format select
+
+    // Geocode function, using PDOK
+    async function geocodeAdres(adres) {
+      const url = `https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${encodeURIComponent(adres)}&rows=1`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+        const docs = data.response?.docs;
+        if (docs && docs.length > 0) {
+          const [x, y] = docs[0].centroide_ll.replace("POINT(", "").replace(")", "").split(" ");
+          return [parseFloat(x), parseFloat(y)];
+        }
+      } catch (err) {
+        console.error(`Fout bij geocoderen van adres "${adres}":`, err);
+      }
+      return null;
+    }
+
+    function voegPuntToe(lon, lat, properties) {
+      const feature = new ol.Feature({
+        geometry: new ol.geom.Point(ol.proj.fromLonLat([lon, lat])),
+        ...properties
+      });
+
+      feature.setStyle(new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: 7,
+          fill: new ol.style.Fill({ color: '#2563eb' }),
+          stroke: new ol.style.Stroke({ color: 'white', width: 2 })
+        })
+      }));
+
+      vectorSource.addFeature(feature);
+    }
+
+    // Show feature info in sidebar
+    map.on('click', evt => {
+      const feature = map.forEachFeatureAtPixel(evt.pixel, f => f);
+      if (feature) {
+        const props = feature.getProperties();
+        let html = '<table>';
+        for (const key in props) {
+          if (props.hasOwnProperty(key) && key !== 'geometry') {
+            html += `<tr><td class="font-semibold pr-2">${key}</td><td>${props[key]}</td></tr>`;
+          }
+        }
+        html += '</table>';
+        featureInfoDiv.innerHTML = html;
+      } else {
+        featureInfoDiv.innerHTML = 'Klik op een punt om details te zien.';
+      }
+    });
+
+    // Toast melding tonen
+    function showToast(message, duration = 3000) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), duration);
+    }
+
+    // Custom message box function
+    function showMessageBox(message, type = 'error', duration = 5000) {
+        const messageBox = document.createElement('div');
+        messageBox.className = `custom-message-box ${type}`;
+        messageBox.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()">Sluiten</button>`;
+        document.body.appendChild(messageBox);
+
+        // Auto-remove after duration
+        setTimeout(() => {
+            if (messageBox.parentElement) {
+                messageBox.remove();
+            }
+        }, duration);
+    }
+
+    // Parse CSV and fill address column options dynamically
+    document.getElementById('fileInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async results => {
+          const rows = results.data;
+          if (!rows.length) {
+            showMessageBox('Geen data gevonden in CSV', 'warning', 4000);
+            return;
+          }
+
+          // Clear previous features
+          vectorSource.clear();
+          featureInfoDiv.innerHTML = 'Klik op een punt om details te zien.';
+
+          // Extract headers for address column selection
+          const headers = results.meta.fields;
+          // Fill dropdown with headers
+          addressColumnSelect.innerHTML = '';
+          headers.forEach(hdr => {
+            const option = document.createElement('option');
+            option.value = hdr;
+            option.textContent = hdr;
+            if (hdr.toLowerCase() === 'adres') option.selected = true;
+            addressColumnSelect.appendChild(option);
+          });
+
+          // Now geocode points using selected address column
+          const addressField = addressColumnSelect.value;
+          let succesvollePunten = 0;
+          for (const row of rows) {
+            const adres = row[addressField];
+            if (adres) {
+              const coords = await geocodeAdres(adres);
+              if (coords) {
+                voegPuntToe(coords[0], coords[1], row);
+                succesvollePunten++;
+              } else {
+                console.warn(`Kan adres niet geocoderen: "${adres}"`);
+              }
+            } else {
+              console.warn(`Rij overgeslagen: geen adres in kolom "${addressField}"`, row);
+            }
+          }
+
+          if (vectorSource.getFeatures().length > 0) {
+            map.getView().fit(vectorSource.getExtent(), { padding: [50, 50, 50, 50], duration: 1000 });
+          }
+          showToast(`📍 Klaar! ${succesvollePunten} punten toegevoegd.`);
+        },
+        error: err => {
+          showMessageBox('Fout bij het inlezen van het CSV-bestand: ' + err.message, 'error');
+          console.error("PapaParse error:", err);
+        }
+      });
+    });
+
+    // Download functions
+
+    // Unified download function to handle Blob or string content
+    function downloadFile(filename, content, mimeType) {
+      const blob = (content instanceof Blob) ? content : new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Main download button handler
+    document.getElementById('downloadBtn').addEventListener('click', async () => {
+      const features = vectorSource.getFeatures();
+      if (features.length === 0) {
+        showMessageBox('Geen punten om te downloaden. Upload eerst een CSV-bestand en geocodeer adressen.', 'warning');
+        return;
+      }
+
+      const selectedFormat = formatSelect.value; // Get selected format
+
+      if (selectedFormat === 'geojson') {
+        const geojsonFormatter = new ol.format.GeoJSON();
+        const geojson = geojsonFormatter.writeFeatures(features, {
+          dataProjection: 'EPSG:4326',
+          featureProjection: map.getView().getProjection()
+        });
+        downloadFile('geocodeerde_punten.geojson', geojson, 'application/geo+json');
+        showToast('🌍 GeoJSON bestand succesvol gedownload!');
+      }
+      else if (selectedFormat === 'kml') {
+        const kmlFormatter = new ol.format.KML();
+        const kml = kmlFormatter.writeFeatures(features, {
+          dataProjection: 'EPSG:4326',
+          featureProjection: map.getView().getProjection()
+        });
+        downloadFile('geocodeerde_punten.kml', kml, 'application/vnd.google-earth.kml+xml');
+        showToast('🌍 KML bestand succesvol gedownload!');
+      }
+      else if (selectedFormat === 'kmz') {
+        const kmlFormatter = new ol.format.KML();
+        const kml = kmlFormatter.writeFeatures(features, {
+          dataProjection: 'EPSG:4326',
+          featureProjection: map.getView().getProjection()
+        });
+
+        const zip = new JSZip();
+        zip.file("doc.kml", kml); // KMZ files usually contain a doc.kml
+        const content = await zip.generateAsync({ type: "blob" }); // Generate as Blob
+
+        downloadFile('geocodeerde_punten.kmz', content, 'application/vnd.google-earth.kmz');
+        showToast('🌍 KMZ bestand succesvol gedownload!');
+      }
+      else if (selectedFormat === 'shp') {
+        const geojsonFormatter = new ol.format.GeoJSON();
+        const geojson = geojsonFormatter.writeFeaturesObject(features, {
+          dataProjection: 'EPSG:4326',
+          featureProjection: map.getView().getProjection()
+        });
+        // shp-write expects GeoJSON in EPSG:4326
+        shpwrite.download(geojson, { folder: 'shapefile', types: { point: 'punten' } });
+        showToast('🌍 Shapefile succesvol gedownload!');
+      }
+    });
+
+  </script>
+</body>
+</html>
