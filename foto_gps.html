@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Foto voor Den Helder</title>
+    <!-- Tailwind CSS CDN voor opmaak -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lettertype -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #map {
+            height: 600px;  /* Grotere kaart */
+            width: 100%;
+            border-radius: 0.5rem;
+            z-index: 0;
+        }
+        .leaflet-popup-content img {
+            max-width: 100%;
+            max-height: 200px;
+            margin-bottom: 0.5rem;
+        }
+        .coordinates-display {
+            font-family: monospace;
+        }
+        #imageList {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-4">
+    <div class="container mx-auto max-w-6xl">
+        <div class="bg-white p-8 rounded-xl shadow-2xl mb-6 border border-gray-200">
+            <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">GPS Foto Den Helder</h1>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                    <div class="mb-6">
+                        <label for="imageUpload" class="block text-gray-700 text-lg font-medium mb-3">
+                            Upload foto's met GPS data
+                        </label>
+                        <input type="file" id="imageUpload" accept="image/*" multiple class="block w-full text-sm text-gray-900
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-full file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-indigo-50 file:text-indigo-700
+                            hover:file:bg-indigo-100 cursor-pointer
+                            focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    </div>
+
+                    <div id="loadingMessage" class="hidden text-indigo-600 text-lg font-medium mb-4">
+                        Foto's verwerken...
+                    </div>
+
+                    <div class="flex space-x-2 mb-4">
+                        <button id="exportGeoJSON" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                            Exporteer als GeoJSON
+                        </button>
+                        <button id="viewAllMarkers" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                            Toon alle punten
+                        </button>
+                        <button id="clearAll" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                            Alles wissen
+                        </button>
+                    </div>
+
+                    <div id="imageList" class="space-y-3">
+                        <!-- Miniaturen komen hier -->
+                    </div>
+                </div>
+
+                <div>
+                    <div id="resultContainer" class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <h2 class="text-xl font-semibold text-gray-700 mb-2">Laatst verwerkte foto:</h2>
+                        <div id="coordinatesDisplay" class="coordinates-display text-gray-900 text-base">
+                            Nog geen foto's verwerkt.
+                        </div>
+                    </div>
+                    <div id="map"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXIF.js bibliotheek voor het lezen van EXIF data -->
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const imageUpload = document.getElementById('imageUpload');
+            const coordinatesDisplay = document.getElementById('coordinatesDisplay');
+            const loadingMessage = document.getElementById('loadingMessage');
+            const imageList = document.getElementById('imageList');
+            const exportGeoJSONBtn = document.getElementById('exportGeoJSON');
+            const viewAllMarkersBtn = document.getElementById('viewAllMarkers');
+            const clearAllBtn = document.getElementById('clearAll');
+            
+            // Initialiseer kaart gecentreerd op Nederland
+            const map = L.map('map').setView([52.1326, 5.2913], 7);
+            
+            // Voeg OpenStreetMap tiles toe
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> bijdragers'
+            }).addTo(map);
+
+            // Array om markers en hun data op te slaan
+            const markers = [];
+            
+            // Functie om knoppen status te updaten
+            function updateButtons() {
+                const hasMarkers = markers.length > 0;
+                exportGeoJSONBtn.disabled = !hasMarkers;
+                viewAllMarkersBtn.disabled = !hasMarkers;
+                clearAllBtn.disabled = !hasMarkers;
+            }
+
+            // Functie om GeoJSON data te genereren
+            function generateGeoJSON() {
+                const features = markers.map(marker => {
+                    // Ensure marker.options contains the necessary properties
+                    const properties = {
+                        name: marker.options.imageName || 'Unknown Image', // Fallback name
+                        timestamp: marker.options.timestamp || null
+                        // Removed imageSrc to keep GeoJSON file size small and standard
+                    };
+                    
+                    return {
+                        type: "Feature",
+                        properties: properties,
+                        geometry: {
+                            type: "Point",
+                            // GeoJSON coordinates are [longitude, latitude]
+                            coordinates: [marker.getLatLng().lng, marker.getLatLng().lat]
+                        }
+                    };
+                });
+                
+                return {
+                    type: "FeatureCollection",
+                    features: features
+                };
+            }
+
+            // Functie om GeoJSON bestand te downloaden
+            function downloadGeoJSON() {
+                const data = generateGeoJSON();
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "foto_gps_data.geojson");
+                document.body.appendChild(downloadAnchorNode); // nodig voor firefox
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            }
+
+            // Functie om alles te wissen
+            function clearAll() {
+                markers.forEach(marker => map.removeLayer(marker));
+                markers.length = 0;
+                imageList.innerHTML = '';
+                coordinatesDisplay.textContent = 'Nog geen foto\'s verwerkt.';
+                updateButtons();
+            }
+
+            // Event listeners voor knoppen
+            exportGeoJSONBtn.addEventListener('click', downloadGeoJSON);
+            viewAllMarkersBtn.addEventListener('click', () => {
+                if (markers.length > 0) {
+                    const group = new L.featureGroup(markers);
+                    map.fitBounds(group.getBounds());
+                }
+            });
+            clearAllBtn.addEventListener('click', clearAll);
+
+            imageUpload.addEventListener('change', function(event) {
+                const files = event.target.files;
+                if (!files || files.length === 0) {
+                    coordinatesDisplay.textContent = 'Geen foto\'s geselecteerd.';
+                    return;
+                }
+
+                loadingMessage.classList.remove('hidden');
+                imageList.innerHTML = ''; // Wis vorige miniaturen
+
+                // Verwerk elk bestand
+                Array.from(files).forEach((file, index) => {
+                    const reader = new FileReader();
+
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.fileName = file.name; // Store filename on the image object
+                        
+                        img.onload = function() {
+                            EXIF.getData(img, function() {
+                                const gpsLatitude = EXIF.getTag(this, 'GPSLatitude');
+                                const gpsLongitude = EXIF.getTag(this, 'GPSLongitude');
+                                const gpsLatitudeRef = EXIF.getTag(this, 'GPSLatitudeRef');
+                                const gpsLongitudeRef = EXIF.getTag(this, 'GPSLongitudeRef');
+                                const dateTime = EXIF.getTag(this, 'DateTimeOriginal') || EXIF.getTag(this, 'DateTime'); // Prefer DateTimeOriginal
+
+                                // Maak miniatuur in de lijst
+                                const thumbnail = document.createElement('div');
+                                thumbnail.className = 'flex items-center p-2 bg-white rounded-lg border border-gray-200 hover:bg-indigo-50 cursor-pointer';
+                                thumbnail.innerHTML = `
+                                    <img src="${e.target.result}" alt="${img.fileName}" class="w-12 h-12 object-cover rounded mr-3">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900 truncate">${img.fileName}</p>
+                                        <p class="text-xs text-gray-500">${file.size > 1024000 
+                                            ? (file.size / 1024000).toFixed(1) + ' MB' 
+                                            : Math.round(file.size / 1024) + ' KB'}</p>
+                                    </div>
+                                `;
+                                imageList.appendChild(thumbnail);
+
+                                if (gpsLatitude && gpsLongitude) {
+                                    // Converteer DMS naar Decimale Graden
+                                    const toDecimal = (dms, ref) => {
+                                        const degrees = dms[0].numerator / dms[0].denominator;
+                                        const minutes = dms[1].numerator / dms[1].denominator;
+                                        const seconds = dms[2].numerator / dms[2].denominator;
+                                        let decimal = degrees + (minutes / 60) + (seconds / 3600);
+                                        if (ref === 'S' || ref === 'W') decimal *= -1;
+                                        return decimal;
+                                    };
+
+                                    const lat = toDecimal(gpsLatitude, gpsLatitudeRef);
+                                    const lon = toDecimal(gpsLongitude, gpsLongitudeRef);
+
+                                    // Console log for debugging: confirm data before adding marker
+                                    console.log(`Processing ${img.fileName}: Lat ${lat.toFixed(6)}, Lon ${lon.toFixed(6)}`);
+
+                                    // Update coördinaten display
+                                    coordinatesDisplay.innerHTML = `
+                                        <p class="mb-1"><span class="font-semibold">Foto:</span> ${img.fileName}</p>
+                                        <p class="mb-1"><span class="font-semibold">Breedtegraad:</span> ${lat.toFixed(6)}</p>
+                                        <p class="mb-1"><span class="font-semibold">Lengtegraad:</span> ${lon.toFixed(6)}</p>
+                                        ${dateTime ? `<p><span class="font-semibold">Datum:</span> ${dateTime}</p>` : ''}
+                                    `;
+
+                                    // Voeg marker toe aan kaart
+                                    const marker = L.marker([lat, lon], {
+                                        imageName: img.fileName, // Store filename in marker options
+                                        imageSrc: e.target.result, // Keep image source for popup
+                                        timestamp: dateTime || null
+                                    }).addTo(map);
+                                    
+                                    marker.bindPopup(`
+                                        <div class="text-center">
+                                            <h3 class="font-bold mb-1">${img.fileName}</h3>
+                                            <img src="${e.target.result}" alt="${img.fileName}" class="mx-auto">
+                                            <p class="mt-2 text-sm"><span class="font-semibold">Coördinaten:</span> ${lat.toFixed(6)}, ${lon.toFixed(6)}</p>
+                                            ${dateTime ? `<p class="text-sm"><span class="font-semibold">Datum:</span> ${dateTime}</p>` : ''}
+                                        </div>
+                                    `);
+                                    markers.push(marker);
+
+                                    // Centreer kaart op eerste geldige coördinaten
+                                    if (markers.length === 1) { // Only set view for the very first valid marker
+                                        map.setView([lat, lon], 10);
+                                    }
+
+                                    // Voeg klik event toe aan miniatuur
+                                    thumbnail.addEventListener('click', () => {
+                                        map.setView([lat, lon], 15);
+                                        marker.openPopup();
+                                    });
+                                } else {
+                                    thumbnail.classList.add('opacity-50');
+                                    const info = thumbnail.querySelector('p.text-gray-500');
+                                    info.textContent += ' (Geen GPS data)';
+                                    info.classList.add('text-red-500');
+                                    console.warn(`No GPS data found for ${img.fileName}`);
+                                }
+
+                                // Verberg laadbericht na laatste foto
+                                if (index === files.length - 1) {
+                                    loadingMessage.classList.add('hidden');
+                                    updateButtons();
+                                }
+                            });
+                        };
+                        img.onerror = function() {
+                            console.error(`Error loading image: ${file.name}`);
+                            // Handle error for this specific image, but continue processing others
+                            if (index === files.length - 1) {
+                                loadingMessage.classList.add('hidden');
+                                updateButtons();
+                            }
+                        };
+                    };
+
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            // Initialiseer knop statussen
+            updateButtons();
+        });
+    </script>
+</body>
+</html>
