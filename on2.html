@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Verkeersongevallen Dashboard</title>
+
+    <!-- ArcGIS SDK CSS -->
+    <link rel="stylesheet" href="https://js.arcgis.com/4.33/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.33/"></script>
+    <script type="module" src="https://js.arcgis.com/4.33/map-components/"></script>
+
+    <style>
+      html, body, #viewDiv {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+      }
+      
+      #filterDiv {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 15px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        z-index: 100;
+        width: 200px;
+      }
+      
+      #filterDiv label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 8px;
+      }
+      
+      #yearSelect {
+        width: 100%;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+      }
+      
+      #logo {
+        position: absolute;
+        top: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 200;
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      }
+      
+      #logo img {
+        max-width: 90px; /* 10% smaller than 100px */
+        height: auto;
+      }
+      
+      /* Indicator styling */
+      #indicator {
+        position: absolute;
+        top: 15px;
+        right: 15px; /* Aligned with filter */
+        margin-top: 100px; /* Placed below the filter */
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        z-index: 150;
+        width: 200px; /* Same width as filter */
+        text-align: center;
+      }
+      
+      #indicator h3 {
+        margin: 0 0 10px 0;
+        color: #1a2a6c;
+        font-size: 16px; /* Made smaller */
+      }
+      
+      .count-display {
+        font-size: 28px; /* Made smaller */
+        font-weight: bold;
+        color: #e74c3c;
+        margin: 5px 0;
+      }
+      
+      .location {
+        font-size: 12px; /* Made smaller */
+        color: #7f8c8d;
+        margin-top: 5px;
+      }
+      
+      .trend {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 10px;
+        font-weight: 500;
+        font-size: 12px; /* Made smaller */
+      }
+      
+      .trend.up {
+        color: #e74c3c;
+      }
+      
+      .trend.down {
+        color: #2ecc71;
+      }
+      
+      .loading {
+        color: #3498db;
+        font-style: italic;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+
+    <!-- Filter rechtsboven -->
+    <div id="filterDiv" class="esri-widget">
+      <label for="yearSelect">Filter op Jaar</label>
+      <select id="yearSelect">
+        <option value="2020">2020</option>
+        <option value="2021">2021</option>
+        <option value="2022">2022</option>
+        <option value="2023">2023</option>
+        <option value="2024" selected>2024</option>
+      </select>
+    </div>
+
+    <!-- Logo in het midden -->
+    <div id="logo">
+      <img src="https://www.mr-online.nl/wp-content/uploads/2022/07/Logo-Den-Helder.png" alt="Logo Den Helder" />
+    </div>
+    
+    <!-- Indicator rechtsboven, onder de filter -->
+    <div id="indicator">
+      <h3>Aantal Verkeersongevallen</h3>
+      <div class="count-display" id="aantal">296</div>
+      <div class="location" id="locationInfo">in Gemeente Den Helder</div>
+      <div class="location" id="yearInfo">Jaar: 2024</div>
+      <div class="trend down" id="trendIndicator">
+        <i class="fas fa-arrow-down"></i> 3% daling t.o.v. vorig jaar
+      </div>
+    </div>
+
+    <script type="module">
+      const [WebMap, MapView, BasemapToggle, Legend, Expand] = await $arcgis.import([
+        "@arcgis/core/WebMap.js",
+        "@arcgis/core/views/MapView.js",
+        "@arcgis/core/widgets/BasemapToggle.js",
+        "@arcgis/core/widgets/Legend.js",
+        "@arcgis/core/widgets/Expand.js"
+      ]);
+
+      // Webmap laden
+      const webmap = new WebMap({
+        portalItem: {
+          id: "8882e867dc9c403798d9c7a46d8b0008"
+        }
+      });
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: webmap
+      });
+
+      await view.when();
+
+      // Widgets toevoegen
+      view.ui.add(new BasemapToggle({ view, nextBasemap: "satellite" }), "bottom-right");
+      view.ui.add(new Expand({ view, content: new Legend({ view }), expandTooltip: "Legenda" }), "bottom-left");
+      view.ui.add("filterDiv", "top-right");
+      
+      // Add indicator to the map UI
+      view.ui.add("indicator", "top-right");
+
+      // Data for Den Helder (gemeente ID 400)
+      const accidentData = {
+        '2020': 245,
+        '2021': 274,
+        '2022': 322,
+        '2023': 305,
+        '2024': 296
+      };
+      
+      // Get DOM elements
+      const yearSelect = document.getElementById('yearSelect');
+      const accidentCount = document.getElementById('aantal');
+      const yearInfo = document.getElementById('yearInfo');
+      const trendIndicator = document.getElementById('trendIndicator');
+      
+      // Update indicator based on selected year
+      function updateIndicator(year) {
+        // Update the count
+        accidentCount.textContent = accidentData[year];
+        
+        // Update year info
+        yearInfo.textContent = `Jaar: ${year}`;
+        
+        // Calculate and display trend
+        const currentYear = parseInt(year);
+        const prevYear = (currentYear - 1).toString();
+        
+        if (accidentData[prevYear]) {
+          const difference = accidentData[year] - accidentData[prevYear];
+          const percentage = ((difference / accidentData[prevYear]) * 100).toFixed(1);
+          
+          if (difference > 0) {
+            trendIndicator.innerHTML = `<i class="fas fa-arrow-up"></i> +${Math.abs(percentage)}% stijging t.o.v. vorig jaar`;
+            trendIndicator.className = 'trend up';
+          } else if (difference < 0) {
+            trendIndicator.innerHTML = `<i class="fas fa-arrow-down"></i> ${Math.abs(percentage)}% daling t.o.v. vorig jaar`;
+            trendIndicator.className = 'trend down';
+          } else {
+            trendIndicator.innerHTML = `<i class="fas fa-equals"></i> Gelijk aan vorig jaar`;
+            trendIndicator.className = 'trend';
+          }
+        } else {
+          trendIndicator.innerHTML = ``;
+        }
+      }
+
+      // Filter logica
+      const featureLayers = webmap.layers.items.filter(l => l.type === "feature");
+
+      function applyYearFilter(year) {
+        featureLayers.forEach(layer => {
+          layer.definitionExpression = `JAAR_VKL = ${year}`;
+        });
+        
+        // Update the indicator
+        updateIndicator(year);
+      }
+
+      // Standaard filter = 2024
+      applyYearFilter(2024);
+
+      // Op dropdown wijziging
+      document.getElementById("yearSelect").addEventListener("change", (event) => {
+        applyYearFilter(event.target.value);
+      });
+      
+      // Add Font Awesome for icons
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+      document.head.appendChild(link);
+    </script>
+  </body>
+</html>
