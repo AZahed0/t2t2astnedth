@@ -339,7 +339,6 @@
             top: 80px;
         }
 
-
         @media (max-width: 768px) {
             .control-panel {
                 width: 90%;
@@ -352,6 +351,15 @@
                 width: 90%;
                 left: 5%;
                 bottom: 60px;
+            }
+
+            #logo-container {
+                top: 5px;
+                padding: 5px;
+            }
+
+            #logo-container img {
+                height: 40px;
             }
 
             .leaflet-control {
@@ -457,7 +465,7 @@
             attribution: '© Esri, HERE, Garmin, FAO, NOAA, USGS, EPA'
         });
 
-        var esriTopo = L.tileLayer('https://server.arcgonsiline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+        var esriTopo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
             attribution: '© Esri, HERE, Garmin, Intermap, increment P Corp., GEBCO, USGS, FAO, NPS, NRCAN, GeoBase, IGN, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), swisstopo, and the GIS User Community'
         });
 
@@ -698,7 +706,7 @@
                 if (layer instanceof L.Path && layer.getBounds && layer.getBounds().contains(e.latlng)) {
                     currentSelectedLayer = layer;
                 }
-                 // Check if click is near a marker
+                 // Check if click is near a marker (including custom label markers)
                  else if (layer instanceof L.Marker && layer.getLatLng().distanceTo(e.latlng) < 20) { // 20 pixels tolerance
                     currentSelectedLayer = layer;
                  }
@@ -754,7 +762,7 @@
                           geometry: layer.toGeoJSON().geometry
                       };
                   }
-                  // Add a property to distinguish standard markers
+                  // Add a property to distinguish standard markers from custom labels if needed
                   layer.feature.properties.type = 'standard_marker';
              }
 
@@ -799,6 +807,12 @@
                 if (layer.options.customStyle) {
                     layer.setStyle(layer.options.customStyle);
                 }
+                 // If the layer is a custom label marker, update its feature geometry on edit (drag)
+                 if (layer instanceof L.Marker && layer._labelText) {
+                      if (layer.feature && layer.feature.geometry) {
+                           layer.feature.geometry = layer.toGeoJSON().geometry;
+                      }
+                 }
                 const geojson = layer.toGeoJSON();
                 console.log("Object bewerkt:", geojson);
             });
@@ -847,6 +861,19 @@
                           feature.properties.fillOpacity = correspondingLayer.options.customStyle.fillOpacity;
                           feature.properties.weight = correspondingLayer.options.customStyle.weight;
                       }
+
+                       // Include label property if it was added directly to the feature properties
+                       // (e.g., from previous imports or manual feature property editing)
+                       if (correspondingLayer.feature && correspondingLayer.feature.properties && correspondingLayer.feature.properties.label !== undefined) {
+                            feature.properties.label = correspondingLayer.feature.properties.label;
+                            if (correspondingLayer.feature.properties.labelColor !== undefined) {
+                                 feature.properties.labelColor = correspondingLayer.feature.properties.labelColor;
+                            }
+                            // If it's a point feature with a label property, assume it's a label marker
+                            if (feature.geometry.type === 'Point') {
+                                feature.properties.isLabel = true;
+                            }
+                       }
                  }
             });
 
@@ -869,7 +896,7 @@
 
         function clearShapes() {
             if (confirm('Weet je zeker dat je alle getekende objecten wilt verwijderen?')) {
-                // Remove all layers from the map
+                // Remove all layers from the map (including custom label markers)
                 drawnItems.clearLayers();
                 // Clear the history
                 drawHistory = [];
@@ -881,7 +908,7 @@
         function undoLastDraw() {
             if (drawHistory.length > 0) {
                 const lastLayer = drawHistory.pop(); // Get the last layer from history
-                // Remove the layer from the map
+                // Remove the layer from the map (this handles both shapes and label markers)
                 drawnItems.removeLayer(lastLayer);
 
                 // If the undone layer was the selected one, clear selected layer
@@ -1011,9 +1038,6 @@
         // Function to load GeoJSON data onto the map
         function loadGeoJSON(geojson) {
             const geojsonLayer = L.geoJSON(geojson, {
-                pointToLayer: function(feature, latlng) {
-                    return L.marker(latlng);
-                },
                 style: function(feature) {
                     // Apply style from properties if available, otherwise use default/current color picker value
                     const color = feature.properties?.color || colorPicker.value;
@@ -1025,13 +1049,11 @@
                     };
                 },
                 onEachFeature: function(feature, layer) {
-                    // Bind popup with properties if available
+                    // Bind popup with properties if available (excluding label properties)
                     if (feature.properties) {
                         let popupContent = '';
                         for (const key in feature.properties) {
-                             if (key !== 'label' && key !== 'labelColor' && key !== 'isLabel') {
-                                popupContent += `<strong>${key}:</strong> ${feature.properties[key]}<br>`;
-                            }
+                            popupContent += `<strong>${key}:</strong> ${feature.properties[key]}<br>`;
                         }
                         if (popupContent) {
                              layer.bindPopup(popupContent);
