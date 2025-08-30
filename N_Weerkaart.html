@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8" />
+    <title>Live Weerkaart - Den Helder (ArcGIS)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        /* Basisstijlen */
+        html, body, #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Styling voor weerpopup */
+        .weather-label {
+            font-size: 0.9rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+            min-width: 240px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+        .weather-label:hover {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .weather-label p {
+            margin: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .weather-label .value {
+            font-weight: 600;
+            color: #3b82f6;
+        }
+        .dark .weather-label .value {
+            color: #60a5fa;
+        }
+
+        /* Donkere modus stijlen */
+        .dark .weather-label {
+            background: #1f2937;
+            color: #f3f4f6;
+            border-color: #4b5563;
+        }
+
+        /* Besturingsknoppen - Deze stijlen zijn nu niet meer nodig voor de verwijderde knoppen, maar blijven voor algemene map-controls als ze in de toekomst worden toegevoegd */
+        .map-control {
+            position: absolute;
+            z-index: 10;
+            transition: all 0.2s ease;
+            background: white;
+            border-radius: 9999px;
+            padding: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .map-control:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+        }
+        .dark .map-control {
+            background: #374151;
+        }
+
+        /* Update tijdweergave */
+        #updateTime {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            z-index: 10;
+            background: rgba(255,255,255,0.9);
+            padding: 0.625rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        #updateTime i {
+            font-size: 1rem;
+        }
+        .dark #updateTime {
+            background: rgba(31,41,55,0.95);
+            color: #f3f4f6;
+        }
+
+        /* Logo styling */
+        #appLogo {
+            position: absolute;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            height: 3.5rem;
+            max-width: 90%;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            background: white;
+            padding: 0.75rem;
+            object-fit: contain;
+            transition: all 0.3s ease;
+        }
+        #appLogo:hover {
+            transform: translateX(-50%) scale(1.03);
+        }
+        .dark #appLogo {
+            background: #374151;
+        }
+
+        /* Info paneel styling */
+        .info-panel {
+            padding: 1.25rem;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            max-width: 320px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .info-panel h3 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #3b82f6;
+        }
+        .info-panel p {
+            margin-bottom: 0.75rem;
+        }
+        .dark .info-panel {
+            background: #1f2937;
+            color: #f3f4f6;
+        }
+        .dark .info-panel h3 {
+            color: #60a5fa;
+        }
+
+        /* Laadindicator */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.8);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            transition: opacity 0.3s ease;
+        }
+        .dark .loading-overlay {
+            background: rgba(17,24,39,0.9);
+        }
+        .loading-spinner {
+            border: 4px solid rgba(59,130,246,0.2);
+            border-radius: 50%;
+            border-top: 4px solid #3b82f6;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        .dark .loading-spinner {
+            border-top-color: #60a5fa;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsieve aanpassingen */
+        @media (max-width: 640px) {
+            #appLogo {
+                height: 2.5rem;
+                padding: 0.5rem;
+            }
+            /* map-control styles are now less relevant as these specific buttons are removed */
+            .info-panel {
+                max-width: 280px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Kaart laden...</p>
+    </div>
+
+  
+
+    <!-- Verwijderde knoppen:
+    <button id="themeToggleBtn" class="map-control" aria-label="Schakel thema">
+        <i id="themeIcon" class="fas fa-moon text-gray-700 dark:text-gray-200 text-lg"></i>
+    </button>
+
+    <button id="refreshBtn" class="map-control" aria-label="Vernieuw gegevens">
+        <i class="fas fa-sync-alt text-gray-700 dark:text-gray-200 text-lg"></i>
+    </button>
+    -->
+
+    <div id="updateTime">
+        <i class="fas fa-clock"></i>
+        <span>Laatst bijgewerkt: -</span>
+    </div>
+
+    <div id="viewDiv"></div>
+
+    <script src="https://js.arcgis.com/4.29/"></script>
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/Graphic",
+            "esri/layers/GraphicsLayer",
+            "esri/PopupTemplate",
+            "esri/symbols/TextSymbol",
+            "esri/widgets/BasemapGallery",
+            "esri/widgets/Expand"
+        ], function(Map, MapView, Graphic, GraphicsLayer, PopupTemplate, TextSymbol,
+                    BasemapGallery, Expand) {
+
+            // Verberg laadoverlay wanneer de kaart klaar is
+            function hideLoading() {
+                const overlay = document.getElementById('loadingOverlay');
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.style.display = 'none', 300);
+            }
+
+            // Toon laadoverlay
+            function showLoading() {
+                const overlay = document.getElementById('loadingOverlay');
+                overlay.style.display = 'flex';
+                setTimeout(() => overlay.style.opacity = '1', 10);
+            }
+
+            // Locaties van weerstations
+            const stationPoints = [
+                { name: "Willemsoord", lat: 52.95905, lon: 4.77139 },
+                { name: "Gemeentewerf Ambachtsweg", lat: 52.94208, lon: 4.78209 },
+                { name: "Huisduinen", lat: 52.95546, lon: 4.72643 },
+                { name: "Julianadorp", lat: 52.89285, lon: 4.74075 }
+            ];
+
+            const weatherLayer = new GraphicsLayer();
+            const map = new Map({
+                basemap: "topo-vector",
+                layers: [weatherLayer]
+            });
+
+            const view = new MapView({
+                container: "viewDiv",
+                map: map,
+                center: [4.77139, 52.95905],
+                zoom: 14
+            });
+
+            // Converteer windgraden naar richting
+            function windDir(degrees) {
+                const dirs = ['N', 'NNO', 'NO', 'ONO', 'O', 'OZO', 'ZO', 'ZZO', 'Z', 'ZZW', 'ZW', 'WZW', 'W', 'WNW', 'NW', 'NNW'];
+                return dirs[Math.round(degrees / 22.5) % 16];
+            }
+
+            // Formatteer tijdstring
+            function formatTime(timeString) {
+                const date = new Date(timeString);
+                return date.toLocaleTimeString('nl-NL', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            }
+
+            // Haal weergegevens op voor een station
+            async function fetchWeather(station, graphic) {
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${station.lat}&longitude=${station.lon}&current=temperature_2m,relative_humidity_2m,precipitation,cloud_cover,wind_speed_10m,wind_direction_10m&forecast_days=1`;
+
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    const data = await res.json();
+                    const w = data.current;
+
+                    graphic.popupTemplate = new PopupTemplate({
+                        title: `${station.name} - Weer`,
+                        content: `
+                            <div class='weather-label'>
+                                <p><span>🌡️ Temperatuur:</span> <span class="value">${w.temperature_2m} °C</span></p>
+                                <p><span>💧 Vochtigheid:</span> <span class="value">${w.relative_humidity_2m}%</span></p>
+                                <p><span>🌧️ Neerslag:</span> <span class="value">${w.precipitation} mm</span></p>
+                                <p><span>☁️ Bewolking:</span> <span class="value">${w.cloud_cover}%</span></p>
+                                <p><span>💨 Wind:</span> <span class="value">${w.wind_speed_10m} km/u ${windDir(w.wind_direction_10m)}</span></p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">🕒 ${formatTime(w.time)}</p>
+                            </div>`
+                    });
+
+                    updateLastUpdated();
+                    return true;
+                } catch (e) {
+                    console.error(`Fout bij ophalen weerdata voor ${station.name}:`, e);
+                    return false;
+                }
+            }
+
+            // Update laatst bijgewerkte tijd
+            function updateLastUpdated() {
+                const now = new Date();
+                document.getElementById('updateTime').querySelector('span').textContent = 
+                    `Laatst bijgewerkt: ${now.toLocaleTimeString("nl-NL")}`;
+            }
+
+            // Vernieuw weergegevens
+            async function refreshWeatherData() {
+                showLoading();
+                weatherLayer.removeAll();
+                // isDarkMode is niet meer nodig hier, aangezien de knoppen zijn verwijderd.
+                // De kleuren zijn nu statisch.
+                const textColor = "black";
+                const haloColor = "white";
+
+                const fetchPromises = stationPoints.map(station => {
+                    const pt = {
+                        type: "point",
+                        longitude: station.lon,
+                        latitude: station.lat
+                    };
+
+                    const marker = new Graphic({
+                        geometry: pt,
+                        symbol: {
+                            type: "simple-marker",
+                            style: "circle",
+                            color: "#3b82f6", // Statische kleur
+                            size: "12px",
+                            outline: { 
+                                color: "white", // Statische kleur
+                                width: 2 
+                            }
+                        },
+                        attributes: station
+                    });
+                    weatherLayer.add(marker);
+
+                    const textGraphic = new Graphic({
+                        geometry: pt,
+                        symbol: new TextSymbol({
+                            text: station.name,
+                            color: textColor,
+                            haloColor: haloColor,
+                            haloSize: "1px",
+                            font: {
+                                size: 11,
+                                family: "Inter",
+                                weight: "bold"
+                            },
+                            yoffset: 18
+                        })
+                    });
+                    weatherLayer.add(textGraphic);
+
+                    return fetchWeather(station, marker);
+                });
+
+                try {
+                    await Promise.all(fetchPromises);
+                } catch (e) {
+                    console.error("Fout bij het vernieuwen van weergegevens:", e);
+                } finally {
+                    hideLoading();
+                }
+            }
+
+            // Initialiseer kaart
+            view.when(() => {
+                // Verwijder alle standaard UI-elementen
+                view.ui.empty(); 
+
+                refreshWeatherData();
+                
+                // Stel auto-vernieuwing in elke 5 minuten
+                setInterval(refreshWeatherData, 5 * 60 * 1000);
+
+                // Basiskaartengalerij
+                const basemapGallery = new BasemapGallery({
+                    view: view
+                });
+                const bgExpand = new Expand({
+                    view: view,
+                    content: basemapGallery,
+                    expandIconClass: "esri-icon-basemap",
+                    expandTooltip: "Basiskaarten",
+                    expanded: false
+                });
+                view.ui.add(bgExpand, "top-left");
+
+                // Info Paneel
+                const infoContent = document.createElement("div");
+                infoContent.className = "info-panel";
+                infoContent.innerHTML = `
+                    <h3>Over de Kaart</h3>
+                    <p>Deze interactieve kaart toont live weerdata voor verschillende locaties in Den Helder.</p>
+                    <p><strong>Functies:</strong></p>
+                    <ul class="list-disc pl-5 mb-3">
+                        <li>Klik op een marker voor gedetailleerde weersinformatie</li>
+                        <li>Data wordt elke 5 minuten automatisch bijgewerkt</li>
+                    </ul>
+                    <p class="text-sm text-gray-500 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i> Data wordt geleverd door Open-Meteo API
+                    </p>
+                `;
+                const infoExpand = new Expand({
+                    view: view,
+                    content: infoContent,
+                    expandIconClass: "esri-icon-description",
+                    expandTooltip: "Informatie",
+                    expanded: false
+                });
+                view.ui.add(infoExpand, "top-right"); // Terug naar top-right, nu zonder overlap
+            }).catch(err => {
+                console.error("MapView fout:", err);
+                document.getElementById('loadingOverlay').innerHTML = `
+                    <div class="text-center p-4">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-3"></i>
+                        <h3 class="font-bold text-lg mb-2">Fout bij laden kaart</h3>
+                        <p>De kaart kon niet worden geladen. Probeer de pagina te verversen.</p>
+                        <button onclick="window.location.reload()" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                            <i class="fas fa-sync-alt mr-2"></i>Verversen
+                        </button>
+                    </div>
+                `;
+            });
+
+            // Verwijderde functionaliteit voor themawisseling en handmatige vernieuwknop
+            // document.getElementById('refreshBtn').addEventListener('click', ...);
+            // themeToggleBtn.addEventListener('click', ...);
+            // window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ...);
+            // applyTheme(); // Deze functie is nu niet meer nodig
+        });
+    </script>
+</body>
+</html>
