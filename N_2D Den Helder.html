@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -29,6 +30,7 @@
             height: 100vh; /* Full viewport height */
             width: 100%; /* Full viewport width */
         }
+
 
         /* Control Panel (Drawing Tools) positioning and styling */
         .control-panel {
@@ -339,6 +341,79 @@
             top: 80px;
         }
 
+        /* Improved Label Styles */
+        .custom-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            background-color: rgba(0,0,0,0.85);
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 2px solid white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5),
+                        0 0 0 2px rgba(255,255,255,0.7);
+            text-shadow: 0 1px 3px black;
+            white-space: nowrap;
+            transform: translate(-50%, -50%);
+            transition: all 0.2s ease;
+            cursor: move; /* Indicate draggable */
+            z-index: 1000 !important; /* Ensure labels are on top */
+            pointer-events: auto; /* Allow interaction */
+        }
+
+        .custom-label:hover {
+            background-color: rgba(30,30,30,0.9);
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 0 15px rgba(0,0,0,0.7),
+                        0 0 0 3px rgba(255,255,255,0.9);
+        }
+
+        .label-edit-icon {
+            position: absolute;
+            right: -8px;
+            top: -8px;
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            cursor: pointer;
+            z-index: 1001; /* Ensure icon is above label */
+        }
+
+        .custom-label:hover .label-edit-icon {
+            opacity: 1;
+        }
+
+        /* Style for the temporary label placement marker */
+        .custom-label.temp {
+             background-color: rgba(0, 128, 0, 0.7); /* Greenish background */
+             border-color: rgba(0, 255, 0, 0.7); /* Green border */
+             box-shadow: 0 0 10px rgba(0, 128, 0, 0.5),
+                         0 0 0 2px rgba(0, 255, 0, 0.7);
+             animation: pulse 1s infinite alternate; /* Add a pulsing animation */
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 0 10px rgba(0, 128, 0, 0.5),
+                            0 0 0 2px rgba(0, 255, 0, 0.7);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.05);
+                box-shadow: 0 0 15px rgba(0, 255, 0, 0.7),
+                            0 0 0 3px rgba(0, 255, 0, 0.9);
+            }
+        }
+
+
         @media (max-width: 768px) {
             .control-panel {
                 width: 90%;
@@ -353,14 +428,7 @@
                 bottom: 60px;
             }
 
-            #logo-container {
-                top: 5px;
-                padding: 5px;
-            }
-
-            #logo-container img {
-                height: 40px;
-            }
+          
 
             .leaflet-control {
                 margin: 5px !important;
@@ -404,7 +472,14 @@
             <input type="range" id="opacity" min="0" max="1" step="0.1" value="0.7">
         </div>
         <button class="control-button" onclick="map.setView([52.9563, 4.7608], 14)"><i class="fas fa-home"></i> Terug naar start</button>
+        <button class="control-button" onclick="startPlacingLabel()"><i class="fas fa-font"></i> Voeg label toe</button>
         <button class="control-button" onclick="changeSelectedColor()"><i class="fas fa-fill-drip"></i> Kleur wijzigen</button>
+         <button class="control-button" onclick="toggleLabelManager()"><i class="fas fa-tags"></i> Label Beheer</button> <div id="label-manager" style="display: none; margin-top: 10px;">
+             <h4 style="margin: 5px 0 10px; font-size: 13px;">
+                 <i class="fas fa-tags"></i> Label Beheer
+             </h4>
+             <div id="label-list" style="max-height: 150px; overflow-y: auto;"></div>
+         </div>
         <button class="control-button" onclick="downloadGeoJSON()"><i class="fas fa-download"></i> Download GeoJSON</button>
         <button class="control-button" onclick="downloadShapefile()"><i class="fas fa-download"></i> Download Shapefile</button>
         <button class="control-button" onclick="document.getElementById('file-input').click()"><i class="fas fa-upload"></i> Import GeoJSON</button>
@@ -496,6 +571,7 @@
         const drawnItems = new L.FeatureGroup().addTo(map);
         let drawHistory = [];
         let currentSelectedLayer = null;
+        let isPlacingLabel = false; // State variable for label placement
 
         const drawControl = new L.Control.Draw({
             draw: {
@@ -613,6 +689,22 @@
                 currentSelectedLayer.feature.properties.fillColor = newColor;
                 currentSelectedLayer.feature.properties.fillOpacity = newOpacity;
             }
+
+             // Apply color to selected label (if a label marker is selected)
+             if (currentSelectedLayer && currentSelectedLayer instanceof L.Marker && currentSelectedLayer._labelText) {
+                 currentSelectedLayer._labelColor = newColor;
+                 updateLabelStyle(currentSelectedLayer);
+             }
+
+            // Update all labels if shift key is pressed
+            if (event.shiftKey) {
+                drawnItems.eachLayer(layer => {
+                    if (layer._labelText) {
+                        layer._labelColor = newColor;
+                        updateLabelStyle(layer);
+                    }
+                });
+            }
         });
 
         opacitySlider.addEventListener('input', function() {
@@ -642,7 +734,182 @@
                  if (!currentSelectedLayer.feature.properties) currentSelectedLayer.feature.properties = {};
                 currentSelectedLayer.feature.properties.fillOpacity = newOpacity;
             }
+             // Opacity is not directly applicable to the custom-label background color with the current CSS,
+             // but you could modify updateLabelStyle to handle opacity if needed.
         });
+
+        // Function to start the label placement process
+        function startPlacingLabel() {
+            if (isPlacingLabel) {
+                isPlacingLabel = false;
+                map.off('click', placeLabelHandler);
+                 // Remove temporary marker if it exists
+                 if (map.tempLabelMarker && map.hasLayer(map.tempLabelMarker)) {
+                     map.removeLayer(map.tempLabelMarker);
+                     delete map.tempLabelMarker;
+                 }
+                alert('Label plaatsing geannuleerd');
+                return;
+            }
+
+            isPlacingLabel = true;
+            alert('Klik op de kaart om een label te plaatsen (klik elders of druk op Esc om te annuleren)');
+
+            // Temporary marker to show placement preview
+            const tempMarker = L.marker(map.getCenter(), {
+                icon: L.divIcon({
+                    className: 'custom-label temp',
+                    html: 'Klik om label te plaatsen',
+                    iconSize: null
+                }),
+                interactive: false // Not interactive for clicks that place the label
+            }).addTo(map);
+            map.tempLabelMarker = tempMarker; // Store reference to temp marker
+
+            // Update temp marker position on mouse move
+            map.on('mousemove', function(e) {
+                if (isPlacingLabel && map.tempLabelMarker) {
+                    map.tempLabelMarker.setLatLng(e.latlng);
+                }
+            });
+
+            // Handle click to place label
+            map.once('click', placeLabelHandler);
+
+            // Handle click elsewhere to cancel (needs refinement to not interfere with placing)
+            // A better approach is to rely on the 'Esc' key or clicking the button again.
+            // Removing the map.once('click', ...) here and relying only on the one in placeLabelHandler is safer.
+        }
+
+        // Handler for placing the label after click
+        function placeLabelHandler(e) {
+            if (!isPlacingLabel) return; // Only proceed if placing is active
+
+            isPlacingLabel = false;
+            map.off('mousemove'); // Remove mousemove listener
+            if (map.tempLabelMarker && map.hasLayer(map.tempLabelMarker)) {
+                map.removeLayer(map.tempLabelMarker); // Remove temporary marker
+                delete map.tempLabelMarker;
+            }
+
+
+            const defaultText = `Label ${new Date().toLocaleTimeString()}`;
+            const labelText = prompt('Label tekst:', defaultText) || defaultText;
+
+            // If text is empty after prompt, cancel
+            if (!labelText) {
+                 alert('Label plaatsing geannuleerd');
+                 return;
+            }
+
+            const color = colorPicker.value;
+
+            // Create the actual label marker
+            const label = L.marker(e.latlng, {
+                icon: L.divIcon({
+                    className: 'custom-label',
+                    html: `
+                        <span>${labelText}</span>
+                        <div class="label-edit-icon" title="Bewerken">✏️</div>
+                    `,
+                    iconSize: null
+                }),
+                draggable: true
+            }).addTo(drawnItems);
+
+            // Apply initial color
+            updateLabelStyle(label);
+
+            // Store label properties on the layer object
+            label._labelText = labelText;
+            label._labelColor = color;
+
+            // Store label properties in feature for export
+            label.feature = {
+                type: 'Feature',
+                properties: {
+                    label: label._labelText,
+                    labelColor: label._labelColor,
+                    isLabel: true // Flag to identify labels on import
+                },
+                geometry: label.toGeoJSON().geometry
+            };
+
+            // Make label interactive (click to edit)
+            label.on('click', function(ev) {
+                // Check if the click was on the edit icon
+                if (ev.originalEvent.target.classList.contains('label-edit-icon')) {
+                    const newText = prompt('Bewerk label:', label._labelText);
+                    if (newText !== null) {
+                        label._labelText = newText;
+                        // Update the icon HTML
+                        label.setIcon(L.divIcon({
+                            className: 'custom-label',
+                            html: `
+                                <span>${newText}</span>
+                                <div class="label-edit-icon" title="Bewerken">✏️</div>
+                            `,
+                            iconSize: null
+                        }));
+                        // Update feature properties
+                        if (label.feature && label.feature.properties) {
+                            label.feature.properties.label = newText;
+                        }
+                        // Update label list if open
+                        if (document.getElementById('label-manager').style.display === 'block') {
+                             updateLabelList();
+                        }
+                    }
+                    ev.originalEvent.stopPropagation(); // Stop propagation to prevent map click
+                }
+                 // Allow dragging to work without triggering this click handler for the label itself
+            });
+
+             // Update feature geometry on dragend
+             label.on('dragend', function() {
+                  if (label.feature && label.feature.geometry) {
+                      label.feature.geometry = label.toGeoJSON().geometry;
+                  }
+             });
+
+
+            drawHistory.push(label); // Add to history
+            console.log("Label geplaatst:", label.toGeoJSON());
+
+            // Update label list if open
+            if (document.getElementById('label-manager').style.display === 'block') {
+                 updateLabelList();
+            }
+        }
+
+        // Helper function to update the style of a custom label marker
+        function updateLabelStyle(label) {
+             const el = label.getElement();
+             if (el) {
+                 el.style.backgroundColor = label._labelColor;
+                 // Calculate and apply contrast color for the border
+                 el.style.borderColor = getContrastColor(label._labelColor);
+             }
+        }
+
+        // Helper function to calculate a contrasting color (black or white)
+        function getContrastColor(hexColor) {
+            // Remove # if it exists
+            if (hexColor.startsWith('#')) {
+                hexColor = hexColor.slice(1);
+            }
+            // Parse hex to RGB
+            const r = parseInt(hexColor.substr(0, 2), 16);
+            const g = parseInt(hexColor.substr(2, 2), 16);
+            const b = parseInt(hexColor.substr(4, 2), 16);
+
+            // Calculate luminance (perceived brightness)
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+            // Use white for dark backgrounds, black for light backgrounds
+            return luminance > 0.5 ? '#000000' : '#ffffff';
+        }
+
 
         function changeSelectedColor() {
             if (!currentSelectedLayer) {
@@ -679,6 +946,15 @@
                 currentSelectedLayer.feature.properties.fillColor = newColor;
                 currentSelectedLayer.feature.properties.fillOpacity = newOpacity;
             }
+             // If a label marker is selected, update its color
+             if (currentSelectedLayer instanceof L.Marker && currentSelectedLayer._labelText) {
+                 currentSelectedLayer._labelColor = newColor;
+                 updateLabelStyle(currentSelectedLayer);
+                 // Update feature properties for export
+                 if (currentSelectedLayer.feature && currentSelectedLayer.feature.properties) {
+                     currentSelectedLayer.feature.properties.labelColor = newColor;
+                 }
+             }
         }
 
         // Map click handler for selecting layers
@@ -823,6 +1099,12 @@
                 if (layer === currentSelectedLayer) {
                     currentSelectedLayer = null;
                 }
+                 // If the deleted layer is a custom label marker, update the label list
+                 if (layer instanceof L.Marker && layer._labelText) {
+                      if (document.getElementById('label-manager').style.display === 'block') {
+                           updateLabelList();
+                      }
+                 }
                 const geojson = layer.toGeoJSON();
                 console.log("Object verwijderd:", geojson);
                 drawHistory = drawHistory.filter(l => l !== layer);
@@ -833,6 +1115,104 @@
             const panel = document.getElementById('control-panel');
             panel.classList.toggle('collapsed');
         }
+
+        // Functions for the Label Manager Panel
+        function toggleLabelManager() {
+            const manager = document.getElementById('label-manager');
+            manager.style.display = manager.style.display === 'block' ? 'none' : 'block';
+            if (manager.style.display === 'block') {
+                updateLabelList(); // Update the list when the manager is opened
+            }
+        }
+
+        function updateLabelList() {
+            const labelList = document.getElementById('label-list');
+            labelList.innerHTML = ''; // Clear the current list
+
+            // Iterate through all drawn layers and add labels to the list
+            drawnItems.eachLayer(layer => {
+                // Check if the layer is a custom label marker
+                if (layer instanceof L.Marker && layer._labelText) {
+                    const labelItem = document.createElement('div');
+                    labelItem.style.padding = '5px';
+                    labelItem.style.borderBottom = '1px solid #eee';
+                    labelItem.style.display = 'flex';
+                    labelItem.style.justifyContent = 'space-between';
+                    labelItem.style.alignItems = 'center'; // Vertically align items
+
+                    labelItem.innerHTML = `
+                        <span>${layer._labelText}</span>
+                        <div>
+                            <button class="control-button" style="margin-left: 5px; font-size: 10px; padding: 2px 5px;"
+                                    onclick="zoomToLabel(${L.stamp(layer)})">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <button class="control-button" style="margin-left: 5px; font-size: 10px; padding: 2px 5px;"
+                                    onclick="editLabelFromList(${L.stamp(layer)})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="control-button clear-button" style="margin-left: 5px; font-size: 10px; padding: 2px 5px;"
+                                    onclick="removeLabel(${L.stamp(layer)})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    labelList.appendChild(labelItem);
+                }
+            });
+        }
+
+        function zoomToLabel(id) {
+            drawnItems.eachLayer(layer => {
+                if (L.stamp(layer) === id && layer.getLatLng) {
+                    map.setView(layer.getLatLng(), 18); // Zoom to the label's location
+                    // Optional: Briefly highlight the label on the map
+                    const el = layer.getElement();
+                    if (el) {
+                         el.style.outline = '2px solid yellow';
+                         setTimeout(() => { el.style.outline = ''; }, 1000);
+                    }
+                }
+            });
+        }
+
+        function editLabelFromList(id) {
+            drawnItems.eachLayer(layer => {
+                if (L.stamp(layer) === id && layer._labelText) {
+                    const newText = prompt('Bewerk label:', layer._labelText);
+                    if (newText !== null) {
+                        layer._labelText = newText;
+                        // Update the icon HTML
+                        layer.setIcon(L.divIcon({
+                            className: 'custom-label',
+                            html: `
+                                <span>${newText}</span>
+                                <div class="label-edit-icon" title="Bewerken">✏️</div>
+                            `,
+                            iconSize: null
+                        }));
+                        // Update feature properties
+                        if (layer.feature && layer.feature.properties) {
+                            layer.feature.properties.label = newText;
+                        }
+                        updateLabelList(); // Refresh the list after editing
+                    }
+                }
+            });
+        }
+
+        function removeLabel(id) {
+            drawnItems.eachLayer(layer => {
+                if (L.stamp(layer) === id && layer instanceof L.Marker && layer._labelText) {
+                    drawnItems.removeLayer(layer); // Remove the label marker from the map
+                    drawHistory = drawHistory.filter(l => l !== layer); // Remove from history
+                    updateLabelList(); // Refresh the list after removal
+                    console.log("Label verwijderd:", layer.toGeoJSON());
+                }
+            });
+        }
+
 
         function downloadGeoJSON() {
             const geojson = drawnItems.toGeoJSON();
@@ -862,9 +1242,15 @@
                           feature.properties.weight = correspondingLayer.options.customStyle.weight;
                       }
 
+                      // Include label properties for custom label markers
+                      if (correspondingLayer instanceof L.Marker && correspondingLayer._labelText) {
+                          feature.properties.label = correspondingLayer._labelText;
+                          feature.properties.labelColor = correspondingLayer._labelColor;
+                          feature.properties.isLabel = true; // Flag to identify labels on import
+                      }
                        // Include label property if it was added directly to the feature properties
                        // (e.g., from previous imports or manual feature property editing)
-                       if (correspondingLayer.feature && correspondingLayer.feature.properties && correspondingLayer.feature.properties.label !== undefined) {
+                       else if (correspondingLayer.feature && correspondingLayer.feature.properties && correspondingLayer.feature.properties.label !== undefined) {
                             feature.properties.label = correspondingLayer.feature.properties.label;
                             if (correspondingLayer.feature.properties.labelColor !== undefined) {
                                  feature.properties.labelColor = correspondingLayer.feature.properties.labelColor;
@@ -901,6 +1287,10 @@
                 // Clear the history
                 drawHistory = [];
                 currentSelectedLayer = null; // Clear selected layer
+                 // Clear the label list in the manager
+                 if (document.getElementById('label-manager').style.display === 'block') {
+                      updateLabelList();
+                 }
                 console.log("Alle objecten verwijderd.");
             }
         }
@@ -915,6 +1305,12 @@
                 if (lastLayer === currentSelectedLayer) {
                     currentSelectedLayer = null;
                 }
+                 // If the undone layer was a custom label marker, update the label list
+                 if (lastLayer instanceof L.Marker && lastLayer._labelText) {
+                      if (document.getElementById('label-manager').style.display === 'block') {
+                           updateLabelList();
+                      }
+                 }
                 console.log("Laatste object ongedaan gemaakt.");
             } else {
                 alert('Geen objecten om ongedaan te maken.');
@@ -1038,6 +1434,64 @@
         // Function to load GeoJSON data onto the map
         function loadGeoJSON(geojson) {
             const geojsonLayer = L.geoJSON(geojson, {
+                pointToLayer: function(feature, latlng) {
+                    // If the feature is flagged as a label, create a custom label marker
+                    if (feature.properties?.isLabel) {
+                        const label = L.marker(latlng, {
+                            icon: L.divIcon({
+                                className: 'custom-label',
+                                html: `
+                                    <span>${feature.properties.label || ''}</span>
+                                    <div class="label-edit-icon" title="Bewerken">✏️</div>
+                                `,
+                                iconSize: null
+                            }),
+                            draggable: true
+                        });
+                        // Store properties on the layer
+                        label._labelText = feature.properties.label || '';
+                        label._labelColor = feature.properties.labelColor || colorPicker.value;
+                        // Apply initial style
+                        updateLabelStyle(label);
+
+                        // Add click listener for editing
+                        label.on('click', function(ev) {
+                             if (ev.originalEvent.target.classList.contains('label-edit-icon')) {
+                                 const newText = prompt('Bewerk label:', label._labelText);
+                                 if (newText !== null) {
+                                     label._labelText = newText;
+                                     label.setIcon(L.divIcon({
+                                         className: 'custom-label',
+                                         html: `
+                                             <span>${newText}</span>
+                                             <div class="label-edit-icon" title="Bewerken">✏️</div>
+                                         `,
+                                         iconSize: null
+                                     }));
+                                     // Update feature properties
+                                     if (label.feature && label.feature.properties) {
+                                         label.feature.properties.label = newText;
+                                     }
+                                     // Update label list if open
+                                     if (document.getElementById('label-manager').style.display === 'block') {
+                                          updateLabelList();
+                                     }
+                                 }
+                                 ev.originalEvent.stopPropagation();
+                             }
+                        });
+                        // Update feature geometry on dragend
+                        label.on('dragend', function() {
+                             if (label.feature && label.feature.geometry) {
+                                 label.feature.geometry = label.toGeoJSON().geometry;
+                             }
+                        });
+
+                        return label; // Return the custom label marker
+                    }
+                    // Otherwise, return a standard marker for other points
+                    return L.marker(latlng);
+                },
                 style: function(feature) {
                     // Apply style from properties if available, otherwise use default/current color picker value
                     const color = feature.properties?.color || colorPicker.value;
@@ -1053,7 +1507,10 @@
                     if (feature.properties) {
                         let popupContent = '';
                         for (const key in feature.properties) {
-                            popupContent += `<strong>${key}:</strong> ${feature.properties[key]}<br>`;
+                            // Exclude label properties from the popup
+                            if (key !== 'label' && key !== 'labelColor' && key !== 'isLabel') {
+                                popupContent += `<strong>${key}:</strong> ${feature.properties[key]}<br>`;
+                            }
                         }
                         if (popupContent) {
                              layer.bindPopup(popupContent);
@@ -1100,6 +1557,7 @@
                              });
                              currentSelectedLayer.bringToFront(); // Bring selected layer to front
                          }
+                         // No special highlighting for markers with custom icons or default markers needed here.
                     });
 
                     // Add the loaded layer to drawn items and history
@@ -1115,6 +1573,10 @@
             if (geojsonLayer.getBounds().isValid()) {
                 map.fitBounds(geojsonLayer.getBounds());
             }
+             // Update label list if manager is open after loading
+             if (document.getElementById('label-manager').style.display === 'block') {
+                  updateLabelList();
+             }
             console.log("GeoJSON geladen:", geojson);
         }
 
@@ -1240,6 +1702,31 @@
                  console.log("Geselecteerde laag: Geen");
              }
          });
+
+         // Keyboard Shortcuts
+         document.addEventListener('keydown', function(e) {
+             // Ctrl+L to start/cancel label placement
+             if (e.ctrlKey && e.key === 'l') {
+                 e.preventDefault(); // Prevent default browser shortcut
+                 startPlacingLabel();
+             }
+
+             // Esc to cancel label placement
+             if (e.key === 'Escape' && isPlacingLabel) {
+                 e.preventDefault(); // Prevent default browser action
+                 isPlacingLabel = false;
+                 map.off('click', placeLabelHandler); // Remove click handler
+                 map.off('mousemove'); // Remove mousemove handler
+                 // Remove temporary marker if it exists
+                 if (map.tempLabelMarker && map.hasLayer(map.tempLabelMarker)) {
+                     map.removeLayer(map.tempLabelMarker);
+                     delete map.tempLabelMarker;
+                 }
+                 alert('Label plaatsing geannuleerd');
+             }
+         });
+
+
     </script>
 </body>
 </html>
