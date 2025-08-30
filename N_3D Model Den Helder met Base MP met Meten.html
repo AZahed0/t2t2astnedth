@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable-no" />
+  <title>3D Scene met modellen en widgets</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+  <style>
+    html, body, #view-div {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    #drop-zone {
+      width: 250px;
+      padding: 12px;
+      background-color: white;
+      z-index: 99; /* Set the drop zone below other elements */
+    }
+
+    #drop-zone h1 {
+      font-size: 16px;
+      margin-top: 0;
+    }
+
+    #drop-zone section {
+      margin-top: 10px;
+    }
+
+    #downloads {
+      display: flex;
+      background: white;
+      gap: 10px;
+      padding: 10px;
+      z-index: 90;
+    }
+
+    #downloads a {
+      display: flex;
+      width: 200px;
+      height: 200px;
+    }
+
+    calcite-notice {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    calcite-notice[open] {
+      animation-duration: 0.2s;
+      animation-name: slidein;
+    }
+
+    @keyframes slidein {
+      from { opacity: 0; transform: translateY(-30%); }
+      to { opacity: 1; transform: translateY(0%); }
+    }
+
+  
+
+    #drop-zone.dragover {
+      border: 2px dashed cornflowerblue;
+      background-color: #f0f8ff;
+    }
+
+    @media (max-width: 600px) {
+      #drop-zone {
+        width: 90%;
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      #downloads {
+        flex-direction: column;
+        height: auto;
+      }
+    }
+
+    #measurement-buttons {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 101; /* Ensure this stays on top of other elements */
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Daylight & Weather widgets */
+    #daylight-widget,
+    #weather-widget {
+      position: absolute;
+      bottom: 40px; /* Adjust based on how far down you want it */
+      right: 10px;
+      z-index: 105; /* Make sure they stay on top of the map and other elements */
+    }
+  </style>
+<script>
+  require([
+    "esri/core/reactiveUtils",
+    "esri/layers/SceneLayer",
+    "esri/WebScene",
+    "esri/views/SceneView",
+    "esri/widgets/Sketch/SketchViewModel",
+    "esri/layers/GraphicsLayer",
+    "esri/widgets/Expand",
+    "esri/widgets/Daylight",
+    "esri/widgets/Weather",
+    "esri/widgets/Search",
+    "esri/widgets/Fullscreen",
+    "esri/widgets/LayerList",
+    "esri/widgets/BasemapGallery",
+    "esri/widgets/AreaMeasurement3D",
+    "esri/widgets/DirectLineMeasurement3D"
+  ], function (
+    reactiveUtils,
+    SceneLayer,
+    WebScene,
+    SceneView,
+    SketchViewModel,
+    GraphicsLayer,
+    Expand,
+    Daylight,
+    Weather,
+    Search,
+    Fullscreen,
+    LayerList,
+    BasemapGallery,
+    AreaMeasurement3D,
+    DirectLineMeasurement3D
+  ) {
+    const deviceId = localStorage.getItem("deviceId") || (crypto.randomUUID() && localStorage.setItem("deviceId", crypto.randomUUID()));
+
+    const webscene = new WebScene({
+      portalItem: { id: "48a900de3c124a47993de5fe9090671d" }
+    });
+
+    const view = new SceneView({
+      container: "view-div",
+      map: webscene,
+      camera: {
+        position: {
+          x: 4.7589,
+          y: 52.9551,
+          z: 150,
+          spatialReference: { wkid: 4326 }
+        },
+        heading: 0,
+        tilt: 65
+      },
+      background: {
+        type: "color",
+        color: [100, 149, 237, 1]
+      }
+    });
+
+    const sketchLayer = new GraphicsLayer();
+    view.map.add(sketchLayer);
+
+    const sketchVM = new SketchViewModel({
+      layer: sketchLayer,
+      view: view
+    });
+
+    let sceneLayer;
+    view.when(() => {
+      sceneLayer = view.map.layers.find((layer) => layer.title === "EditableFeatures3DObject");
+      sceneLayer.definitionExpression = `deviceId = '${deviceId}' OR deviceId = 'initial-model'`;
+
+      // 3D BAG SceneLayer
+      const bag3DLayer = new SceneLayer({
+        url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3DBAG_WGS_EGM_V2/SceneServer",
+        title: "3D BAG",
+        visible: false
+      });
+      view.map.add(bag3DLayer);
+
+      // 3D Bomen SceneLayer
+      const bomen3DLayer = new SceneLayer({
+        url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3D_Bomen_WGS/SceneServer",
+        title: "3D Bomen",
+        visible: false
+      });
+      view.map.add(bomen3DLayer);
+
+
+      // Model upload event
+      const input = document.querySelector("#model-input");
+      input.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        const fileName = file.name.toLowerCase();
+        const fileExtension = fileName.split('.').pop();
+
+        const validExtensions = ["glb", "gltf"];
+        const isValidExtension = validExtensions.includes(fileExtension);
+
+        if (file && file.size / (1024 * 1024) <= 50 && isValidExtension) {
+          const mesh = await sceneLayer.convertMesh([file]);
+          await mesh.load();
+          sketchVM.place(mesh, {
+            graphicProperties: {
+              layer: sketchLayer,
+              attributes: { deviceId: deviceId }
+            }
+          });
+
+          // Add success notice
+          const notice = document.createElement("calcite-notice");
+          notice.setAttribute("kind", "success");
+          notice.setAttribute("icon", "");
+          notice.setAttribute("open", "");
+          notice.innerHTML = `
+            <div slot="title">Model toegevoegd</div>
+            <div slot="message">Je model is succesvol geplaatst.</div>
+          `;
+          document.body.appendChild(notice);
+          setTimeout(() => notice.remove(), 4000);
+
+        } else {
+          let message = "Het bestand mag maximaal 50 MB zijn";
+          if (file && file.size / (1024 * 1024) > 50) {
+            message = `Bestand te groot (${(file.size / (1024 * 1024)).toFixed(2)} MB). Het bestand mag maximaal 50 MB zijn.`;
+          } else if (file && !isValidExtension) {
+            message = `Ongeldig bestandstype.  Alleen .glb en .gltf bestanden zijn toegestaan.`;
+          }
+          document.querySelector("#size-warning").innerHTML = `<div slot="title">Fout bij bestandsupload</div><div slot="message">${message}</div>`;
+          document.querySelector("#size-warning").open = true;
+        }
+        input.value = "";
+      });
+
+      // Drop zone
+      const dropZone = document.getElementById("drop-zone");
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("dragover");
+      });
+      dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+      dropZone.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("dragover");
+        const file = e.dataTransfer.files[0];
+        const fileName = file.name.toLowerCase();
+        const fileExtension = fileName.split('.').pop();
+
+        const validExtensions = ["glb", "gltf"];
+        const isValidExtension = validExtensions.includes(fileExtension);
+
+        if (file && file.size / (1024 * 1024) <= 50 && isValidExtension) {
+          const mesh = await sceneLayer.convertMesh([file]);
+          await mesh.load();
+          sketchVM.place(mesh, {
+            graphicProperties: {
+              layer: sketchLayer,
+              attributes: { deviceId: deviceId }
+            }
+          });
+           // Add success notice
+          const notice = document.createElement("calcite-notice");
+          notice.setAttribute("kind", "success");
+          notice.setAttribute("icon", "");
+          notice.setAttribute("open", "");
+          notice.innerHTML = `
+            <div slot="title">Model toegevoegd</div>
+            <div slot="message">Je model is succesvol geplaatst.</div>
+          `;
+          document.body.appendChild(notice);
+          setTimeout(() => notice.remove(), 4000);
+        } else {
+          let message = "Het bestand mag maximaal 50 MB zijn";
+          if (file && file.size / (1024 * 1024) > 50) {
+            message = `Bestand te groot (${(file.size / (1024 * 1024)).toFixed(2)} MB). Het bestand mag maximaal 50 MB zijn.`;
+          } else if (file && !isValidExtension) {
+            message = `Ongeldig bestandstype.  Alleen .glb en .gltf bestanden zijn toegestaan.`;
+          }
+          document.querySelector("#size-warning").innerHTML = `<div slot="title">Fout bij bestandsupload</div><div slot="message">${message}</div>`;
+          document.querySelector("#size-warning").open = true;
+        }
+      });
+    });
+
+    // Widgets
+    const searchExpand = new Expand({
+      view: view,
+      content: new Search({ view }),
+      expandIcon: "search",
+      expanded: false,
+      label: "Zoeken"
+    });
+    view.ui.add(searchExpand, "top-left");
+
+    const downloadsExpand = new Expand({
+      view: view,
+      content: document.getElementById("downloads"),
+      expandIcon: "download",
+      expanded: false,
+      label: "Downloads"
+    });
+    view.ui.add(downloadsExpand, "bottom-left");
+
+    const daylightExpand = new Expand({
+      view: view,
+      content: new Daylight({ view }),
+      expandIcon: "sun",
+      expanded: false,
+      label: "Daglicht"
+    });
+    view.ui.add(daylightExpand, { position: "bottom-right", index: 105 });
+
+    const weatherExpand = new Expand({
+      view: view,
+      content: new Weather({ view }),
+      expandIcon: "cloudy",
+      expanded: false,
+      label: "Weer"
+    });
+    view.ui.add(weatherExpand, { position: "bottom-right", index: 105 });
+
+    const fullscreen = new Fullscreen({ view: view });
+    view.ui.add(fullscreen, "top-left");
+
+    const uploadExpand = new Expand({
+      view: view,
+      expandIcon: "upload-to-cloud",
+      expanded: false,
+      content: document.getElementById("drop-zone"),
+      label: "Uploaden"
+    });
+    view.ui.add(uploadExpand, "top-left");
+
+    // LayerList
+    const layerListExpand = new Expand({
+      view: view,
+      content: new LayerList({
+        view: view,
+        listItemCreatedFunction: function (event) {
+          const item = event.item;
+          if (item.layer.title === "3D BAG" || item.layer.title === "3D Bomen") {
+            item.visible = false;
+          }
+        }
+      }),
+      expandIcon: "layers",
+      expanded: false,
+      group: "top-left",
+      label: "Lagen"
+    });
+    view.ui.add(layerListExpand, "top-left");
+
+    // BasemapGallery
+    const basemapGalleryExpand = new Expand({
+      view: view,
+      content: new BasemapGallery({ view }),
+      expandIcon: "basemap",
+      expanded: false,
+      group: "top-left",
+      label: "Basiskaart"
+    });
+    view.ui.add(basemapGalleryExpand, "top-left");
+
+    let distanceWidget = null;
+    let areaWidget = null;
+
+    // Buttons
+    const startDistanceBtn = document.getElementById("start-distance");
+    const startAreaBtn = document.getElementById("start-area");
+    const stopBtn = document.getElementById("stop-measurement");
+    stopBtn.disabled = true;
+
+    function clearMeasurements() {
+      if (distanceWidget) {
+        distanceWidget.destroy();
+        distanceWidget = null;
+      }
+      if (areaWidget) {
+        areaWidget.destroy();
+        areaWidget = null;
+      }
+      stopBtn.disabled = true;
+    }
+
+    startDistanceBtn.addEventListener("click", () => {
+      clearMeasurements();
+      require(["esri/widgets/DirectLineMeasurement3D"], (DirectLineMeasurement3D) => {
+        distanceWidget = new DirectLineMeasurement3D({ view, unit: "meters" });
+        view.ui.add(distanceWidget, "top-right");
+        stopBtn.disabled = false;
+      });
+    });
+
+    startAreaBtn.addEventListener("click", () => {
+      clearMeasurements();
+      require(["esri/widgets/AreaMeasurement3D"], (AreaMeasurement3D) => {
+        areaWidget = new AreaMeasurement3D({ view, unit: "square-meters" });
+        view.ui.add(areaWidget, "top-right");
+        stopBtn.disabled = false;
+      });
+    });
+
+    stopBtn.addEventListener("click", () => {
+      clearMeasurements();
+    });
+
+  });
+</script>
+</head>
+<body>
+  <div id="view-div"></div>
+
+  <div id="drop-zone">
+    <h1>Voeg je eigen model toe</h1>
+    <input id="model-input" type="file" />
+    <section>
+      <p>Sleep een bestand hierheen of klik om te uploaden.</p>
+    </section>
+  </div>
+
+  <div id="downloads">
+    <a download href="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/Tower.glb">
+      <calcite-card>
+        <img slot="thumbnail" alt="Torens" src="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/Tower.png" />
+        <div slot="title">Torens</div>
+      </calcite-card>
+    </a>
+    <a download href="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/GreenBuilding.fbx">
+      <calcite-card>
+        <img slot="thumbnail" alt="Gebouw" src="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/GreenBuilding.png" />
+        <div slot="title">Gebouw</div>
+      </calcite-card>
+    </a>
+  </div>
+
+  <calcite-notice id="size-warning" kind="danger" icon closable>
+    <div slot="title">Bestand te groot</div>
+    <div slot="message">Het bestand mag maximaal 50 MB zijn</div>
+  </calcite-notice>
+  
+  <div id="measurement-buttons" style="position: absolute; top: 10px; right: 10px; z-index: 99; display: flex; gap: 10px;">
+    <calcite-button id="start-distance" appearance="solid" kind="brand">Afstand meten</calcite-button>
+    <calcite-button id="start-area" appearance="solid" kind="brand">Oppervlakte meten</calcite-button>
+    <calcite-button id="stop-measurement" appearance="outline" kind="neutral" disabled>Stop meting</calcite-button>
+  </div>
+</body>
+</html>
