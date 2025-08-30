@@ -1,1758 +1,389 @@
-
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8" />
+    <title>Den Helder</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D Den Helder</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-search@3.0.9/dist/leaflet-search.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.29/"></script>
     <style>
-        body {
+        html, body, #viewDiv {
+            padding: 0;
             margin: 0;
-            font-family: Arial, sans-serif;
+            height: 100%;
+            width: 100%;
         }
 
-        /* CSS Variables for consistent styling */
-        :root {
-            --primary-color: #2c3e50; /* Dark blue/gray */
-            --secondary-color: #3498db; /* Bright blue */
-            --accent-color: #e74c3c; /* Red */
-            --light-gray: #ecf0f1;
-            --dark-gray: #7f8c8d;
-        }
-
-        #map {
-            height: 100vh; /* Full viewport height */
-            width: 100%; /* Full viewport width */
-        }
-
-        /* Logo positioning and styling */
-        #logo-container {
+        .tools-container {
             position: absolute;
             top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000; /* Ensure logo is above the map */
-            background: white;
-            padding: 8px;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-        }
-
-        #logo-container img {
-            height: 80px; /* Adjusted logo size */
-        }
-
-        /* Control Panel (Drawing Tools) positioning and styling */
-        .control-panel {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000; /* Ensure panel is above the map */
-            background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-            width: 180px;
-            transition: height 0.3s ease; /* Smooth collapse transition */
-        }
-
-        .control-panel.collapsed {
-            height: 40px; /* Reduced height when collapsed */
-            overflow: hidden; /* Hide content when collapsed */
-        }
-
-        .control-panel h3 {
-            margin: 0 0 10px;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--primary-color);
-            cursor: pointer; /* Indicate clickable header */
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .control-panel h3 i {
-            margin-right: 5px;
-        }
-
-        /* Style for collapsed state */
-        .control-panel.collapsed {
-            height: 40px;
-            overflow: hidden;
-        }
-
-        /* Arrow indicator for expanded state */
-        .control-panel h3::after {
-            content: '▲';
-        }
-
-        /* Arrow indicator for collapsed state */
-        .control-panel.collapsed h3::after {
-            content: '▼';
-        }
-
-
-        .control-panel label {
-            display: block;
-            font-size: 12px;
-            color: var(--dark-gray);
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .control-panel label i {
-            font-size: 14px;
-        }
-
-        /* Custom styling for color picker */
-        #color-selector input[type="color"] {
-            width: 32px;
-            height: 32px;
-            border: none;
-            cursor: pointer;
-            border-radius: 50%; /* Make color picker round */
-            padding: 2px;
-            margin-bottom: 10px;
-        }
-
-        #color-selector input[type="color"]::-webkit-color-swatch-wrapper {
-            padding: 0;
-        }
-
-        #color-selector input[type="color"]::-webkit-color-swatch {
-            border: 2px solid #fff;
-            border-radius: 50%;
-        }
-
-        /* Opacity slider styling */
-        #opacity-slider input {
-            width: 100%;
-        }
-
-        /* Styling for control buttons */
-        .control-button {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            width: 100%;
-            padding: 8px 10px;
-            background: var(--secondary-color);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 12px;
-            text-align: left;
-            margin: 5px 0;
-            transition: all 0.2s ease; /* Smooth hover effect */
-        }
-
-        .control-button i {
-            font-size: 14px;
-        }
-
-        .control-button:hover {
-            background: #2980b9;
-            transform: translateY(-2px);
-        }
-
-        /* Styling for the clear button */
-        .clear-button {
-            background: var(--accent-color);
-        }
-
-        .clear-button:hover {
-            background: #c0392b;
-        }
-
-        /* Search Bar positioning and styling */
-        .leaflet-search-bar {
-            position: absolute;
-            bottom: 30px;
-            left: 5px;
-            z-index: 1000;
-            background: white;
-            border-radius: 12px;
-            padding: 7px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-            width: 200px;
-        }
-
-        .leaflet-search-bar .search-content {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .leaflet-search-input {
-            width: 120px;
-            border: 1px solid var(--light-gray);
-            border-radius: 5px;
-            padding: 4px;
-            font-size: 10px;
-        }
-
-        .leaflet-search-button {
-            background: var(--secondary-color);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 4px;
-            font-size: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-        }
-
-        .leaflet-search-button i {
-            font-size: 12px;
-        }
-
-        .leaflet-search-button:hover {
-            background: #2980b9;
-            transform: translateY(-2px);
-        }
-
-        .leaflet-search-cancel {
-            display: none;
-            background: var(--light-gray);
-            color: var(--dark-gray);
-            border: none;
-            border-radius: 5px;
-            padding: 4px;
-            font-size: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            transition: all 0.2s ease;
-        }
-
-        .leaflet-search-cancel i {
-            font-size: 12px;
-        }
-
-        .leaflet-search-cancel:hover {
-            background: #d0d4d6;
-            transform: translateY(-2px);
-        }
-
-        /* Show cancel button when searching */
-        .leaflet-search-bar.searching .leaflet-search-cancel {
-            display: inline-flex;
-        }
-
-        /* Search Results Container */
-        #search-results {
-            position: absolute;
-            bottom: 100%;
-            left: 0;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-            z-index: 1001;
-            max-height: 180px;
-            overflow-y: auto;
-            width: 100%;
-            display: none;
-        }
-
-        #search-results ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        #search-results li {
-            padding: 5px;
-            cursor: pointer;
-            font-size: 10px;
-            border-bottom: 1px solid var(--light-gray);
-        }
-
-        #search-results li:hover {
-            background: var(--light-gray);
-        }
-
-        #search-results li:last-child {
-            border-bottom: none;
-        }
-
-        /* Legend styling */
-        .legend {
-            background: white;
+            left: 10px;
+            z-index: 99;
+            background-color: white;
             padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-            font-size: 14px;
-            color: var(--dark-gray);
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
 
-        .legend h4 {
-            margin: 0 0 8px;
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        .legend i {
-            width: 16px;
-            height: 16px;
-            float: left;
-            margin-right: 8px;
-            opacity: 0.8;
-            border-radius: 50%;
-            border: 2px solid;
-            box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-        }
-
-        /* Custom styling for Leaflet controls */
-        .leaflet-control-zoom,
-        .leaflet-control-layers {
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-            background: white;
-        }
-
-        .leaflet-control-zoom-in,
-        .leaflet-control-zoom-out {
-            width: 40px;
-            height: 40px;
-            line-height: 40px;
-            text-align: center;
-            font-size: 24px;
-            cursor: pointer;
-            background: white;
-            border: 1px solid var(--light-gray);
-            border-radius: 12px 12px 0 0;
-            color: var(--dark-gray);
-        }
-
-        .leaflet-control-zoom-out {
-            border-radius: 0 0 12px 12px;
-            border-top: none;
-        }
-
-        .leaflet-control-zoom-in:hover,
-        .leaflet-control-zoom-out:hover {
-            background: var(--light-gray);
-        }
-
-        /* Adjust position of Leaflet Draw toolbar */
-        .leaflet-draw-toolbar {
-            top: 80px;
-        }
-
-        /* Improved Label Styles */
-        .custom-label {
-            font-size: 14px;
-            font-weight: bold;
-            color: white;
-            background-color: rgba(0,0,0,0.85);
-            padding: 6px 12px;
-            border-radius: 4px;
-            border: 2px solid white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5),
-                        0 0 0 2px rgba(255,255,255,0.7);
-            text-shadow: 0 1px 3px black;
-            white-space: nowrap;
-            transform: translate(-50%, -50%);
-            transition: all 0.2s ease;
-            cursor: move; /* Indicate draggable */
-            z-index: 1000 !important; /* Ensure labels are on top */
-            pointer-events: auto; /* Allow interaction */
-        }
-
-        .custom-label:hover {
-            background-color: rgba(30,30,30,0.9);
-            transform: translate(-50%, -50%) scale(1.05);
-            box-shadow: 0 0 15px rgba(0,0,0,0.7),
-                        0 0 0 3px rgba(255,255,255,0.9);
-        }
-
-        .label-edit-icon {
+        #logoDiv {
             position: absolute;
-            right: -8px;
-            top: -8px;
-            background: #3498db;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            bottom: 0;
+            right: 0;
+            z-index: 100;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
-            opacity: 0;
-            transition: opacity 0.2s;
-            cursor: pointer;
-            z-index: 1001; /* Ensure icon is above label */
+            padding: 8px;
+            background-color: white;
+            border-radius: 5px;
         }
 
-        .custom-label:hover .label-edit-icon {
-            opacity: 1;
+        #logoDiv img {
+            max-width: 100%;
+            max-height: 100%;
         }
-
-        /* Style for the temporary label placement marker */
-        .custom-label.temp {
-             background-color: rgba(0, 128, 0, 0.7); /* Greenish background */
-             border-color: rgba(0, 255, 0, 0.7); /* Green border */
-             box-shadow: 0 0 10px rgba(0, 128, 0, 0.5),
-                         0 0 0 2px rgba(0, 255, 0, 0.7);
-             animation: pulse 1s infinite alternate; /* Add a pulsing animation */
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: translate(-50%, -50%) scale(1);
-                box-shadow: 0 0 10px rgba(0, 128, 0, 0.5),
-                            0 0 0 2px rgba(0, 255, 0, 0.7);
-            }
-            100% {
-                transform: translate(-50%, -50%) scale(1.05);
-                box-shadow: 0 0 15px rgba(0, 255, 0, 0.7),
-                            0 0 0 3px rgba(0, 255, 0, 0.9);
-            }
-        }
-
-
-        @media (max-width: 768px) {
-            .control-panel {
-                width: 90%;
-                bottom: 10px;
-                right: auto;
-                left: 5%;
-            }
-
-            .leaflet-search-bar {
-                width: 90%;
-                left: 5%;
-                bottom: 60px;
-            }
-
-            #logo-container {
-                top: 5px;
-                padding: 5px;
-            }
-
-            #logo-container img {
-                height: 40px;
-            }
-
-            .leaflet-control {
-                margin: 5px !important;
-            }
-        }
-
-        /* Drag and drop indicator */
-        #map::after {
-            content: 'Sleep GeoJSON of Shapefile hier';
+        #toggleBuurtGrenzen {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 3px dashed var(--secondary-color);
-            border-radius: 10px;
-            font-size: 18px;
-            color: var(--primary-color);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 1000;
+            top: 85px; /* Adjusted top value to position below zoom controls */
+            left: 10px;
+            z-index: 100;
+            padding: 10px;
+            background-color: #014b6b; /* Darker blue background */
+            color: white; /* White text */
+            border-radius: 5px;
+            cursor: pointer;
+            border: 1px solid #014b6b; /* Darker blue border */
+        }
+        #toggleBuurtGrenzen:hover {
+            background-color: #014b6b; /* Darker blue on hover */
         }
 
-        #map.drag-over::after {
-            opacity: 1;
-        }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-    <div id="logo-container">
-        <img src="https://www.multibel.eu/wp-content/uploads/gemeente-den-helder-app-quote-500x383.png" alt="Den Helder Logo">
+    <div id="viewDiv"></div>
+    <div id="logoDiv">
+        <img src="https://www.denhelder.nl/dsresource?objectid=571c93e2-71c1-4168-a4ae-21c0970c48d8" alt="Gemeente Den Helder Logo" height="100">
     </div>
-    <div class="control-panel collapsed" id="control-panel">
-        <h3 onclick="toggleControlPanel()"><i class="fas fa-pencil-alt"></i> Tekentools</h3>
-        <div id="color-selector">
-            <label><i class="fas fa-palette"></i> Kleur kiezen:</label>
-            <input type="color" id="draw-color" value="#0000FF">
-        </div>
-        <div id="opacity-slider">
-            <label><i class="fas fa-adjust"></i> Transparantie:</label>
-            <input type="range" id="opacity" min="0" max="1" step="0.1" value="0.7">
-        </div>
-        <button class="control-button" onclick="map.setView([52.9563, 4.7608], 14)"><i class="fas fa-home"></i> Terug naar start</button>
-        <button class="control-button" onclick="startPlacingLabel()"><i class="fas fa-font"></i> Voeg label toe</button>
-        <button class="control-button" onclick="changeSelectedColor()"><i class="fas fa-fill-drip"></i> Kleur wijzigen</button>
-         <button class="control-button" onclick="toggleLabelManager()"><i class="fas fa-tags"></i> Label Beheer</button> <div id="label-manager" style="display: none; margin-top: 10px;">
-             <h4 style="margin: 5px 0 10px; font-size: 13px;">
-                 <i class="fas fa-tags"></i> Label Beheer
-             </h4>
-             <div id="label-list" style="max-height: 150px; overflow-y: auto;"></div>
-         </div>
-        <button class="control-button" onclick="downloadGeoJSON()"><i class="fas fa-download"></i> Download GeoJSON</button>
-        <button class="control-button" onclick="downloadShapefile()"><i class="fas fa-download"></i> Download Shapefile</button>
-        <button class="control-button" onclick="document.getElementById('file-input').click()"><i class="fas fa-upload"></i> Import GeoJSON</button>
-        <button class="control-button" onclick="document.getElementById('shp-file-input').click()"><i class="fas fa-upload"></i> Import Shapefile</button>
-        <input type="file" id="file-input" accept=".geojson,.json" style="display: none;">
-        <input type="file" id="shp-file-input" accept=".zip" style="display: none;">
-        <button class="control-button clear-button" onclick="clearShapes()"><i class="fas fa-trash"></i> Verwijder alles</button>
-        <button class="control-button" onclick="undoLastDraw()"><i class="fas fa-undo"></i> Ongedaan maken</button>
-    </div>
-    <div class="leaflet-search-bar" id="search-bar">
-        <div class="search-content">
-            <div id="search-results">
-                <ul></ul>
-            </div>
-            <input type="text" class="leaflet-search-input" placeholder="Zoek een adres..." id="search-input">
-            <button class="leaflet-search-button" id="search-button"><i class="fas fa-search"></i></button>
-            <button class="leaflet-search-cancel" id="search-cancel"><i class="fas fa-times"></i></button>
-        </div>
-    </div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/leaflet-search@3.0.9/dist/leaflet-search.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.3/proj4.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/4.0.2/shp.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://unpkg.com/shpwrite@1.6.0/dist/shpwrite.js"></script>
-
+    <button id="toggleBuurtGrenzen">Toon Buurtgrenzen</button>
     <script>
-        // Define the Proj4js projection for RD (Dutch coordinate system)
-        proj4.defs('EPSG:28992', '+proj=sterea +lat_0=52.15616055555555 +lon_0=5.38763888888889 +k=0.9999079 +x_0=155000 +y_0=463000 +ellps=bessel +units=m +no_defs');
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/layers/GraphicsLayer",
+            "esri/widgets/Sketch",
+            "esri/widgets/Expand",
+            "esri/layers/VectorTileLayer",
+            "esri/widgets/DistanceMeasurement2D",
+            "esri/widgets/AreaMeasurement2D",
+            "esri/widgets/BasemapGallery",
+            "esri/widgets/Search",
+            "esri/core/promiseUtils",
+            "esri/widgets/Track",
+            "esri/layers/FeatureLayer",
+            "esri/Graphic" // Added for creating marker
+        ], function(
+            Map, MapView, GraphicsLayer, Sketch,  Expand, VectorTileLayer,
+            DistanceMeasurement2D, AreaMeasurement2D, BasemapGallery, Search, promiseUtils, Track, FeatureLayer, Graphic
+        ) {
 
-        // Initialize the map centered around Den Helder
-        var map = L.map('map', {
-            zoomControl: true
-        }).setView([52.9563, 4.7608], 14);
-
-        // Define base map layers
-        var brtLayer = L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/standaard/EPSG:3857/{z}/{x}/{y}.png', {
-            attribution: 'Kaartgegevens © <a href="https://www.kadaster.nl">Kadaster</a>',
-            style: 'standaard'
-        }).addTo(map);
-
-        var googleRoadmap = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-            attribution: '© <a href="https://www.google.com/maps">Google Maps</a>'
-        });
-
-        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        });
-
-        var esriImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-        });
-
-        var esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri, HERE, Garmin, FAO, NOAA, USGS, EPA'
-        });
-
-        var esriTopo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri, HERE, Garmin, Intermap, increment P Corp., GEBCO, USGS, FAO, NPS, NRCAN, GeoBase, IGN, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), swisstopo, and the GIS User Community'
-        });
-
-        var esriImageryLabels = L.layerGroup([
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: '© Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-            }),
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-                attribution: '© Esri, HERE, Garmin, FAO, NOAA, USGS'
-            })
-        ]);
-
-        var baseMaps = {
-            "Esri World Imagery": esriImagery,
-            "Esri World Street Map": esriStreet,
-            "Esri World Topographic Map": esriTopo,
-            "Esri Imagery with Labels": esriImageryLabels,
-            "Google Roadmap": googleRoadmap,
-            "OpenStreetMap (OSM)": osm,
-            "BRT-Achtergrondkaart (NL)": brtLayer
-        };
-
-        var overlayMaps = {};
-        var layerControl = L.control.layers(baseMaps, overlayMaps, { position: 'topright' }).addTo(map);
-        L.control.zoom({ position: 'topright' }).addTo(map);
-        L.control.scale({ metric: true, imperial: false }).addTo(map);
-
-        const drawnItems = new L.FeatureGroup().addTo(map);
-        let drawHistory = [];
-        let currentSelectedLayer = null;
-        let isPlacingLabel = false; // State variable for label placement
-
-        const drawControl = new L.Control.Draw({
-            draw: {
-                polygon: {
-                    allowIntersection: false,
-                    drawError: {
-                        color: '#b00b00',
-                        message: '<strong>Fout:</strong> Geen kruisingen toegestaan!'
-                    },
-                    shapeOptions: {
-                        color: '#0000FF',
-                        fillColor: '#0000FF',
-                        fillOpacity: 0.7,
-                        weight: 2
-                    }
-                },
-                polyline: {
-                    color: '#0000FF',
-                    weight: 3,
-                    lineCap: 'round'
-                },
-                circle: {
-                    shapeOptions: {
-                        color: '#0000FF',
-                        fillColor: '#0000FF',
-                        fillOpacity: 0.7,
-                        weight: 2
-                    }
-                },
-                marker: {
-                    icon: new L.Icon.Default()
-                },
-                rectangle: {
-                    shapeOptions: {
-                        color: '#0000FF',
-                        fillColor: '#0000FF',
-                        fillOpacity: 0.7,
-                        weight: 2
-                    }
-                }
-            },
-            edit: {
-                featureGroup: drawnItems,
-                remove: true
-            }
-        });
-        map.addControl(drawControl);
-
-        const colorPicker = document.getElementById('draw-color');
-        const opacitySlider = document.getElementById('opacity');
-
-        function updateDrawControlOptions() {
-            const color = colorPicker.value;
-            const opacity = parseFloat(opacitySlider.value);
-            drawControl.setDrawingOptions({
-                polygon: {
-                    shapeOptions: {
-                        color: color,
-                        fillColor: color,
-                        fillOpacity: opacity,
-                        weight: 2
-                    }
-                },
-                polyline: {
-                    color: color,
-                    weight: 3,
-                    lineCap: 'round'
-                },
-                circle: {
-                    shapeOptions: {
-                        color: color,
-                        fillColor: color,
-                        fillOpacity: opacity,
-                        weight: 2
-                    }
-                },
-                rectangle: {
-                    shapeOptions: {
-                        color: color,
-                        fillColor: color,
-                        fillOpacity: opacity,
-                        weight: 2
-                    }
-                }
-            });
-        }
-
-        // Update color and opacity of selected shape when controls change
-        colorPicker.addEventListener('change', function(event) { // Added event parameter
-            updateDrawControlOptions(); // Update options for new shapes
-            const newColor = this.value;
-
-            // Apply color to selected shape
-            if (currentSelectedLayer && currentSelectedLayer instanceof L.Path) {
-                const newOpacity = parseFloat(opacitySlider.value);
-                currentSelectedLayer.setStyle({
-                    color: newColor,
-                    fillColor: newColor,
-                    fillOpacity: newOpacity,
-                    weight: currentSelectedLayer instanceof L.Polyline ? 3 : 2
-                });
-                // Store the custom style for persistence
-                currentSelectedLayer.options.customStyle = {
-                    color: newColor,
-                    fillColor: newColor,
-                    fillOpacity: newOpacity,
-                    weight: currentSelectedLayer instanceof L.Polyline ? 3 : 2
-                };
-                 // Update feature properties for export
-                if (!currentSelectedLayer.feature) {
-                    currentSelectedLayer.feature = { type: 'Feature', properties: {}, geometry: currentSelectedLayer.toGeoJSON().geometry };
-                }
-                if (!currentSelectedLayer.feature.properties) currentSelectedLayer.feature.properties = {};
-                currentSelectedLayer.feature.properties.color = newColor;
-                currentSelectedLayer.feature.properties.fillColor = newColor;
-                currentSelectedLayer.feature.properties.fillOpacity = newOpacity;
-            }
-
-             // Apply color to selected label (if a label marker is selected)
-             if (currentSelectedLayer && currentSelectedLayer instanceof L.Marker && currentSelectedLayer._labelText) {
-                 currentSelectedLayer._labelColor = newColor;
-                 updateLabelStyle(currentSelectedLayer);
-             }
-
-            // Update all labels if shift key is pressed
-            if (event.shiftKey) {
-                drawnItems.eachLayer(layer => {
-                    if (layer._labelText) {
-                        layer._labelColor = newColor;
-                        updateLabelStyle(layer);
-                    }
-                });
-            }
-        });
-
-        opacitySlider.addEventListener('input', function() {
-            updateDrawControlOptions(); // Update options for new shapes
-            const newOpacity = parseFloat(this.value);
-
-            // Apply opacity to selected shape
-            if (currentSelectedLayer && currentSelectedLayer instanceof L.Path) {
-                const color = colorPicker.value;
-                currentSelectedLayer.setStyle({
-                    color: color,
-                    fillColor: color,
-                    fillOpacity: newOpacity,
-                    weight: currentSelectedLayer instanceof L.Polyline ? 3 : 2
-                });
-                // Store the custom style for persistence
-                currentSelectedLayer.options.customStyle = {
-                    color: color,
-                    fillColor: color,
-                    fillOpacity: newOpacity,
-                    weight: currentSelectedLayer instanceof L.Polyline ? 3 : 2
-                };
-                 // Update feature properties for export
-                if (!currentSelectedLayer.feature) {
-                    currentSelectedLayer.feature = { type: 'Feature', properties: {}, geometry: currentSelectedLayer.toGeoJSON().geometry };
-                }
-                 if (!currentSelectedLayer.feature.properties) currentSelectedLayer.feature.properties = {};
-                currentSelectedLayer.feature.properties.fillOpacity = newOpacity;
-            }
-             // Opacity is not directly applicable to the custom-label background color with the current CSS,
-             // but you could modify updateLabelStyle to handle opacity if needed.
-        });
-
-        // Function to start the label placement process
-        function startPlacingLabel() {
-            if (isPlacingLabel) {
-                isPlacingLabel = false;
-                map.off('click', placeLabelHandler);
-                 // Remove temporary marker if it exists
-                 if (map.tempLabelMarker && map.hasLayer(map.tempLabelMarker)) {
-                     map.removeLayer(map.tempLabelMarker);
-                     delete map.tempLabelMarker;
-                 }
-                alert('Label plaatsing geannuleerd');
-                return;
-            }
-
-            isPlacingLabel = true;
-            alert('Klik op de kaart om een label te plaatsen (klik elders of druk op Esc om te annuleren)');
-
-            // Temporary marker to show placement preview
-            const tempMarker = L.marker(map.getCenter(), {
-                icon: L.divIcon({
-                    className: 'custom-label temp',
-                    html: 'Klik om label te plaatsen',
-                    iconSize: null
-                }),
-                interactive: false // Not interactive for clicks that place the label
-            }).addTo(map);
-            map.tempLabelMarker = tempMarker; // Store reference to temp marker
-
-            // Update temp marker position on mouse move
-            map.on('mousemove', function(e) {
-                if (isPlacingLabel && map.tempLabelMarker) {
-                    map.tempLabelMarker.setLatLng(e.latlng);
-                }
+            // Topo_RD Basemap (no API key required)
+            const topoRD = new VectorTileLayer({
+                url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/Topo_RD/VectorTileServer"
             });
 
-            // Handle click to place label
-            map.once('click', placeLabelHandler);
+            const graphicsLayer = new GraphicsLayer();
 
-            // Handle click elsewhere to cancel (needs refinement to not interfere with placing)
-            // A better approach is to rely on the 'Esc' key or clicking the button again.
-            // Removing the map.once('click', ...) here and relying only on the one in placeLabelHandler is safer.
-        }
-
-        // Handler for placing the label after click
-        function placeLabelHandler(e) {
-            if (!isPlacingLabel) return; // Only proceed if placing is active
-
-            isPlacingLabel = false;
-            map.off('mousemove'); // Remove mousemove listener
-            if (map.tempLabelMarker && map.hasLayer(map.tempLabelMarker)) {
-                map.removeLayer(map.tempLabelMarker); // Remove temporary marker
-                delete map.tempLabelMarker;
-            }
-
-
-            const defaultText = `Label ${new Date().toLocaleTimeString()}`;
-            const labelText = prompt('Label tekst:', defaultText) || defaultText;
-
-            // If text is empty after prompt, cancel
-            if (!labelText) {
-                 alert('Label plaatsing geannuleerd');
-                 return;
-            }
-
-            const color = colorPicker.value;
-
-            // Create the actual label marker
-            const label = L.marker(e.latlng, {
-                icon: L.divIcon({
-                    className: 'custom-label',
-                    html: `
-                        <span>${labelText}</span>
-                        <div class="label-edit-icon" title="Bewerken">✏️</div>
-                    `,
-                    iconSize: null
-                }),
-                draggable: true
-            }).addTo(drawnItems);
-
-            // Apply initial color
-            updateLabelStyle(label);
-
-            // Store label properties on the layer object
-            label._labelText = labelText;
-            label._labelColor = color;
-
-            // Store label properties in feature for export
-            label.feature = {
-                type: 'Feature',
-                properties: {
-                    label: label._labelText,
-                    labelColor: label._labelColor,
-                    isLabel: true // Flag to identify labels on import
+            const map = new Map({
+                basemap: {
+                  baseLayers: [topoRD]
                 },
-                geometry: label.toGeoJSON().geometry
-            };
-
-            // Make label interactive (click to edit)
-            label.on('click', function(ev) {
-                // Check if the click was on the edit icon
-                if (ev.originalEvent.target.classList.contains('label-edit-icon')) {
-                    const newText = prompt('Bewerk label:', label._labelText);
-                    if (newText !== null) {
-                        label._labelText = newText;
-                        // Update the icon HTML
-                        label.setIcon(L.divIcon({
-                            className: 'custom-label',
-                            html: `
-                                <span>${newText}</span>
-                                <div class="label-edit-icon" title="Bewerken">✏️</div>
-                            `,
-                            iconSize: null
-                        }));
-                        // Update feature properties
-                        if (label.feature && label.feature.properties) {
-                            label.feature.properties.label = newText;
-                        }
-                        // Update label list if open
-                        if (document.getElementById('label-manager').style.display === 'block') {
-                             updateLabelList();
-                        }
-                    }
-                    ev.originalEvent.stopPropagation(); // Stop propagation to prevent map click
-                }
-                 // Allow dragging to work without triggering this click handler for the label itself
+                layers: [graphicsLayer]
             });
 
-             // Update feature geometry on dragend
-             label.on('dragend', function() {
-                  if (label.feature && label.feature.geometry) {
-                      label.feature.geometry = label.toGeoJSON().geometry;
-                  }
-             });
+            const view = new MapView({
+                container: "viewDiv",
+                map: map,
+                center: [4.7591, 52.9590], // Den Helder
+                zoom: 10,
+                locale: "nl"
+            });
 
+            // Feature layer for CBS Buurtgrenzen 2024
+            const buurtGrenzen = new FeatureLayer({
+                url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/CBS_Buurt_actueel/FeatureServer/0",
+                // Apply a simple outline style with no fill
+                renderer: {
+                    type: "simple",
+                    symbol: {
+                        type: "simple-fill",
+                        outline: {
+                            color: [1, 75, 107],  // Changed to #014b6b
+                            width: 1.5
+                        },
+                        color: null // No fill
+                    }
+                },
+                visible: false // Set to false to default to off
+            });
+            map.add(buurtGrenzen);
 
-            drawHistory.push(label); // Add to history
-            console.log("Label geplaatst:", label.toGeoJSON());
-
-            // Update label list if open
-            if (document.getElementById('label-manager').style.display === 'block') {
-                 updateLabelList();
-            }
-        }
-
-        // Helper function to update the style of a custom label marker
-        function updateLabelStyle(label) {
-             const el = label.getElement();
-             if (el) {
-                 el.style.backgroundColor = label._labelColor;
-                 // Calculate and apply contrast color for the border
-                 el.style.borderColor = getContrastColor(label._labelColor);
-             }
-        }
-
-        // Helper function to calculate a contrasting color (black or white)
-        function getContrastColor(hexColor) {
-            // Remove # if it exists
-            if (hexColor.startsWith('#')) {
-                hexColor = hexColor.slice(1);
-            }
-            // Parse hex to RGB
-            const r = parseInt(hexColor.substr(0, 2), 16);
-            const g = parseInt(hexColor.substr(2, 2), 16);
-            const b = parseInt(hexColor.substr(4, 2), 16);
-
-            // Calculate luminance (perceived brightness)
-            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-            // Use white for dark backgrounds, black for light backgrounds
-            return luminance > 0.5 ? '#000000' : '#ffffff';
-        }
-
-
-        function changeSelectedColor() {
-            if (!currentSelectedLayer) {
-                alert('Selecteer eerst een vorm door erop te klikken');
-                return;
-            }
-
-            const newColor = colorPicker.value;
-            const newOpacity = parseFloat(opacitySlider.value);
-
-            if (currentSelectedLayer instanceof L.Path) {
-                currentSelectedLayer.setStyle({
-                    color: newColor,
-                    fillColor: newColor,
-                    fillOpacity: newOpacity,
-                    weight: currentSelectedLayer instanceof L.Polyline ? 3 : 2
-                });
-
-                currentSelectedLayer.options.customStyle = {
-                    color: newColor,
-                    fillColor: newColor,
-                    fillOpacity: newOpacity,
-                    weight: currentSelectedLayer instanceof L.Polyline ? 3 : 2
-                };
-
-                if (!currentSelectedLayer.feature) {
-                    currentSelectedLayer.feature = {
-                        type: 'Feature',
-                        properties: {},
-                        geometry: currentSelectedLayer.toGeoJSON().geometry
-                    };
-                }
-                currentSelectedLayer.feature.properties.color = newColor;
-                currentSelectedLayer.feature.properties.fillColor = newColor;
-                currentSelectedLayer.feature.properties.fillOpacity = newOpacity;
-            }
-             // If a label marker is selected, update its color
-             if (currentSelectedLayer instanceof L.Marker && currentSelectedLayer._labelText) {
-                 currentSelectedLayer._labelColor = newColor;
-                 updateLabelStyle(currentSelectedLayer);
-                 // Update feature properties for export
-                 if (currentSelectedLayer.feature && currentSelectedLayer.feature.properties) {
-                     currentSelectedLayer.feature.properties.labelColor = newColor;
-                 }
-             }
-        }
-
-        // Map click handler for selecting layers
-        map.on('click', function(e) {
-            // Reset style of previously selected layer
-            if (currentSelectedLayer) {
-                if (currentSelectedLayer instanceof L.Path && currentSelectedLayer.options.customStyle) {
-                    currentSelectedLayer.setStyle(currentSelectedLayer.options.customStyle);
+            // Add button to toggle layer visibility
+            const toggleButton = document.getElementById("toggleBuurtGrenzen");
+            toggleButton.addEventListener("click", function() {
+                buurtGrenzen.visible = !buurtGrenzen.visible;
+                if (buurtGrenzen.visible) {
+                    toggleButton.textContent = "Verberg Buurtgrenzen";
                 } else {
-                    // Reset to default weight for shapes if no custom style
-                    if (currentSelectedLayer instanceof L.Path) {
-                        currentSelectedLayer.setStyle({
-                            weight: currentSelectedLayer instanceof L.Polyline ? 3 : 2
-                        });
+                    toggleButton.textContent = "Toon Buurtgrenzen";
+                }
+            });
+
+
+            // Sketch tool
+            const sketch = new Sketch({
+                layer: graphicsLayer,
+                view: view,
+                creationMode: "update",
+                availableCreateTools: ["point", "polyline", "polygon", "rectangle", "circle"],
+                polygonSymbol: {
+                    color: [ 255, 0, 0, 0.3 ],
+                    outline: {
+                        color: "#ff0000",
+                        width: 1
                     }
-                    // No visual reset needed for markers with custom icons or default markers
-                }
-            }
-
-            currentSelectedLayer = null; // Clear current selection
-
-            // Find the layer clicked on
-            drawnItems.eachLayer(function(layer) {
-                // Check if click is within bounds for shapes
-                if (layer instanceof L.Path && layer.getBounds && layer.getBounds().contains(e.latlng)) {
-                    currentSelectedLayer = layer;
-                }
-                 // Check if click is near a marker (including custom label markers)
-                 else if (layer instanceof L.Marker && layer.getLatLng().distanceTo(e.latlng) < 20) { // 20 pixels tolerance
-                    currentSelectedLayer = layer;
-                 }
-            });
-
-            // Highlight the newly selected layer (only for shapes)
-            if (currentSelectedLayer && currentSelectedLayer instanceof L.Path) {
-                currentSelectedLayer.setStyle({
-                    weight: 5,
-                    color: '#FFFF00' // Yellow border for selection
-                });
-                currentSelectedLayer.bringToFront(); // Bring selected layer to front
-            }
-             // No special highlighting for markers with custom icons or default markers needed here.
-        });
-
-
-        map.on('draw:created', (e) => {
-            const layer = e.layer;
-            const currentColor = colorPicker.value;
-            const currentOpacity = parseFloat(opacitySlider.value);
-
-            if (layer instanceof L.Path) {
-                layer.setStyle({
-                    color: currentColor,
-                    fillColor: currentColor,
-                    fillOpacity: currentOpacity,
-                    weight: layer instanceof L.Polyline ? 3 : 2
-                });
-                layer.options.customStyle = {
-                    color: currentColor,
-                    fillColor: currentColor,
-                    fillOpacity: currentOpacity,
-                    weight: layer instanceof L.Polyline ? 3 : 2
-                };
-                if (!layer.feature) {
-                    layer.feature = {
-                        type: 'Feature',
-                        properties: {},
-                        geometry: layer.toGeoJSON().geometry
-                    };
-                }
-                layer.feature.properties.color = currentColor;
-                layer.feature.properties.fillColor = currentColor;
-                layer.feature.properties.fillOpacity = currentOpacity;
-            }
-             // If it's a standard marker drawn by Leaflet Draw, you might want to add default properties
-             else if (layer instanceof L.Marker) {
-                  if (!layer.feature) {
-                      layer.feature = {
-                          type: 'Feature',
-                          properties: {},
-                          geometry: layer.toGeoJSON().geometry
-                      };
-                  }
-                  // Add a property to distinguish standard markers from custom labels if needed
-                  layer.feature.properties.type = 'standard_marker';
-             }
-
-
-            drawnItems.addLayer(layer);
-            drawHistory.push(layer);
-            const geojson = layer.toGeoJSON();
-            console.log("Nieuw object getekend:", geojson);
-
-             // Add click listener to the newly drawn layer for selection
-             layer.on('click', function(e) {
-                  L.DomEvent.stopPropagation(e); // Prevent map click event
-                  // Deselect previous layer if any
-                  if (currentSelectedLayer) {
-                       if (currentSelectedLayer instanceof L.Path && currentSelectedLayer.options.customStyle) {
-                            currentSelectedLayer.setStyle(currentSelectedLayer.options.customStyle);
-                        } else {
-                             if (currentSelectedLayer instanceof L.Path) {
-                                  currentSelectedLayer.setStyle({
-                                      weight: currentSelectedLayer instanceof L.Polyline ? 3 : 2
-                                  });
-                             }
-                        }
-                  }
-                  currentSelectedLayer = this;
-                  console.log("Geselecteerde laag:", currentSelectedLayer);
-
-                  // Highlight the newly selected layer (only for shapes)
-                  if (currentSelectedLayer instanceof L.Path) {
-                      currentSelectedLayer.setStyle({
-                          weight: 5,
-                          color: '#FFFF00' // Yellow border for selection
-                      });
-                      currentSelectedLayer.bringToFront(); // Bring selected layer to front
-                  }
-             });
-        });
-
-        map.on('draw:edited', (e) => {
-            e.layers.eachLayer((layer) => {
-                // Reapply custom style after editing if available
-                if (layer.options.customStyle) {
-                    layer.setStyle(layer.options.customStyle);
-                }
-                 // If the layer is a custom label marker, update its feature geometry on edit (drag)
-                 if (layer instanceof L.Marker && layer._labelText) {
-                      if (layer.feature && layer.feature.geometry) {
-                           layer.feature.geometry = layer.toGeoJSON().geometry;
-                      }
-                 }
-                const geojson = layer.toGeoJSON();
-                console.log("Object bewerkt:", geojson);
-            });
-        });
-
-        map.on('draw:deleted', (e) => {
-            e.layers.eachLayer((layer) => {
-                if (layer === currentSelectedLayer) {
-                    currentSelectedLayer = null;
-                }
-                 // If the deleted layer is a custom label marker, update the label list
-                 if (layer instanceof L.Marker && layer._labelText) {
-                      if (document.getElementById('label-manager').style.display === 'block') {
-                           updateLabelList();
-                      }
-                 }
-                const geojson = layer.toGeoJSON();
-                console.log("Object verwijderd:", geojson);
-                drawHistory = drawHistory.filter(l => l !== layer);
-            });
-        });
-
-        function toggleControlPanel() {
-            const panel = document.getElementById('control-panel');
-            panel.classList.toggle('collapsed');
-        }
-
-        // Functions for the Label Manager Panel
-        function toggleLabelManager() {
-            const manager = document.getElementById('label-manager');
-            manager.style.display = manager.style.display === 'block' ? 'none' : 'block';
-            if (manager.style.display === 'block') {
-                updateLabelList(); // Update the list when the manager is opened
-            }
-        }
-
-        function updateLabelList() {
-            const labelList = document.getElementById('label-list');
-            labelList.innerHTML = ''; // Clear the current list
-
-            // Iterate through all drawn layers and add labels to the list
-            drawnItems.eachLayer(layer => {
-                // Check if the layer is a custom label marker
-                if (layer instanceof L.Marker && layer._labelText) {
-                    const labelItem = document.createElement('div');
-                    labelItem.style.padding = '5px';
-                    labelItem.style.borderBottom = '1px solid #eee';
-                    labelItem.style.display = 'flex';
-                    labelItem.style.justifyContent = 'space-between';
-                    labelItem.style.alignItems = 'center'; // Vertically align items
-
-                    labelItem.innerHTML = `
-                        <span>${layer._labelText}</span>
-                        <div>
-                            <button class="control-button" style="margin-left: 5px; font-size: 10px; padding: 2px 5px;"
-                                    onclick="zoomToLabel(${L.stamp(layer)})">
-                                <i class="fas fa-search"></i>
-                            </button>
-                            <button class="control-button" style="margin-left: 5px; font-size: 10px; padding: 2px 5px;"
-                                    onclick="editLabelFromList(${L.stamp(layer)})">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="control-button clear-button" style="margin-left: 5px; font-size: 10px; padding: 2px 5px;"
-                                    onclick="removeLabel(${L.stamp(layer)})">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    `;
-
-                    labelList.appendChild(labelItem);
-                }
-            });
-        }
-
-        function zoomToLabel(id) {
-            drawnItems.eachLayer(layer => {
-                if (L.stamp(layer) === id && layer.getLatLng) {
-                    map.setView(layer.getLatLng(), 18); // Zoom to the label's location
-                    // Optional: Briefly highlight the label on the map
-                    const el = layer.getElement();
-                    if (el) {
-                         el.style.outline = '2px solid yellow';
-                         setTimeout(() => { el.style.outline = ''; }, 1000);
-                    }
-                }
-            });
-        }
-
-        function editLabelFromList(id) {
-            drawnItems.eachLayer(layer => {
-                if (L.stamp(layer) === id && layer._labelText) {
-                    const newText = prompt('Bewerk label:', layer._labelText);
-                    if (newText !== null) {
-                        layer._labelText = newText;
-                        // Update the icon HTML
-                        layer.setIcon(L.divIcon({
-                            className: 'custom-label',
-                            html: `
-                                <span>${newText}</span>
-                                <div class="label-edit-icon" title="Bewerken">✏️</div>
-                            `,
-                            iconSize: null
-                        }));
-                        // Update feature properties
-                        if (layer.feature && layer.feature.properties) {
-                            layer.feature.properties.label = newText;
-                        }
-                        updateLabelList(); // Refresh the list after editing
-                    }
-                }
-            });
-        }
-
-        function removeLabel(id) {
-            drawnItems.eachLayer(layer => {
-                if (L.stamp(layer) === id && layer instanceof L.Marker && layer._labelText) {
-                    drawnItems.removeLayer(layer); // Remove the label marker from the map
-                    drawHistory = drawHistory.filter(l => l !== layer); // Remove from history
-                    updateLabelList(); // Refresh the list after removal
-                    console.log("Label verwijderd:", layer.toGeoJSON());
-                }
-            });
-        }
-
-
-        function downloadGeoJSON() {
-            const geojson = drawnItems.toGeoJSON();
-            if (geojson.features.length === 0) {
-                alert('Geen objecten om te exporteren.');
-                return;
-            }
-
-            // Iterate through features and add custom properties from layers
-            geojson.features.forEach(feature => {
-                 // Find the corresponding layer in drawnItems using geometry comparison
-                 // Note: This can be slow for many layers. A more robust approach
-                 // would be to store a unique ID on each layer and feature.
-                 const correspondingLayer = drawnItems.getLayers().find(layer =>
-                      JSON.stringify(layer.toGeoJSON().geometry) === JSON.stringify(feature.geometry)
-                 );
-
-                 if (correspondingLayer) {
-                      // Ensure properties object exists
-                      if (!feature.properties) feature.properties = {};
-
-                      // Include custom style properties for shapes
-                      if (correspondingLayer.options.customStyle) {
-                          feature.properties.color = correspondingLayer.options.customStyle.color;
-                          feature.properties.fillColor = correspondingLayer.options.customStyle.fillColor;
-                          feature.properties.fillOpacity = correspondingLayer.options.customStyle.fillOpacity;
-                          feature.properties.weight = correspondingLayer.options.customStyle.weight;
-                      }
-
-                      // Include label properties for custom label markers
-                      if (correspondingLayer instanceof L.Marker && correspondingLayer._labelText) {
-                          feature.properties.label = correspondingLayer._labelText;
-                          feature.properties.labelColor = correspondingLayer._labelColor;
-                          feature.properties.isLabel = true; // Flag to identify labels on import
-                      }
-                       // Include label property if it was added directly to the feature properties
-                       // (e.g., from previous imports or manual feature property editing)
-                       else if (correspondingLayer.feature && correspondingLayer.feature.properties && correspondingLayer.feature.properties.label !== undefined) {
-                            feature.properties.label = correspondingLayer.feature.properties.label;
-                            if (correspondingLayer.feature.properties.labelColor !== undefined) {
-                                 feature.properties.labelColor = correspondingLayer.feature.properties.labelColor;
-                            }
-                            // If it's a point feature with a label property, assume it's a label marker
-                            if (feature.geometry.type === 'Point') {
-                                feature.properties.isLabel = true;
-                            }
-                       }
-                 }
-            });
-
-
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(geojson, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "drawn_features.geojson");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            document.body.removeChild(downloadAnchor); // Clean up the anchor element
-        }
-
-        function downloadShapefile() {
-            // Note: Shapefile format has limitations compared to GeoJSON (e.g., no styling, limited attribute types).
-            // Mapshaper is a good tool for conversion, but direct Shapefile export from Leaflet is complex.
-            // This function still directs to Mapshaper as a workaround.
-            window.open('https://mapshaper.org', '_blank');
-        }
-
-        function clearShapes() {
-            if (confirm('Weet je zeker dat je alle getekende objecten wilt verwijderen?')) {
-                // Remove all layers from the map (including custom label markers)
-                drawnItems.clearLayers();
-                // Clear the history
-                drawHistory = [];
-                currentSelectedLayer = null; // Clear selected layer
-                 // Clear the label list in the manager
-                 if (document.getElementById('label-manager').style.display === 'block') {
-                      updateLabelList();
-                 }
-                console.log("Alle objecten verwijderd.");
-            }
-        }
-
-        function undoLastDraw() {
-            if (drawHistory.length > 0) {
-                const lastLayer = drawHistory.pop(); // Get the last layer from history
-                // Remove the layer from the map (this handles both shapes and label markers)
-                drawnItems.removeLayer(lastLayer);
-
-                // If the undone layer was the selected one, clear selected layer
-                if (lastLayer === currentSelectedLayer) {
-                    currentSelectedLayer = null;
-                }
-                 // If the undone layer was a custom label marker, update the label list
-                 if (lastLayer instanceof L.Marker && lastLayer._labelText) {
-                      if (document.getElementById('label-manager').style.display === 'block') {
-                           updateLabelList();
-                      }
-                 }
-                console.log("Laatste object ongedaan gemaakt.");
-            } else {
-                alert('Geen objecten om ongedaan te maken.');
-            }
-        }
-
-        const searchInput = document.getElementById('search-input');
-        const searchButton = document.querySelector('.leaflet-search-button');
-        const searchCancel = document.querySelector('.leaflet-search-cancel');
-        const searchBar = document.getElementById('search-bar');
-        const searchResultsContainer = document.getElementById('search-results');
-        const searchResultsList = document.querySelector('#search-results ul');
-
-        let currentSearch = null;
-
-        searchInput.addEventListener('input', () => {
-            const searchTerm = searchInput.value.trim();
-            searchCancel.style.display = searchTerm ? 'inline-flex' : 'none';
-            searchResultsContainer.style.display = searchTerm ? 'block' : 'none';
-
-            if (searchTerm.length < 3) {
-                searchResultsList.innerHTML = '';
-                return;
-            }
-
-            if (currentSearch) {
-                clearTimeout(currentSearch);
-            }
-
-            currentSearch = setTimeout(() => {
-                fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(searchTerm)}&countrycodes=nl`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data && data.length > 0) {
-                            const results = data.map(item => ({
-                                name: item.display_name,
-                                center: L.latLng(item.lat, item.lon),
-                                properties: item
-                            }));
-                            displaySearchResults(results);
-                        } else {
-                            searchResultsList.innerHTML = '<li>Geen resultaten gevonden</li>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Fout:', error);
-                        searchResultsList.innerHTML = '<li>Er is een fout opgetreden</li>';
-                    });
-            }, 300);
-        });
-
-        function displaySearchResults(results) {
-            searchResultsList.innerHTML = '';
-            results.forEach(result => {
-                const li = document.createElement('li');
-                li.textContent = result.name;
-                li.addEventListener('click', () => {
-                    searchInput.value = result.name;
-                    searchResultsContainer.style.display = 'none';
-                    const rdCoords = proj4('EPSG:4326', 'EPSG:28992', [result.center.lng, result.center.lat]);
-                    const marker = L.marker(result.center, {
-                        icon: new L.Icon.Default()
-                    }).bindPopup(result.name + '<br/>RD X: ' + rdCoords[0].toFixed(2) + '<br/>RD Y: ' + rdCoords[1].toFixed(2));
-                    drawnItems.addLayer(marker);
-                    drawHistory.push(marker);
-                    marker.openPopup();
-                    map.setView(result.center, 16);
-                    console.log("Zoekmarker toegevoegd:", marker.toGeoJSON());
-                });
-                searchResultsList.appendChild(li);
-            });
-            searchResultsContainer.style.display = 'block';
-        }
-
-        searchButton.addEventListener('click', () => {
-            const searchTerm = searchInput.value.trim();
-            if (searchTerm) {
-                searchBar.classList.add('searching');
-                fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(searchTerm)}&countrycodes=nl`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data && data.length > 0) {
-                            const result = data.map(item => ({
-                                name: item.display_name,
-                                center: L.latLng(item.lat, item.lon),
-                                properties: item
-                            }))[0];
-                            const latlng = result.center;
-                            const rdCoords = proj4('EPSG:4326', 'EPSG:28992', [latlng.lng, latlng.lat]);
-                            const marker = L.marker(latlng, {
-                                icon: new L.Icon.Default()
-                            }).bindPopup(result.name + '<br/>RD X: ' + rdCoords[0].toFixed(2) + '<br/>RD Y: ' + rdCoords[1].toFixed(2));
-                            drawnItems.addLayer(marker);
-                            drawHistory.push(marker);
-                            marker.openPopup();
-                            map.setView(L.latLng(latlng), 16);
-                            console.log("Zoekmarker toegevoegd:", marker.toGeoJSON());
-                        } else {
-                            alert('Locatie niet gevonden');
-                        }
-                        searchBar.classList.remove('searching');
-                        searchCancel.style.display = 'none';
-                    })
-                    .catch(error => {
-                        console.error('Fout:', error);
-                        alert('Er is een fout opgetreden tijdens het zoeken');
-                        searchBar.classList.remove('searching');
-                        searchCancel.style.display = 'none';
-                    });
-            }
-        });
-
-        searchCancel.addEventListener('click', () => {
-            searchInput.value = '';
-            searchBar.classList.remove('searching');
-            searchCancel.style.display = 'none';
-            searchResultsContainer.style.display = 'none';
-            searchResultsList.innerHTML = '';
-        });
-
-        // Function to load GeoJSON data onto the map
-        function loadGeoJSON(geojson) {
-            const geojsonLayer = L.geoJSON(geojson, {
-                pointToLayer: function(feature, latlng) {
-                    // If the feature is flagged as a label, create a custom label marker
-                    if (feature.properties?.isLabel) {
-                        const label = L.marker(latlng, {
-                            icon: L.divIcon({
-                                className: 'custom-label',
-                                html: `
-                                    <span>${feature.properties.label || ''}</span>
-                                    <div class="label-edit-icon" title="Bewerken">✏️</div>
-                                `,
-                                iconSize: null
-                            }),
-                            draggable: true
-                        });
-                        // Store properties on the layer
-                        label._labelText = feature.properties.label || '';
-                        label._labelColor = feature.properties.labelColor || colorPicker.value;
-                        // Apply initial style
-                        updateLabelStyle(label);
-
-                        // Add click listener for editing
-                        label.on('click', function(ev) {
-                             if (ev.originalEvent.target.classList.contains('label-edit-icon')) {
-                                 const newText = prompt('Bewerk label:', label._labelText);
-                                 if (newText !== null) {
-                                     label._labelText = newText;
-                                     label.setIcon(L.divIcon({
-                                         className: 'custom-label',
-                                         html: `
-                                             <span>${newText}</span>
-                                             <div class="label-edit-icon" title="Bewerken">✏️</div>
-                                         `,
-                                         iconSize: null
-                                     }));
-                                     // Update feature properties
-                                     if (label.feature && label.feature.properties) {
-                                         label.feature.properties.label = newText;
-                                     }
-                                     // Update label list if open
-                                     if (document.getElementById('label-manager').style.display === 'block') {
-                                          updateLabelList();
-                                     }
-                                 }
-                                 ev.originalEvent.stopPropagation();
-                             }
-                        });
-                        // Update feature geometry on dragend
-                        label.on('dragend', function() {
-                             if (label.feature && label.feature.geometry) {
-                                 label.feature.geometry = label.toGeoJSON().geometry;
-                             }
-                        });
-
-                        return label; // Return the custom label marker
-                    }
-                    // Otherwise, return a standard marker for other points
-                    return L.marker(latlng);
                 },
-                style: function(feature) {
-                    // Apply style from properties if available, otherwise use default/current color picker value
-                    const color = feature.properties?.color || colorPicker.value;
-                    return {
-                        color: color,
-                        fillColor: feature.properties?.fillColor || color,
-                        fillOpacity: feature.properties?.fillOpacity || parseFloat(opacitySlider.value),
-                        weight: feature.geometry.type === 'LineString' ? 3 : 2
-                    };
+                polylineSymbol: {
+                    color: "#ff0000",
+                    width: 2
                 },
-                onEachFeature: function(feature, layer) {
-                    // Bind popup with properties if available (excluding label properties)
-                    if (feature.properties) {
-                        let popupContent = '';
-                        for (const key in feature.properties) {
-                            // Exclude label properties from the popup
-                            if (key !== 'label' && key !== 'labelColor' && key !== 'isLabel') {
-                                popupContent += `<strong>${key}:</strong> ${feature.properties[key]}<br>`;
-                            }
-                        }
-                        if (popupContent) {
-                             layer.bindPopup(popupContent);
-                        }
+                pointSymbol: {
+                    color: "#ff0000",
+                    size: 8,
+                    type: "simple-marker"
+                }
+            });
 
-                        // Store the custom style options from properties if available
-                        if (feature.properties.color || feature.properties.fillColor || feature.properties.fillOpacity || feature.properties.weight) {
-                            layer.options.customStyle = {
-                                color: feature.properties.color,
-                                fillColor: feature.properties.fillColor,
-                                fillOpacity: feature.properties.fillOpacity,
-                                weight: feature.properties.weight
+            // Sketch Expand widget (collapsible)
+            const sketchExpand = new Expand({
+                view: view,
+                content: sketch,
+                expandTooltip: "Schets tekenen",
+                expandIconClass: "esri-icon-edit", // valid icon
+                expanded: false
+            });
+
+
+            // Measurement tools
+            let distanceWidget = new DistanceMeasurement2D({
+                view: view,
+                unit: "meters",
+                labelFormatFunction: function(value, unit) {
+                    return value.toFixed(2) + " " + unit;
+                }
+            });
+            let areaWidget = new AreaMeasurement2D({
+                view: view,
+                unit: "square-meters",
+                labelFormatFunction: function(value, unit) {
+                    return value.toFixed(2) + " m²";
+                }
+            });
+
+            const distanceExpand = new Expand({
+                view,
+                content: distanceWidget,
+                expandTooltip: "Afstand meten",
+                expanded: false
+            });
+
+            const areaExpand = new Expand({
+                view,
+                content: areaWidget,
+                expandTooltip: "Oppervlakte meten",
+                expanded: false
+            });
+
+            // Basemap Gallery
+            const basemapGallery = new BasemapGallery({
+                view: view,
+                heading: "Selecteer een Basemap"
+            });
+            const basemapExpandWidget = new Expand({
+                view: view,
+                content: basemapGallery,
+                expandIcon: "basemap",
+                expandTooltip: "Basemap wisselen",
+                expanded: false
+            });
+
+            function clearMeasurements() {
+                distanceWidget.destroy();
+                areaWidget.destroy();
+                distanceWidget = new DistanceMeasurement2D({
+                    view: view,
+                    unit: "meters",
+                    labelFormatFunction: function(value, unit) {
+                        return value.toFixed(2) + " " + unit;
+                    }
+                });
+                areaWidget = new AreaMeasurement2D({
+                    view: view,
+                    unit: "square-meters",
+                    labelFormatFunction: function(value, unit) {
+                        return value.toFixed(2) + " m²";
+                    }
+                });
+                distanceExpand.content = distanceWidget;
+                areaExpand.content = areaWidget;
+            }
+
+            // Create a button to clear the measurements
+            const clearMeasurementsButton = document.createElement("button");
+            clearMeasurementsButton.innerHTML = "Metingen wissen";
+            clearMeasurementsButton.className = "esri-widget esri-button";
+            clearMeasurementsButton.addEventListener("click", clearMeasurements);
+
+
+            // PDOK Locatieserver Search
+            const pdokSearch = new Search({
+                view: view,
+                placeholder: "Zoek een adres...", // Dutch placeholder
+                sources: [
+                    {
+                        locator: {
+                            url: "https://geodata.nationaalgeoregister.nl/locatieserver/v3/suggest"
+                        },
+                        outFields: ["完整地址", "TYPE"],
+                        name: "PDOK Locatieserver",
+                        autoSelect: true,
+                        resultTemplate: "{完整地址}",
+                        zoom: 17,
+                        // Custom search function to handle PDOK's specific query parameters and response structure.
+                        search: function(params) {
+                            const suggestUrl = "https://geodata.nationaalgeoregister.nl/locatieserver/v3/suggest";
+                            const lookupUrl = "https://geodata.nationaalgeoregister.nl/locatieserver/v3/lookup";
+
+                            // 1. Suggest Service: Get suggestions based on input
+                            const suggestParams = {
+                                zoek: params.searchTerm,
+                                fq: "type:adres",
+                                wt: "json"
                             };
-                        }
 
-                        // Store the feature properties on the layer for easier access (e.g., for export)
-                        layer.feature = feature;
+                            // Build the full URL for the suggest service request.
+                            const suggestFullUrl = suggestUrl + "?" + Object.entries(suggestParams)
+                                .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+                                .join("&");
 
-                    }
-
-                    // Add click listener to loaded layer for selection
-                    layer.on('click', function(e) {
-                         L.DomEvent.stopPropagation(e); // Prevent map click event
-                         // Deselect previous layer if any
-                         if (currentSelectedLayer) {
-                              if (currentSelectedLayer instanceof L.Path && currentSelectedLayer.options.customStyle) {
-                                   currentSelectedLayer.setStyle(currentSelectedLayer.options.customStyle);
-                               } else {
-                                    if (currentSelectedLayer instanceof L.Path) {
-                                         currentSelectedLayer.setStyle({
-                                             weight: currentSelectedLayer instanceof L.Polyline ? 3 : 2
-                                         });
+                            return fetch(suggestFullUrl)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error("Failed to fetch suggestions");
                                     }
-                               }
-                         }
-                         currentSelectedLayer = this;
-                         console.log("Geselecteerde laag:", currentSelectedLayer);
+                                    return response.json();
+                                })
+                                .then(suggestData => {
+                                    if (!suggestData.response || suggestData.response.numFound === 0) {
+                                        return []; // Return empty array if no suggestions
+                                    }
+                                    // 2. Lookup Service: Get detailed results for each suggestion.
+                                    const lookupPromises = suggestData.response.docs.map(suggestDoc => {
+                                        const lookupParams = {
+                                            id: suggestDoc.id,
+                                            wt: "json"
+                                        };
+                                        const lookupFullUrl = lookupUrl + "?" + Object.entries(lookupParams)
+                                            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+                                            .join("&");
 
-                         // Highlight the newly selected layer (only for shapes)
-                         if (currentSelectedLayer instanceof L.Path) {
-                             currentSelectedLayer.setStyle({
-                                 weight: 5,
-                                 color: '#FFFF00' // Yellow border for selection
-                             });
-                             currentSelectedLayer.bringToFront(); // Bring selected layer to front
-                         }
-                         // No special highlighting for markers with custom icons or default markers needed here.
-                    });
+                                        return fetch(lookupFullUrl)
+                                            .then(response => {
+                                                if (!response.ok) {
+                                                    throw new Error("Failed to fetch lookup details");
+                                                }
+                                                return response.json();
+                                            });
+                                    });
+                                    return Promise.all(lookupPromises); // Resolve all lookup promises
+                                })
+                                .then(lookupResults => {
+                                    // Format the results in the structure that the ArcGIS API expects.
+                                    const formattedResults = lookupResults.flatMap(lookupData => {
+                                        if (lookupData.response && lookupData.response.docs) {
+                                            return lookupData.response.docs.map(doc => ({
+                                                name: doc.完整地址,
+                                                location: {
+                                                    x: doc.centroide_rd.x,
+                                                    y: doc.centroide_rd.y
+                                                }
+                                            }));
+                                        }
+                                        return [];
+                                    });
+                                     // Add this inside the search function, before returning the formatted results
+                                        formattedResults.forEach(result => {
+                                            const point = {
+                                                type: "point",
+                                                x: result.location.x,
+                                                y: result.location.y
+                                            };
 
-                    // Add the loaded layer to drawn items and history
-                    drawnItems.addLayer(layer);
-                    drawHistory.push(layer);
-                }
+                                            const markerSymbol = {
+                                                type: "simple-marker",
+                                                color: [255, 0, 0],  // Red
+                                                outline: {
+                                                    color: [255, 255, 255], // White
+                                                    width: 1
+                                                },
+                                                size: 12
+                                            };
+
+                                            const graphic = new Graphic({
+                                                geometry: point,
+                                                symbol: markerSymbol
+                                            });
+                                            graphicsLayer.add(graphic);
+                                        });
+                                    return formattedResults;
+                                })
+                                .catch(error => {
+                                    console.error("Error in PDOK search:", error);
+                                    return []; // Return empty array on error to avoid breaking the map
+                                });
+                        }
+                    }
+                ]
             });
 
-            // Add the created geojsonLayer to the map (this also adds all features within it)
-            geojsonLayer.addTo(map);
+            // Search Expand widget (collapsible)
+            const searchExpand = new Expand({
+                view: view,
+                content: pdokSearch,
+                expandTooltip: "Zoeken",
+                expandIconClass: "esri-icon-search",
+                expanded: false
+            });
 
-            // Zoom to the extent of the loaded GeoJSON layers
-            if (geojsonLayer.getBounds().isValid()) {
-                map.fitBounds(geojsonLayer.getBounds());
-            }
-             // Update label list if manager is open after loading
-             if (document.getElementById('label-manager').style.display === 'block') {
-                  updateLabelList();
-             }
-            console.log("GeoJSON geladen:", geojson);
-        }
+            // Create an instance of the Track widget
+            const track = new Track({
+                view: view
+            });
 
 
-        document.getElementById('file-input').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+            // Add the button to the view
+            view.ui.add(clearMeasurementsButton, "bottom-left");
+            view.ui.add(searchExpand, "top-right"); // Collapsible Search
+            view.ui.add(track, "top-right");
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const geojson = JSON.parse(e.target.result);
-                    loadGeoJSON(geojson); // Use the new loadGeoJSON function
-                } catch (error) {
-                    console.error("Fout bij parsen GeoJSON:", error);
-                    alert("Fout bij het importeren: Ongeldig GeoJSON bestand");
-                }
-            };
-            reader.readAsText(file);
-            e.target.value = ''; // Clear the file input
+
+            // UI Additions.  Added colorDiv to the top-right
+            view.ui.add(sketchExpand, "top-right"); // Collapsible Sketch
+            view.ui.add(basemapExpandWidget, "top-right"); // Moved below sketch
+            view.ui.add(distanceExpand, "bottom-left");
+            view.ui.add(areaExpand, "bottom-left");
+
         });
-
-        document.getElementById('shp-file-input').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    shp(e.target.result).then(function(geojson) {
-                         loadGeoJSON(geojson); // Use the new loadGeoJSON function
-                    }).catch(function(error) {
-                        console.error("Fout bij parsen Shapefile:", error);
-                        alert("Fout bij het importeren: Ongeldig Shapefile (ZIP-bestand vereist)");
-                    });
-                } catch (error) {
-                    console.error("Fout bij lezen Shapefile:", error);
-                    alert("Fout bij het importeren: Ongeldig Shapefile");
-                }
-            };
-            reader.readAsArrayBuffer(file);
-            e.target.value = ''; // Clear the file input
-        });
-
-        const handleDragOver = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('map').classList.add('drag-over');
-        };
-
-        const handleDragLeave = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('map').classList.remove('drag-over');
-        };
-
-        const handleDrop = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('map').classList.remove('drag-over');
-
-            const file = e.dataTransfer.files[0];
-            if (!file) return;
-
-            if (file.name.endsWith('.geojson') || file.name.endsWith('.json')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const geojson = JSON.parse(e.target.result);
-                        loadGeoJSON(geojson); // Use the new loadGeoJSON function
-                    } catch (error) {
-                        console.error("Fout bij parsen GeoJSON:", error);
-                        alert("Fout bij het importeren: Ongeldig GeoJSON bestand");
-                    }
-                };
-                reader.readAsText(file);
-            } else if (file.name.endsWith('.zip')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        shp(e.target.result).then(function(geojson) {
-                            loadGeoJSON(geojson); // Use the new loadGeoJSON function
-                        }).catch(function(error) {
-                            console.error("Fout bij parsen Shapefile:", error);
-                            alert("Fout bij het importeren: Ongeldig Shapefile (ZIP-bestand vereist)");
-                        });
-                    } catch (error) {
-                        console.error("Fout bij lezen Shapefile:", error);
-                        alert("Fout bij het importeren: Ongeldig Shapefile");
-                    }
-                };
-                reader.readAsArrayBuffer(file);
-            } else {
-                alert("Alleen GeoJSON (.geojson, .json) of Shapefile (.zip) bestanden worden ondersteund");
-            }
-        };
-
-        map.getContainer().addEventListener('dragover', handleDragOver);
-        map.getContainer().addEventListener('dragleave', handleDragLeave);
-        map.getContainer().addEventListener('drop', handleDrop);
-
-         // Clear selected layer when clicking on the map itself (not on a layer)
-         map.on('click', function(e) {
-             // Check if the click originated from a Leaflet layer.
-             // If e.originalEvent.target is the map container, it was a click on the map background.
-             const clickedElement = e.originalEvent.target;
-             const isLeafletLayer = clickedElement.classList.contains('leaflet-interactive') || clickedElement.closest('.leaflet-marker-icon');
-
-             if (!isLeafletLayer && clickedElement === map.getContainer()) {
-                 // Reset style of previously selected layer before clearing selection
-                 if (currentSelectedLayer) {
-                      if (currentSelectedLayer instanceof L.Path && currentSelectedLayer.options.customStyle) {
-                           currentSelectedLayer.setStyle(currentSelectedLayer.options.customStyle);
-                       } else {
-                            if (currentSelectedLayer instanceof L.Path) {
-                                 currentSelectedLayer.setStyle({
-                                     weight: currentSelectedLayer instanceof L.Polyline ? 3 : 2
-                                 });
-                            }
-                       }
-                 }
-                 currentSelectedLayer = null;
-                 console.log("Geselecteerde laag: Geen");
-             }
-         });
-
-         // Keyboard Shortcuts
-         document.addEventListener('keydown', function(e) {
-             // Ctrl+L to start/cancel label placement
-             if (e.ctrlKey && e.key === 'l') {
-                 e.preventDefault(); // Prevent default browser shortcut
-                 startPlacingLabel();
-             }
-
-             // Esc to cancel label placement
-             if (e.key === 'Escape' && isPlacingLabel) {
-                 e.preventDefault(); // Prevent default browser action
-                 isPlacingLabel = false;
-                 map.off('click', placeLabelHandler); // Remove click handler
-                 map.off('mousemove'); // Remove mousemove handler
-                 // Remove temporary marker if it exists
-                 if (map.tempLabelMarker && map.hasLayer(map.tempLabelMarker)) {
-                     map.removeLayer(map.tempLabelMarker);
-                     delete map.tempLabelMarker;
-                 }
-                 alert('Label plaatsing geannuleerd');
-             }
-         });
-
-
     </script>
 </body>
 </html>
