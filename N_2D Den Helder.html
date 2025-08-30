@@ -30,22 +30,6 @@
             width: 100%; /* Full viewport width */
         }
 
-        /* Logo positioning and styling */
-        #logo-container {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000; /* Ensure logo is above the map */
-            background: white;
-            padding: 8px;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-        }
-
-        #logo-container img {
-            height: 80px; /* Adjusted logo size */
-        }
 
         /* Control Panel (Drawing Tools) positioning and styling */
         .control-panel {
@@ -443,14 +427,6 @@
                 bottom: 60px;
             }
 
-            #logo-container {
-                top: 5px;
-                padding: 5px;
-            }
-
-            #logo-container img {
-                height: 40px;
-            }
 
             .leaflet-control {
                 margin: 5px !important;
@@ -483,9 +459,6 @@
 </head>
 <body>
     <div id="map"></div>
-    <div id="logo-container">
-        <img src="https://www.multibel.eu/wp-content/uploads/gemeente-den-helder-app-quote-500x383.png" alt="Den Helder Logo">
-    </div>
     <div class="control-panel collapsed" id="control-panel">
         <h3 onclick="toggleControlPanel()"><i class="fas fa-pencil-alt"></i> Tekentools</h3>
         <div id="color-selector">
