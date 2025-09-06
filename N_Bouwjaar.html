@@ -30,7 +30,7 @@
 
         const layer = new FeatureLayer({
           url: "https://basisregistraties.arcgisonline.nl/arcgis/rest/services/BAG/BAGv3/FeatureServer/4", 
-          outFields: ["bouwjaar"], 
+          outFields: ["bouwjaar", "Identificatie"], // 'Identificatie' toegevoegd voor het filter
           minScale: 72223.819286,
           //definitionExpression: "bouwjaar < 2000"
         });
@@ -38,7 +38,7 @@
         // Define the PopupTemplate
         const popupTemplate = new PopupTemplate({
           title: "Gegevens van het gebouw",
-          content: "<b>Bouwjaar:</b> {bouwjaar}", // Use the "bouwjaar" field for popup content
+          content: "<b>Bouwjaar:</b> {bouwjaar}<br><b>Identificatie:</b> {Identificatie}", // Toegevoegde identificatie in de popup
         });
 
         // Assign the popupTemplate to the layer
@@ -82,7 +82,7 @@
             },
             {
               minValue: 2000.01,
-              maxValue: 2024,
+              maxValue: 2025,
               symbol: new SimpleFillSymbol({
                 color: "#00ffff", // Cyaan neon
                 outline: {
@@ -124,7 +124,7 @@
         const slider = new Slider({
           container: "slider",
           min: 1800, 
-          max: 2024, 
+          max: 2025, 
           values: [1990],
           step: 1,
           visibleElements: {
@@ -160,7 +160,8 @@
         //--------------------------------------------------------------------------
 
         function setYear(year) {
-          const filterExpression = "bouwjaar <= " + year;
+          // De filterexpressie combineert nu bouwjaar en identificatie
+          const filterExpression = "bouwjaar <= " + year + " AND Identificatie LIKE '0400%'";
           layer.definitionExpression = filterExpression;
           view.whenLayerView(layer).then((layerView) => {
             layerView.filter = {
