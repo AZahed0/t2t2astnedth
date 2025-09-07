@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenStreetMap Geocode Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        #controls {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 350px;
+            min-width: 300px;
+        }
+
+        #map-container {
+            flex-grow: 1;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        #map {
+            height: 600px;
+            border-radius: 12px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #475569;
+        }
+
+        input[type="file"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="file"]:focus, textarea:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+
+        textarea {
+            min-height: 150px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+        
+        #downloadLink {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        #downloadLink a {
+            display: block;
+            padding: 10px;
+            background-color: #10b981;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+        }
+        
+        .message-box {
+            background-color: #e2e8f0;
+            color: #475569;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        #progressBarContainer {
+            display: none;
+            margin-top: 10px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        #progressBar {
+            width: 0%;
+            height: 10px;
+            background: #3b82f6;
+            transition: width 0.3s ease-in-out;
+        }
+
+    </style>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+    <div id="controls">
+        <h2>OSM Reverse Geocode Tool</h2>
+        <div class="message-box" id="messageBox"></div>
+
+        <label for="geojson-input">Plak GeoJSON hieronder of upload een bestand:</label>
+        <textarea id="geojson-input">
+{
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [4.7610, 52.9649]
+        }
+      }
+    ]
+}
+        </textarea>
+        <input type="file" id="file-upload" accept=".geojson, .json">
+        
+        <div class="button-group">
+            <button id="geocode-button">Start Geocoding</button>
+            <button id="download-button" disabled>Download GeoJSON</button>
+        </div>
+
+        <div id="progressBarContainer">
+          <div id="progressBar"></div>
+        </div>
+    </div>
+    
+    <div id="map-container">
+        <div id="map"></div>
+    </div>
+
+    <script>
+        const map = L.map('map').setView([52.9649, 4.7610], 13);
+        const featureLayer = L.geoJSON().addTo(map);
+
+        // Basemaps
+        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+
+        const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles © Esri'
+        });
+
+        const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; CARTO'
+        });
+
+        // Init map with OSM by default
+        osm.addTo(map);
+
+        // Add basemap switcher
+        L.control.layers({
+            "OpenStreetMap": osm,
+            "Esri Satellite": esri,
+            "Carto Light": carto
+        }).addTo(map);
+
+        const geocodeButton = document.getElementById('geocode-button');
+        const downloadButton = document.getElementById('download-button');
+        const fileUpload = document.getElementById('file-upload');
+        const geojsonInput = document.getElementById('geojson-input');
+        const messageBox = document.getElementById('messageBox');
+        const progressBarContainer = document.getElementById('progressBarContainer');
+        const progressBar = document.getElementById('progressBar');
+        let geocodedData = null;
+
+        function showMessage(text, isError = false) {
+            messageBox.textContent = text;
+            messageBox.style.display = 'block';
+            messageBox.style.backgroundColor = isError ? '#fecaca' : '#d1e8f9';
+            messageBox.style.color = isError ? '#b91c1c' : '#1e40af';
+        }
+
+        function setProgressBar(progress) {
+            progressBar.style.width = `${progress}%`;
+            progressBarContainer.style.display = 'block';
+        }
+
+        function hideProgressBar() {
+            progressBarContainer.style.display = 'none';
+        }
+
+        // Lees het bestand als de gebruiker er een uploadt
+        fileUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    geojsonInput.value = event.target.result;
+                    showMessage('Bestand succesvol geladen.', false);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Start de geocoding
+        geocodeButton.addEventListener('click', async () => {
+            geocodeButton.disabled = true;
+            downloadButton.disabled = true;
+            hideProgressBar();
+            showMessage('Bezig met geocoden, een ogenblik geduld...', false);
+            
+            try {
+                const geojson = JSON.parse(geojsonInput.value);
+                if (geojson.type !== 'FeatureCollection' || !Array.isArray(geojson.features)) {
+                    throw new Error('Ongeldig GeoJSON-formaat. Het moet een FeatureCollection zijn.');
+                }
+                
+                // Filter all features that have a geometry
+                const features = geojson.features.filter(f => f.geometry);
+                
+                if (features.length === 0) {
+                    showMessage('Geen geometrieën gevonden in het GeoJSON-bestand.', true);
+                    throw new Error('Geen geometrieën gevonden.');
+                }
+
+                const updatedFeatures = [];
+                for (let i = 0; i < features.length; i++) {
+                    const feature = features[i];
+                    let lon, lat;
+
+                    // Compute a representative coordinate for reverse geocoding
+                    if (feature.geometry.type === "Point") {
+                        [lon, lat] = feature.geometry.coordinates;
+                    } else if (feature.geometry.type === "LineString") {
+                        // Use the middle vertex for LineString
+                        const coords = feature.geometry.coordinates;
+                        const midIndex = Math.floor(coords.length / 2);
+                        [lon, lat] = coords[midIndex];
+                    } else if (feature.geometry.type === "Polygon") {
+                        // Compute centroid of the first ring for Polygon
+                        const ring = feature.geometry.coordinates[0];
+                        let x = 0, y = 0;
+                        for (const [cx, cy] of ring) {
+                            x += cx;
+                            y += cy;
+                        }
+                        lon = x / ring.length;
+                        lat = y / ring.length;
+                    } else {
+                        // Skip unsupported geometries and continue loop
+                        continue; 
+                    }
+
+                    // Show progress per point
+                    showMessage(`Bezig met geocoden punt ${i + 1} van ${features.length}...`);
+                    setProgressBar(((i + 1) / features.length) * 100);
+
+                    // Correcte Nominatim reverse geocoding API
+                    const apiUrl = `https://nominatim.openstreetmap.org/reverse`;
+                    const params = new URLSearchParams({
+                        'lat': lat,
+                        'lon': lon,
+                        'format': 'jsonv2',
+                        'addressdetails': '1',
+                        'accept-language': 'nl'
+                    });
+
+                    const response = await fetch(`${apiUrl}?${params.toString()}`);
+                    if (!response.ok) {
+                        throw new Error(`Nominatim API error: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    
+                    const newProperties = feature.properties || {};
+                    if (data?.address) {
+                        const address = data.address;
+                        const street = address.road || '';
+                        const number = address.house_number || '';
+                        const postalCode = address.postcode || '';
+                        const city = address.city || address.town || address.village || '';
+                        
+                        const fullAdres = `${street} ${number}, ${postalCode} ${city}`.trim();
+                        
+                        newProperties.adres = `${street} ${number}`.trim();
+                        newProperties.full_adres = fullAdres;
+                        newProperties.straat = street;
+                        newProperties.huisnummer = number;
+                        newProperties.postcode = postalCode;
+                        newProperties.woonplaats = city;
+                    } else {
+                        newProperties.adres = 'Geen adres gevonden';
+                        newProperties.full_adres = 'Geen volledig adres gevonden';
+                    }
+                    
+                    updatedFeatures.push({ ...feature, properties: newProperties });
+                }
+
+                geocodedData = {
+                    ...geojson,
+                    features: updatedFeatures
+                };
+                
+                // Update de kaart
+                featureLayer.clearLayers();
+                
+                // Set style for LineString and Polygon geometries
+                featureLayer.options.style = {
+                    color: "#2563eb",
+                    weight: 3,
+                    opacity: 0.8
+                };
+                
+                featureLayer.addData(geocodedData);
+
+                if (featureLayer.getBounds().isValid()) {
+                    map.fitBounds(featureLayer.getBounds());
+                } else {
+                    map.setView([52.9649, 4.7610], 13);
+                }
+
+                // Add popups to each marker, line, and polygon
+                featureLayer.eachLayer(layer => {
+                    if (layer.feature && layer.feature.properties) {
+                        const props = layer.feature.properties;
+                        layer.bindPopup(`
+                            <strong>${props.full_adres || 'Geen adres gevonden'}</strong><br>
+                            Straat: ${props.straat || ''} ${props.huisnummer || ''}<br>
+                            Postcode: ${props.postcode || ''}<br>
+                            Woonplaats: ${props.woonplaats || ''}
+                        `);
+                    }
+                });
+
+                showMessage(`Succes! ${updatedFeatures.length} punten zijn geocoded.`);
+                downloadButton.disabled = false;
+                hideProgressBar();
+
+            } catch (error) {
+                console.error(error);
+                showMessage(`Er is een fout opgetreden: ${error.message}`, true);
+                hideProgressBar();
+            } finally {
+                geocodeButton.disabled = false;
+            }
+        });
+
+        // Download het bijgewerkte GeoJSON-bestand
+        downloadButton.addEventListener('click', () => {
+            if (geocodedData) {
+                const dataStr = JSON.stringify(geocodedData, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'geocoded_points.geojson';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+        });
+    </script>
+</body>
+</html>
