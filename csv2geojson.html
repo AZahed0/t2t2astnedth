@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV naar GeoJSON Kaart Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+          xintegrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+          crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+            xintegrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+            crossorigin=""></script>
+    <script src="https://unpkg.com/papaparse@5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js"></script>
+    <script src="https://unpkg.com/proj4leaflet@1.0.1/src/proj4leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #map {
+            height: 70vh;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .legend {
+            padding: 10px;
+            background: white;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            line-height: 1.5;
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .layer-control {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2 flex items-center">
+            <i class="fas fa-map-marked-alt text-blue-600 mr-3"></i>CSV naar GeoJSON Kaart Tool
+        </h1>
+        <p class="text-gray-600 mb-6">Upload een CSV-bestand, kies coördinaatvelden, en visualiseer uw gegevens op de kaart.</p>
+
+        <!-- Control Panel -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <!-- File Upload -->
+                <div>
+                    <label for="csv-file" class="block text-sm font-medium text-gray-700 mb-1">
+                        <span class="step-number">1</span>Upload CSV Bestand
+                    </label>
+                    <input type="file" id="csv-file" accept=".csv" class="mt-1 block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-blue-50 file:text-blue-700
+                                hover:file:bg-blue-100"/>
+                    <p class="text-xs text-gray-500 mt-1">Alleen .csv bestanden</p>
+                </div>
+
+                <!-- X Field Dropdown -->
+                <div>
+                    <label for="x-field" class="block text-sm font-medium text-gray-700 mb-1">
+                        <span class="step-number">2</span>Selecteer X-veld (Longitude)
+                    </label>
+                    <select id="x-field" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white disabled:bg-gray-200" disabled>
+                        <option value="">Kies een kolom...</option>
+                    </select>
+                </div>
+
+                <!-- Y Field Dropdown -->
+                <div>
+                    <label for="y-field" class="block text-sm font-medium text-gray-700 mb-1">
+                        <span class="step-number">3</span>Selecteer Y-veld (Latitude)
+                    </label>
+                    <select id="y-field" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white disabled:bg-gray-200" disabled>
+                        <option value="">Kies een kolom...</option>
+                    </select>
+                </div>
+                
+                <!-- Projection Dropdown -->
+                <div>
+                    <label for="projection" class="block text-sm font-medium text-gray-700 mb-1">
+                        <span class="step-number">4</span>Selecteer Projectie
+                    </label>
+                    <select id="projection" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white">
+                        <option value="WGS84" selected>WGS84 (EPSG:4326)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Statistics and Actions -->
+            <div class="flex flex-col md:flex-row justify-between items-center mt-6 pt-4 border-t border-gray-200">
+                <div id="file-stats" class="text-sm text-gray-600 mb-4 md:mb-0">
+                    <span id="record-count">0</span> records geladen
+                </div>
+                
+                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
+                    <button id="plot-button" class="px-5 py-2.5 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center" disabled>
+                        <i class="fas fa-map-marker-alt mr-2"></i>Punten plotten
+                    </button>
+                    <button id="download-button" class="px-5 py-2.5 border border-transparent text-sm font-medium rounded-full shadow-sm text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center" disabled>
+                        <i class="fas fa-download mr-2"></i>Download GeoJSON
+                    </button>
+                    <button id="reset-button" class="px-5 py-2.5 border border-gray-300 text-sm font-medium rounded-full shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center">
+                        <i class="fas fa-redo mr-2"></i>Reset
+                    </button>
+                </div>
+            </div>
+            
+            <div id="message-area" class="mt-4 text-sm text-center p-2 rounded-md"></div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="relative">
+            <div id="map" class="w-full"></div>
+            <div id="point-count" class="absolute top-4 right-4 bg-white bg-opacity-90 py-1 px-3 rounded-md shadow-md z-500 text-sm font-medium hidden">
+                <i class="fas fa-map-pin text-blue-600 mr-1"></i> <span id="points-placed">0</span> punten getoond
+            </div>
+        </div>
+        
+        <!-- Basemap Control (will be added via JS) -->
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileInput = document.getElementById('csv-file');
+            const xFieldSelect = document.getElementById('x-field');
+            const yFieldSelect = document.getElementById('y-field');
+            const projectionSelect = document.getElementById('projection');
+            const plotButton = document.getElementById('plot-button');
+            const downloadButton = document.getElementById('download-button');
+            const resetButton = document.getElementById('reset-button');
+            const messageArea = document.getElementById('message-area');
+            const mapDiv = document.getElementById('map');
+            const recordCount = document.getElementById('record-count');
+            const pointsPlaced = document.getElementById('points-placed');
+            const pointCountDisplay = document.getElementById('point-count');
+            
+            let map;
+            let csvData;
+            let geojsonPoints;
+            let pointLayer;
+            let baseLayers = {};
+            let layerControl;
+
+            // Function to initialize the map based on the selected projection
+            function initMap(projection) {
+                if (map) {
+                    map.remove();
+                }
+
+                let crs;
+                let initialCenter;
+                let initialZoom;
+
+                if (projection === "WGS84") {
+                    // FIX: Gebruik Web Mercator (EPSG:3857) voor de Leaflet/OSM tegels
+                    crs = L.CRS.EPSG3857;
+                    initialCenter = [52.959, 4.759]; // Den Helder coordinates
+                    initialZoom = 11; // Closer zoom for Den Helder
+
+                    // Define base layers for WGS84
+                    baseLayers = {
+                        "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        }),
+                        "Satelliet": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                        }),
+                        "Topografie": L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                            attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
+                        })
+                    };
+                }
+
+                map = L.map('map', {
+                    crs: crs,
+                    center: initialCenter,
+                    zoom: initialZoom,
+                    layers: [Object.values(baseLayers)[0]] // Add the first base layer by default
+                });
+
+                // Add layer control
+                layerControl = L.control.layers(baseLayers).addTo(map);
+
+                // Add scale control
+                L.control.scale({metric: true, imperial: false}).addTo(map);
+
+                if (geojsonPoints) {
+                    plotGeoJSON(geojsonPoints);
+                }
+            }
+            
+            // Initial map load with WGS84
+            initMap("WGS84");
+            
+            // Handle file upload
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    Papa.parse(file, {
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            csvData = results.data;
+                            const headers = results.meta.fields;
+                            populateDropdowns(headers);
+                            
+                            // Update record count
+                            recordCount.textContent = csvData.length;
+                            
+                            messageArea.textContent = `CSV-bestand geladen met ${csvData.length} records. Selecteer uw coördinaatvelden.`;
+                            messageArea.className = "mt-4 text-sm text-center p-2 rounded-md bg-blue-50 text-blue-700";
+                            
+                            enableControls();
+                        },
+                        error: function(err, file, inputElem, reason) {
+                            console.error("Fout bij parseren CSV:", err);
+                            messageArea.textContent = `Fout bij verwerken CSV: ${reason}`;
+                            messageArea.className = "mt-4 text-sm text-center p-2 rounded-md bg-red-50 text-red-700";
+                            disableControls();
+                        }
+                    });
+                }
+            });
+
+            // Populate the dropdowns with CSV headers
+            function populateDropdowns(headers) {
+                xFieldSelect.innerHTML = '<option value="">Kies een kolom...</option>';
+                yFieldSelect.innerHTML = '<option value="">Kies een kolom...</option>';
+                
+                headers.forEach(header => {
+                    const optionX = document.createElement('option');
+                    optionX.value = header;
+                    optionX.textContent = header;
+                    xFieldSelect.appendChild(optionX);
+
+                    const optionY = document.createElement('option');
+                    optionY.value = header;
+                    optionY.textContent = header;
+                    yFieldSelect.appendChild(optionY);
+                });
+            }
+
+            // Enable or disable controls
+            function enableControls() {
+                xFieldSelect.disabled = false;
+                yFieldSelect.disabled = false;
+                plotButton.disabled = false;
+            }
+            
+            function disableControls() {
+                xFieldSelect.disabled = true;
+                yFieldSelect.disabled = true;
+                plotButton.disabled = true;
+                downloadButton.disabled = true;
+            }
+
+            // Plot points on the map
+            plotButton.addEventListener('click', () => {
+                const xField = xFieldSelect.value;
+                const yField = yFieldSelect.value;
+                const currentProjection = projectionSelect.value;
+
+                if (!xField || !yField) {
+                    messageArea.textContent = "Selecteer zowel X- als Y-velden.";
+                    messageArea.className = "mt-4 text-sm text-center p-2 rounded-md bg-red-50 text-red-700";
+                    return;
+                }
+
+                if (pointLayer) {
+                    map.removeLayer(pointLayer);
+                }
+                
+                geojsonPoints = {
+                    "type": "FeatureCollection",
+                    "features": []
+                };
+
+                let bounds = [];
+                const parsedPoints = [];
+                let skippedRecords = 0;
+
+                csvData.forEach(row => {
+                    let x = parseFloat(row[xField].replace(',', '.'));
+                    let y = parseFloat(row[yField].replace(',', '.'));
+
+                    if (isNaN(x) || isNaN(y)) {
+                        skippedRecords++;
+                        console.warn(`Overslaan van rij vanwege ongeldige coördinaten:`, row);
+                        return;
+                    }
+                    
+                    let lat = y;
+                    let lng = x;
+                    
+                    if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+                        skippedRecords++;
+                        console.warn(`Overslaan van rij vanwege ongeldige WGS84 coördinaten:`, lat, lng);
+                        return;
+                    }
+
+                    parsedPoints.push([lat, lng, row]);
+                    
+                    const feature = {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [lng, lat]
+                        },
+                        "properties": row
+                    };
+                    geojsonPoints.features.push(feature);
+                    
+                    bounds.push([lat, lng]);
+                });
+                
+                if (geojsonPoints.features.length === 0) {
+                    messageArea.textContent = "Geen geldige punten gevonden in het CSV-bestand.";
+                    messageArea.className = "mt-4 text-sm text-center p-2 rounded-md bg-red-50 text-red-700";
+                    downloadButton.disabled = true;
+                    pointCountDisplay.classList.add('hidden');
+                    return;
+                }
+                
+                // Update point count display
+                pointsPlaced.textContent = geojsonPoints.features.length;
+                pointCountDisplay.classList.remove('hidden');
+                
+                let message = `${geojsonPoints.features.length} punten op de kaart geplot.`;
+                if (skippedRecords > 0) {
+                    message += ` ${skippedRecords} records overgeslagen vanwege ongeldige coördinaten.`;
+                }
+                
+                messageArea.textContent = message;
+                messageArea.className = "mt-4 text-sm text-center p-2 rounded-md bg-green-50 text-green-700";
+                downloadButton.disabled = false;
+                
+                plotGeoJSON(geojsonPoints);
+                
+                // Fit map to bounds if points are available
+                if (bounds.length > 0) {
+                    map.fitBounds(bounds, {padding: [20, 20]});
+                }
+            });
+            
+            // Function to plot the GeoJSON data on the map
+            function plotGeoJSON(geojson) {
+                if (pointLayer) {
+                    map.removeLayer(pointLayer);
+                }
+                
+                pointLayer = L.geoJSON(geojson, {
+                    pointToLayer: function (feature, latlng) {
+                        // Create a custom marker with a blue color
+                        return L.circleMarker(latlng, {
+                            radius: 6,
+                            fillColor: "#3b82f6",
+                            color: "#1d4ed8",
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                    },
+                    onEachFeature: function (feature, layer) {
+                        if (feature.properties) {
+                            let popupContent = '<div class="text-sm max-h-40 overflow-y-auto">';
+                            popupContent += '<table class="min-w-full divide-y divide-gray-200">';
+                            
+                            let firstRow = true;
+                            for (let key in feature.properties) {
+                                popupContent += `<tr class="${firstRow ? '' : 'border-t border-gray-100'}">`;
+                                popupContent += `<td class="py-1 px-2 font-medium text-gray-700">${key}:</td>`;
+                                popupContent += `<td class="py-1 px-2 text-gray-900">${feature.properties[key]}</td>`;
+                                popupContent += `</tr>`;
+                                firstRow = false;
+                            }
+                            
+                            popupContent += '</table></div>';
+                            layer.bindPopup(popupContent, {
+                                maxWidth: 300,
+                                minWidth: 200
+                            });
+                        }
+                    }
+                }).addTo(map);
+                
+                // Add the point layer to the layer control
+                layerControl.addOverlay(pointLayer, "Geprojecteerde punten");
+            }
+            
+            // Handle projection change
+            projectionSelect.addEventListener('change', (event) => {
+                initMap(event.target.value);
+            });
+
+            // Download GeoJSON
+            downloadButton.addEventListener('click', () => {
+                if (geojsonPoints && geojsonPoints.features.length > 0) {
+                    const geojsonString = JSON.stringify(geojsonPoints, null, 2);
+                    const blob = new Blob([geojsonString], { type: "application/geo+json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    
+                    // Create filename from original CSV filename if available
+                    const csvFile = fileInput.files[0];
+                    let filename = 'punten.geojson';
+                    if (csvFile && csvFile.name) {
+                        filename = csvFile.name.replace('.csv', '') + '.geojson';
+                    }
+                    
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    messageArea.textContent = `GeoJSON-bestand (${filename}) gedownload!`;
+                    messageArea.className = "mt-4 text-sm text-center p-2 rounded-md bg-blue-50 text-blue-700";
+                } else {
+                    messageArea.textContent = "Geen punten om te downloaden. Plot eerst punten op de kaart.";
+                    messageArea.className = "mt-4 text-sm text-center p-2 rounded-md bg-red-50 text-red-700";
+                }
+            });
+            
+            // Reset button
+            resetButton.addEventListener('click', () => {
+                // Clear file input
+                fileInput.value = '';
+                
+                // Reset dropdowns
+                xFieldSelect.innerHTML = '<option value="">Kies een kolom...</option>';
+                yFieldSelect.innerHTML = '<option value="">Kies een kolom...</option>';
+                xFieldSelect.disabled = true;
+                yFieldSelect.disabled = true;
+                
+                // Reset data
+                csvData = null;
+                geojsonPoints = null;
+                recordCount.textContent = '0';
+                
+                // Disable buttons
+                plotButton.disabled = true;
+                downloadButton.disabled = true;
+                
+                // Remove point layer
+                if (pointLayer) {
+                    map.removeLayer(pointLayer);
+                    pointLayer = null;
+                }
+                
+                // Hide point count
+                pointCountDisplay.classList.add('hidden');
+                
+                // Clear message area
+                messageArea.textContent = '';
+                messageArea.className = "mt-4 text-sm text-center p-2 rounded-md";
+                
+                // Reset map view
+                initMap(projectionSelect.value);
+            });
+        });
+    </script>
+</body>
+</html>
