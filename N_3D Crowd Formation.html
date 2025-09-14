@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Crowd Formation Simulation</title>
+<link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
+<script src="https://js.arcgis.com/4.29/"></script>
+<style>
+html, body, #viewDiv { padding:0; margin:0; height:100%; width:100%; }
+#controls {
+  position:absolute; top:10px; left:10px; background:white;
+  padding:15px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.3);
+  font-family:sans-serif; z-index:10; width:350px; max-height:95vh; overflow-y:auto;
+}
+button { margin:5px; padding:8px 12px; background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer; transition:0.3s; }
+button:hover { background:#388E3C; }
+#pauseBtn { background:#FF9800; }
+#pauseBtn:hover { background:#F57C00; }
+#resetBtn { background:#F44336; }
+#resetBtn:hover { background:#D32F2F; }
+.control-group { margin:10px 0; padding:8px; background:#f5f5f5; border-radius:5px; }
+label { display:block; margin:5px 0; font-weight:bold; color:#333; }
+select, input[type=file], input[type=range] { width:100%; margin:8px 0; }
+.value-display { display:inline-block; width:40px; text-align:center; font-weight:bold; }
+.instructions { font-size:12px; color:#666; margin-top:10px; padding:8px; background:#fff; border-radius:4px; border-left:3px solid #4CAF50; }
+.formation-preview { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; margin:10px 0; padding:5px; background:#eee; border-radius:4px; }
+.formation-dot { width:10px; height:10px; background:#4CAF50; border-radius:50%; margin:2px; }
+.center-dot { background:#F44336; }
+</style>
+</head>
+<body>
+<div id="viewDiv"></div>
+
+<div id="controls">
+<h3>3D Crowd Formation</h3>
+
+<div class="control-group">
+  <button id="startBtn">▶️ Start</button>
+  <button id="pauseBtn">⏸️ Pause</button>
+  <button id="resetBtn">⏪ Reset</button>
+</div>
+
+<div class="control-group">
+  <label for="speedSlider">Speed: <span id="speedValue" class="value-display">5</span></label>
+  <input type="range" id="speedSlider" min="1" max="20" value="5">
+</div>
+
+<div class="control-group">
+  <label for="modelSelect">3D Model:</label>
+  <select id="modelSelect">
+    <option value="sphere">Red Sphere (Default)</option>
+    <option value="cone">Cone</option>
+    <option value="cube">Cube</option>
+    <option value="cylinder">Cylinder</option>
+    <option value="diamond">Diamond</option>
+    <option value="upload">Upload .glb/.gltf</option>
+  </select>
+  <input type="file" id="uploadModel" accept=".glb,.gltf" style="display:none;"/>
+</div>
+
+<div class="control-group">
+  <label for="objectCount">Number of Objects: <span id="countValue" class="value-display">5</span></label>
+  <input type="range" id="objectCount" min="1" max="100" value="5">
+</div>
+
+<div class="control-group">
+  <label for="rowsInput">Rows: <span id="rowsValue" class="value-display">2</span></label>
+  <input type="range" id="rowsInput" min="1" max="10" value="2">
+</div>
+
+<div class="control-group">
+  <label for="columnsInput">Columns: <span id="columnsValue" class="value-display">3</span></label>
+  <input type="range" id="columnsInput" min="1" max="10" value="3">
+</div>
+
+<div class="control-group">
+  <label for="spacingSlider">Spacing: <span id="spacingValue" class="value-display">10</span>m</label>
+  <input type="range" id="spacingSlider" min="1" max="50" value="10">
+</div>
+
+<div class="control-group">
+  <label for="centerPosition">Center Position:</label>
+  <select id="centerPosition">
+    <option value="middle-center">Middle Center</option>
+    <option value="top-left">Top Left</option>
+    <option value="top-center">Top Center</option>
+    <option value="top-right">Top Right</option>
+    <option value="middle-left">Middle Left</option>
+    <option value="middle-right">Middle Right</option>
+    <option value="bottom-left">Bottom Left</option>
+    <option value="bottom-center">Bottom Center</option>
+    <option value="bottom-right">Bottom Right</option>
+  </select>
+  <div class="formation-preview" id="formationPreview">
+    <div class="formation-dot center-dot"></div>
+    <div class="formation-dot"></div>
+    <div class="formation-dot"></div>
+    <div class="formation-dot"></div>
+    <div class="formation-dot"></div>
+    <div class="formation-dot"></div>
+    <div class="formation-dot"></div>
+    <div class="formation-dot"></div>
+    <div class="formation-dot"></div>
+  </div>
+</div>
+
+<div class="control-group" id="sizeControls">
+  <label>Height: <span id="heightValue" class="value-display">5</span></label>
+  <input type="range" id="heightSlider" min="1" max="30" value="5">
+  <label>Width: <span id="widthValue" class="value-display">5</span></label>
+  <input type="range" id="widthSlider" min="1" max="30" value="5">
+  <label>Depth: <span id="depthValue" class="value-display">5</span></label>
+  <input type="range" id="depthSlider" min="1" max="30" value="5">
+</div>
+
+<div class="control-group">
+  <label>X Offset: <span id="xOffsetValue" class="value-display">0</span>m</label>
+  <input type="range" id="xOffsetSlider" min="-50" max="50" value="0">
+  <label>Y Offset: <span id="yOffsetValue" class="value-display">0</span>m</label>
+  <input type="range" id="yOffsetSlider" min="-50" max="50" value="0">
+  <label>Z Offset: <span id="zOffsetValue" class="value-display">0</span>m</label>
+  <input type="range" id="zOffsetSlider" min="-50" max="50" value="0">
+</div>
+
+<div class="control-group" id="rotationControls">
+  <label for="rotationSlider">Rotation: <span id="rotationValue" class="value-display">0</span>°</label>
+  <input type="range" id="rotationSlider" min="0" max="360" value="0">
+</div>
+
+<div class="instructions">
+  <strong>Instructions:</strong> Click map to set start point, then click again to set end point.
+</div>
+</div>
+
+<script>
+require(["esri/Map","esri/views/SceneView","esri/Graphic","esri/geometry/Point"], 
+function(Map, SceneView, Graphic, Point){
+
+const map = new Map({ basemap:"topo-3d", ground:"world-elevation" });
+const view = new SceneView({ container:"viewDiv", map, camera:{position:[4.7430,52.9360,500], tilt:65} });
+
+let config = {
+  modelType:"sphere",
+  height:5,
+  width:5,
+  depth:5,
+  modelRotation:0,
+  objectCount:5,
+  rows:2,
+  columns:3,
+  spacing:10,
+  centerPosition:"middle-center",
+  xOffset:0,
+  yOffset:0,
+  zOffset:0
+};
+
+let objects = [];
+let startPoint = null, endPoint = null, path = null;
+
+function createSymbol(type, fileUrl){
+  let symbolLayer;
+  const color = [Math.random()*255,Math.random()*255,Math.random()*255,0.8];
+  switch(type){
+    case "cone": symbolLayer = { type:"object", resource:{primitive:"cone"}, material:{color}, height:config.height, width:config.width, depth:config.depth, heading:config.modelRotation }; break;
+    case "cube": symbolLayer = { type:"object", resource:{primitive:"cube"}, material:{color}, height:config.height, width:config.width, depth:config.depth, heading:config.modelRotation }; break;
+    case "cylinder": symbolLayer = { type:"object", resource:{primitive:"cylinder"}, material:{color}, height:config.height, width:config.width, depth:config.depth, heading:config.modelRotation }; break;
+    case "diamond": symbolLayer = { type:"object", resource:{primitive:"diamond"}, material:{color}, height:config.height, width:config.width, depth:config.depth, heading:config.modelRotation }; break;
+    case "upload": symbolLayer = { type:"object", resource:{href:fileUrl||""}, height:config.height, width:config.width, depth:config.depth, heading:config.modelRotation }; break;
+    default: symbolLayer = { type:"object", resource:{primitive:"sphere"}, material:{color}, height:config.height, width:config.width, depth:config.depth, heading:config.modelRotation };
+  }
+  return { type:"point-3d", symbolLayers:[symbolLayer] };
+}
+
+function initObjects(){
+  objects.forEach(obj=>view.graphics.remove(obj));
+  objects=[];
+  const positions = calculateFormationPositions();
+  for(let i=0;i<config.objectCount;i++){
+    const pos=positions[i]||{x:0,y:0};
+    const object = new Graphic({
+      geometry:new Point({longitude:0, latitude:0}),
+      symbol:createSymbol(config.modelType),
+      elevationInfo:{mode:"relative-to-ground", offset:config.height/2 + config.zOffset},
+      attributes:{offsetX:pos.x, offsetY:pos.y, index:i}
+    });
+    objects.push(object);
+  }
+  view.graphics.addMany(objects);
+  updateFormationPreview();
+}
+
+function calculateFormationPositions(){
+  const positions=[];
+  const totalObjects=Math.min(config.objectCount, config.rows*config.columns);
+  let centerOffsetX=0, centerOffsetY=0;
+  switch(config.centerPosition){
+    case "top-left": centerOffsetX=0; centerOffsetY=0; break;
+    case "top-center": centerOffsetX=(config.columns-1)*config.spacing/2; centerOffsetY=0; break;
+    case "top-right": centerOffsetX=(config.columns-1)*config.spacing; centerOffsetY=0; break;
+    case "middle-left": centerOffsetX=0; centerOffsetY=(config.rows-1)*config.spacing/2; break;
+    case "middle-center": centerOffsetX=(config.columns-1)*config.spacing/2; centerOffsetY=(config.rows-1)*config.spacing/2; break;
+    case "middle-right": centerOffsetX=(config.columns-1)*config.spacing; centerOffsetY=(config.rows-1)*config.spacing/2; break;
+    case "bottom-left": centerOffsetX=0; centerOffsetY=(config.rows-1)*config.spacing; break;
+    case "bottom-center": centerOffsetX=(config.columns-1)*config.spacing/2; centerOffsetY=(config.rows-1)*config.spacing; break;
+    case "bottom-right": centerOffsetX=(config.columns-1)*config.spacing; centerOffsetY=(config.rows-1)*config.spacing; break;
+  }
+  for(let i=0;i<totalObjects;i++){
+    const row=Math.floor(i/config.columns);
+    const col=i%config.columns;
+    const x=col*config.spacing - centerOffsetX;
+    const y=row*config.spacing - centerOffsetY;
+    positions.push({ x:x/111320, y:y/110574 });
+  }
+  return positions;
+}
+
+function updateFormationPreview(){
+  const preview=document.getElementById('formationPreview');
+  preview.innerHTML='';
+  const positions=calculateFormationPositions();
+  const totalObjects=Math.min(config.objectCount, config.rows*config.columns);
+  let centerIndex=0;
+  switch(config.centerPosition){
+    case "top-left": centerIndex=0; break;
+    case "top-center": centerIndex=Math.floor(config.columns/2); break;
+    case "top-right": centerIndex=config.columns-1; break;
+    case "middle-left": centerIndex=Math.floor(config.rows/2)*config.columns; break;
+    case "middle-center": centerIndex=Math.floor(config.rows/2)*config.columns + Math.floor(config.columns/2); break;
+    case "middle-right": centerIndex=Math.floor(config.rows/2)*config.columns + config.columns-1; break;
+    case "bottom-left": centerIndex=(config.rows-1)*config.columns; break;
+    case "bottom-center": centerIndex=(config.rows-1)*config.columns + Math.floor(config.columns/2); break;
+    case "bottom-right": centerIndex=(config.rows-1)*config.columns + config.columns-1; break;
+  }
+  for(let i=0;i<9;i++){
+    const dot=document.createElement('div');
+    dot.className='formation-dot';
+    if(i<totalObjects){ if(i===centerIndex) dot.classList.add('center-dot'); } else { dot.style.visibility='hidden'; }
+    preview.appendChild(dot);
+  }
+}
+
+function updateObjects(){
+  objects.forEach(obj=>{
+    obj.symbol=(config.modelType==="upload" && window.uploadedModelUrl) ? createSymbol("upload", window.uploadedModelUrl) : createSymbol(config.modelType);
+    obj.elevationInfo={mode:"relative-to-ground", offset: config.height/2 + config.zOffset};
+  });
+}
+
+function updateObjectPositions(baseLon, baseLat){
+  const positions=calculateFormationPositions();
+  objects.forEach((obj,i)=>{
+    if(i<positions.length){
+      const pos=positions[i];
+      obj.geometry=new Point({
+        longitude: baseLon + pos.x + config.xOffset/111320,
+        latitude: baseLat + pos.y + config.yOffset/110574,
+        z: config.zOffset
+      });
+      obj.elevationInfo={mode:"relative-to-ground", offset: config.height/2 + config.zOffset};
+    }
+  });
+}
+
+initObjects();
+
+const startMarker=new Graphic({symbol:{type:"point-3d", symbolLayers:[{type:"object", resource:{primitive:"cone"}, material:{color:"green"}, height:15, width:8, depth:8}]}});
+
+const endMarker=new Graphic({symbol:{type:"point-3d", symbolLayers:[{type:"object", resource:{primitive:"cube"}, material:{color:"blue"}, height:15, width:8, depth:8}]}});
+
+view.graphics.addMany([startMarker,endMarker]);
+
+let progress=0, running=false, speed=0.005;
+
+view.on("click", function(event){
+  const point=view.toMap(event);
+  if(!startPoint){ startPoint=[point.longitude, point.latitude]; startMarker.geometry=point; updateObjectPositions(startPoint[0], startPoint[1]); }
+  else if(!endPoint){ endPoint=[point.longitude, point.latitude]; endMarker.geometry=point; path=[startPoint,endPoint]; progress=0; running=true; }
+  else{ startPoint=[point.longitude, point.latitude]; endPoint=null; path=null; startMarker.geometry=point; endMarker.geometry=null; updateObjectPositions(startPoint[0], startPoint[1]); running=false; progress=0; }
+});
+
+function animate(){
+  if(running && path && path.length===2){
+    const [x1,y1]=path[0]; const [x2,y2]=path[1];
+    const baseLon=x1+(x2-x1)*progress; const baseLat=y1+(y2-y1)*progress;
+    updateObjectPositions(baseLon, baseLat);
+    progress+=speed;
+    if(progress>=1) running=false;
+  }
+  requestAnimationFrame(animate);
+}
+animate();
+
+// Control Handlers
+document.getElementById("startBtn").onclick = ()=>running=true;
+document.getElementById("pauseBtn").onclick = ()=>running=false;
+document.getElementById("resetBtn").onclick = ()=>{ running=false; progress=0; if(startPoint) updateObjectPositions(startPoint[0],startPoint[1]); };
+
+document.getElementById("speedSlider").oninput=e=>{ speed=e.target.value/1000; document.getElementById("speedValue").textContent=e.target.value; };
+document.getElementById("objectCount").oninput=e=>{ config.objectCount=parseInt(e.target.value); document.getElementById("countValue").textContent=e.target.value; initObjects(); if(startPoint) updateObjectPositions(startPoint[0],startPoint[1]); };
+document.getElementById("rowsInput").oninput=e=>{ config.rows=parseInt(e.target.value); document.getElementById("rowsValue").textContent=e.target.value; initObjects(); if(startPoint) updateObjectPositions(startPoint[0],startPoint[1]); };
+document.getElementById("columnsInput").oninput=e=>{ config.columns=parseInt(e.target.value); document.getElementById("columnsValue").textContent=e.target.value; initObjects(); if(startPoint) updateObjectPositions(startPoint[0],startPoint[1]); };
+document.getElementById("spacingSlider").oninput=e=>{ config.spacing=parseInt(e.target.value); document.getElementById("spacingValue").textContent=e.target.value; if(startPoint) updateObjectPositions(startPoint[0],startPoint[1]); updateFormationPreview(); };
+document.getElementById("centerPosition").addEventListener("change", e=>{ config.centerPosition=e.target.value; if(startPoint) updateObjectPositions(startPoint[0],startPoint[1]); updateFormationPreview(); });
+
+const modelSelect=document.getElementById("modelSelect");
+const uploadInput=document.getElementById("uploadModel");
+modelSelect.addEventListener("change", e=>{ config.modelType=e.target.value; if(config.modelType==="upload"){ uploadInput.style.display="block"; } else { uploadInput.style.display="none"; updateObjects(); } });
+uploadInput.addEventListener("change", e=>{ const file=e.target.files[0]; if(file){ window.uploadedModelUrl=URL.createObjectURL(file); updateObjects(); } });
+
+document.getElementById("heightSlider").oninput=e=>{ config.height=parseFloat(e.target.value); document.getElementById("heightValue").textContent=e.target.value; updateObjects(); };
+document.getElementById("widthSlider").oninput=e=>{ config.width=parseFloat(e.target.value); document.getElementById("widthValue").textContent=e.target.value; updateObjects(); };
+document.getElementById("depthSlider").oninput=e=>{ config.depth=parseFloat(e.target.value); document.getElementById("depthValue").textContent=e.target.value; updateObjects(); };
+document.getElementById("rotationSlider").oninput=e=>{ config.modelRotation=parseInt(e.target.value); document.getElementById("rotationValue").textContent=e.target.value; updateObjects(); };
+
+// New X,Y,Z Offset sliders
+document.getElementById("xOffsetSlider").oninput=e=>{ config.xOffset=parseFloat(e.target.value); document.getElementById("xOffsetValue").textContent=e.target.value; if(startPoint) updateObjectPositions(startPoint[0],startPoint[1]); };
+document.getElementById("yOffsetSlider").oninput=e=>{ config.yOffset=parseFloat(e.target.value); document.getElementById("yOffsetValue").textContent=e.target.value; if(startPoint) updateObjectPositions(startPoint[0],startPoint[1]); };
+document.getElementById("zOffsetSlider").oninput=e=>{ config.zOffset=parseFloat(e.target.value); document.getElementById("zOffsetValue").textContent=e.target.value; if(startPoint) updateObjectPositions(startPoint[0],startPoint[1]); };
+
+});
+</script>
+</body>
+</html>
