@@ -1,0 +1,1070 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>3D Scene met modellen, widgets en simulatie</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+  <style>
+    html, body, #view-div {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    #drop-zone {
+      width: 250px;
+      padding: 12px;
+      background-color: white;
+      z-index: 99;
+    }
+
+    #drop-zone h1 {
+      font-size: 16px;
+      margin-top: 0;
+    }
+
+    #drop-zone section {
+      margin-top: 10px;
+    }
+
+    #downloads {
+      display: flex;
+      background: white;
+      gap: 10px;
+      padding: 10px;
+      z-index: 90;
+    }
+
+    #downloads a {
+      display: flex;
+      width: 200px;
+      height: 200px;
+    }
+
+    calcite-notice {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    calcite-notice[open] {
+      animation-duration: 0.2s;
+      animation-name: slidein;
+    }
+
+    @keyframes slidein {
+      from { opacity: 0; transform: translateY(-30%); }
+      to { opacity: 1; transform: translateY(0%); }
+    }
+
+    #drop-zone.dragover {
+      border: 2px dashed cornflowerblue;
+      background-color: #f0f8ff;
+    }
+
+    @media (max-width: 600px) {
+      #drop-zone {
+        width: 90%;
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      #downloads {
+        flex-direction: column;
+        height: auto;
+      }
+    }
+
+    #measurement-buttons {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 101;
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Daylight & Weather widgets */
+    #daylight-widget,
+    #weather-widget {
+      position: absolute;
+      bottom: 40px;
+      right: 10px;
+      z-index: 105;
+    }
+
+    /* Simulation widget - MIDDEN RECHTS */
+    #simulation-widget {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      z-index: 100;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      font-family: sans-serif;
+      width: 350px;
+      max-height: 80vh;
+      overflow-y: auto;
+      display: block; /* ZICHTBAAR BIJ OPENEN */
+      box-sizing: border-box;
+    }
+
+    .simulation-control-group {
+      margin: 10px 0;
+      padding: 8px;
+      background: #f5f5f5;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .simulation-control-group button {
+      flex-grow: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    #startBtn { background: #4CAF50; }
+    #pauseBtn { background: #FFC107; }
+    #resetBtn { background: #2196F3; }
+    #removeBtn { background: #F44336; }
+
+    .simulation-control-group button:hover {
+      opacity: 0.8;
+    }
+
+    .simulation-label {
+      display: block;
+      margin: 5px 0;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .simulation-value-display {
+      display: inline-block;
+      width: 40px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .simulation-instructions {
+      font-size: 12px;
+      color: #666;
+      margin-top: 10px;
+      padding: 8px;
+      background: #fff;
+      border-radius: 4px;
+      border-left: 3px solid #4CAF50;
+    }
+
+    .formation-preview {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      margin: 10px 0;
+      padding: 5px;
+      background: #eee;
+      border-radius: 4px;
+    }
+
+    .formation-dot {
+      width: 10px;
+      height: 10px;
+      background: #4CAF50;
+      border-radius: 50%;
+      margin: 2px;
+    }
+
+    .center-dot {
+      background: #F44336;
+    }
+  </style>
+</head>
+<body>
+  <div id="view-div"></div>
+
+  <div id="drop-zone">
+    <h1>Voeg je eigen model toe</h1>
+    <input id="model-input" type="file" />
+    <section>
+      <p>Sleep een bestand hierheen of klik om te uploaden.</p>
+    </section>
+  </div>
+
+  <div id="downloads">
+    <a download href="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/Tower.glb">
+      <calcite-card>
+        <img slot="thumbnail" alt="Torens" src="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/Tower.png" />
+        <div slot="title">Torens</div>
+      </calcite-card>
+    </a>
+    <a download href="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/GreenBuilding.fbx">
+      <calcite-card>
+        <img slot="thumbnail" alt="Gebouw" src="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/GreenBuilding.png" />
+        <div slot="title">Gebouw</div>
+      </calcite-card>
+    </a>
+  </div>
+
+  <calcite-notice id="size-warning" kind="danger" icon closable>
+    <div slot="title">Bestand te groot</div>
+    <div slot="message">Het bestand mag maximaal 50 MB zijn</div>
+  </calcite-notice>
+  
+  <div id="measurement-buttons">
+    <calcite-button id="start-distance" appearance="solid" kind="brand">Afstand meten</calcite-button>
+    <calcite-button id="start-area" appearance="solid" kind="brand">Oppervlakte meten</calcite-button>
+    <calcite-button id="stop-measurement" appearance="outline" kind="neutral" disabled>Stop meting</calcite-button>
+  </div>
+  
+  <div id="simulation-widget">
+    <h3>3D Crowd Formation</h3>
+
+    <div class="simulation-control-group">
+      <button id="startBtn">▶️ Start</button>
+      <button id="pauseBtn">⏸️ Pause</button>
+      <button id="resetBtn">⏪ Reset</button>
+      <button id="removeBtn">🗑️ Verwijder</button>
+    </div>
+
+    <div class="simulation-control-group">
+      <label for="speedSlider" class="simulation-label">Speed: <span id="speedValue" class="simulation-value-display">5</span></label>
+      <input type="range" id="speedSlider" min="1" max="20" value="5">
+    </div>
+
+    <div class="simulation-control-group">
+      <label for="modelSelect" class="simulation-label">3D Model:</label>
+      <select id="modelSelect">
+        <option value="sphere">Red Sphere (Default)</option>
+        <option value="cone">Cone</option>
+        <option value="cube">Cube</option>
+        <option value="cylinder">Cylinder</option>
+        <option value="diamond">Diamond</option>
+        <option value="upload">Upload .glb/.gltf</option>
+      </select>
+      <input type="file" id="uploadModel" accept=".glb,.gltf" style="display:none;"/>
+    </div>
+
+    <div class="simulation-control-group">
+      <label for="objectCount" class="simulation-label">Number of Objects: <span id="countValue" class="simulation-value-display">5</span></label>
+      <input type="range" id="objectCount" min="1" max="100" value="5">
+    </div>
+
+    <div class="simulation-control-group">
+      <label for="rowsInput" class="simulation-label">Rows: <span id="rowsValue" class="simulation-value-display">2</span></label>
+      <input type="range" id="rowsInput" min="1" max="10" value="2">
+    </div>
+
+    <div class="simulation-control-group">
+      <label for="columnsInput" class="simulation-label">Columns: <span id="columnsValue" class="simulation-value-display">3</span></label>
+      <input type="range" id="columnsInput" min="1" max="10" value="3">
+    </div>
+
+    <div class="simulation-control-group">
+      <label for="spacingSlider" class="simulation-label">Spacing: <span id="spacingValue" class="simulation-value-display">10</span>m</label>
+      <input type="range" id="spacingSlider" min="1" max="50" value="10">
+    </div>
+
+    <div class="simulation-control-group">
+      <label for="centerPosition" class="simulation-label">Center Position:</label>
+      <select id="centerPosition">
+        <option value="middle-center">Middle Center</option>
+        <option value="top-left">Top Left</option>
+        <option value="top-center">Top Center</option>
+        <option value="top-right">Top Right</option>
+        <option value="middle-left">Middle Left</option>
+        <option value="middle-right">Middle Right</option>
+        <option value="bottom-left">Bottom Left</option>
+        <option value="bottom-center">Bottom Center</option>
+        <option value="bottom-right">Bottom Right</option>
+      </select>
+      <div class="formation-preview" id="formationPreview">
+        <div class="formation-dot center-dot"></div>
+        <div class="formation-dot"></div>
+        <div class="formation-dot"></div>
+        <div class="formation-dot"></div>
+        <div class="formation-dot"></div>
+        <div class="formation-dot"></div>
+        <div class="formation-dot"></div>
+        <div class="formation-dot"></div>
+        <div class="formation-dot"></div>
+      </div>
+    </div>
+
+    <div class="simulation-control-group" id="sizeControls">
+      <label class="simulation-label">Height: <span id="heightValue" class="simulation-value-display">5</span></label>
+      <input type="range" id="heightSlider" min="1" max="30" value="5">
+      <label class="simulation-label">Width: <span id="widthValue" class="simulation-value-display">5</span></label>
+      <input type="range" id="widthSlider" min="1" max="30" value="5">
+      <label class="simulation-label">Depth: <span id="depthValue" class="simulation-value-display">5</span></label>
+      <input type="range" id="depthSlider" min="1" max="30" value="5">
+    </div>
+
+    <div class="simulation-control-group">
+      <label class="simulation-label">X Offset: <span id="xOffsetValue" class="simulation-value-display">0</span>m</label>
+      <input type="range" id="xOffsetSlider" min="-50" max="50" value="0">
+      <label class="simulation-label">Y Offset: <span id="yOffsetValue" class="simulation-value-display">0</span>m</label>
+      <input type="range" id="yOffsetSlider" min="-50" max="50" value="0">
+      <label class="simulation-label">Z Offset: <span id="zOffsetValue" class="simulation-value-display">0</span>m</label>
+      <input type="range" id="zOffsetSlider" min="-50" max="50" value="0">
+    </div>
+
+    <div class="simulation-control-group" id="rotationControls">
+      <label for="rotationSlider" class="simulation-label">Rotation: <span id="rotationValue" class="simulation-value-display">0</span>°</label>
+      <input type="range" id="rotationSlider" min="0" max="360" value="0">
+    </div>
+
+    <div class="simulation-instructions">
+      <strong>Instructies:</strong> Klik op de kaart om het startpunt in te stellen, klik vervolgens nogmaals om het eindpunt in te stellen.
+    </div>
+  </div>
+
+  <script>
+    require([
+      "esri/core/reactiveUtils",
+      "esri/layers/SceneLayer",
+      "esri/WebScene",
+      "esri/views/SceneView",
+      "esri/widgets/Sketch/SketchViewModel",
+      "esri/layers/GraphicsLayer",
+      "esri/widgets/Expand",
+      "esri/widgets/Daylight",
+      "esri/widgets/Weather",
+      "esri/widgets/Search",
+      "esri/widgets/Fullscreen",
+      "esri/widgets/LayerList",
+      "esri/widgets/BasemapGallery",
+      "esri/widgets/AreaMeasurement3D",
+      "esri/widgets/DirectLineMeasurement3D",
+      "esri/Graphic",
+      "esri/geometry/Point"
+    ], function (
+      reactiveUtils,
+      SceneLayer,
+      WebScene,
+      SceneView,
+      SketchViewModel,
+      GraphicsLayer,
+      Expand,
+      Daylight,
+      Weather,
+      Search,
+      Fullscreen,
+      LayerList,
+      BasemapGallery,
+      AreaMeasurement3D,
+      DirectLineMeasurement3D,
+      Graphic,
+      Point
+    ) {
+      const deviceId = localStorage.getItem("deviceId") || (crypto.randomUUID() && localStorage.setItem("deviceId", crypto.randomUUID()));
+
+      const webscene = new WebScene({
+        portalItem: { id: "48a900de3c124a47993de5fe9090671d" }
+      });
+
+      const view = new SceneView({
+        container: "view-div",
+        map: webscene,
+        camera: {
+          position: {
+            x: 4.7589,
+            y: 52.9551,
+            z: 150,
+            spatialReference: { wkid: 4326 }
+          },
+          heading: 0,
+          tilt: 65
+        },
+        background: {
+          type: "color",
+          color: [100, 149, 237, 1]
+        }
+      });
+
+      const sketchLayer = new GraphicsLayer();
+      view.map.add(sketchLayer);
+
+      const sketchVM = new SketchViewModel({
+        layer: sketchLayer,
+        view: view
+      });
+
+      let sceneLayer;
+      
+      // Simulation variables
+      let simulationObjects = [];
+      let simulationStartPoint = null, simulationEndPoint = null, simulationPath = null;
+      let simulationProgress = 0, simulationRunning = false, simulationSpeed = 0.005;
+      
+      // Simulation configuration
+      let simulationConfig = {
+        modelType: "sphere",
+        height: 5,
+        width: 5,
+        depth: 5,
+        modelRotation: 0,
+        objectCount: 5,
+        rows: 2,
+        columns: 3,
+        spacing: 10,
+        centerPosition: "middle-center",
+        xOffset: 0,
+        yOffset: 0,
+        zOffset: 0
+      };
+
+      view.when(() => {
+        sceneLayer = view.map.layers.find((layer) => layer.title === "EditableFeatures3DObject");
+        sceneLayer.definitionExpression = `deviceId = '${deviceId}' OR deviceId = 'initial-model'`;
+
+        // 3D BAG SceneLayer
+        const bag3DLayer = new SceneLayer({
+          url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3DBAG_WGS_EGM_V2/SceneServer",
+          title: "3D BAG",
+          visible: false
+        });
+        view.map.add(bag3DLayer);
+
+        // 3D Bomen SceneLayer
+        const bomen3DLayer = new SceneLayer({
+          url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3D_Bomen_WGS/SceneServer",
+          title: "3D Bomen",
+          visible: false
+        });
+        view.map.add(bomen3DLayer);
+
+        // Initialize simulation
+        initSimulationObjects();
+        
+        // Simulation markers
+        const simulationStartMarker = new Graphic({
+          symbol: {
+            type: "point-3d", 
+            symbolLayers: [{
+              type: "object", 
+              resource: {primitive: "cone"}, 
+              material: {color: "green"}, 
+              height: 15, 
+              width: 8, 
+              depth: 8
+            }]
+          }
+        });
+        
+        const simulationEndMarker = new Graphic({
+          symbol: {
+            type: "point-3d", 
+            symbolLayers: [{
+              type: "object", 
+              resource: {primitive: "cube"}, 
+              material: {color: "blue"}, 
+              height: 15, 
+              width: 8, 
+              depth: 8
+            }]
+          }
+        });
+        
+        view.graphics.addMany([simulationStartMarker, simulationEndMarker]);
+
+        // Model upload event
+        const input = document.querySelector("#model-input");
+        input.addEventListener("change", async (e) => {
+          const file = e.target.files[0];
+          const fileName = file.name.toLowerCase();
+          const fileExtension = fileName.split('.').pop();
+
+          const validExtensions = ["glb", "gltf"];
+          const isValidExtension = validExtensions.includes(fileExtension);
+
+          if (file && file.size / (1024 * 1024) <= 50 && isValidExtension) {
+            const mesh = await sceneLayer.convertMesh([file]);
+            await mesh.load();
+            sketchVM.place(mesh, {
+              graphicProperties: {
+                layer: sketchLayer,
+                attributes: { deviceId: deviceId }
+              }
+            });
+
+            // Add success notice
+            const notice = document.createElement("calcite-notice");
+            notice.setAttribute("kind", "success");
+            notice.setAttribute("icon", "");
+            notice.setAttribute("open", "");
+            notice.innerHTML = `
+              <div slot="title">Model toegevoegd</div>
+              <div slot="message">Je model is succesvol geplaatst.</div>
+            `;
+            document.body.appendChild(notice);
+            setTimeout(() => notice.remove(), 4000);
+
+          } else {
+            let message = "Het bestand mag maximaal 50 MB zijn";
+            if (file && file.size / (1024 * 1024) > 50) {
+              message = `Bestand te groot (${(file.size / (1024 * 1024)).toFixed(2)} MB). Het bestand mag maximaal 50 MB zijn.`;
+            } else if (file && !isValidExtension) {
+              message = `Ongeldig bestandstype.  Alleen .glb en .gltf bestanden zijn toegestaan.`;
+            }
+            document.querySelector("#size-warning").innerHTML = `<div slot="title">Fout bij bestandsupload</div><div slot="message">${message}</div>`;
+            document.querySelector("#size-warning").open = true;
+          }
+          input.value = "";
+        });
+
+        // Drop zone
+        const dropZone = document.getElementById("drop-zone");
+        dropZone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dropZone.classList.add("dragover");
+        });
+        dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+        dropZone.addEventListener("drop", async (e) => {
+          e.preventDefault();
+          dropZone.classList.remove("dragover");
+          const file = e.dataTransfer.files[0];
+          const fileName = file.name.toLowerCase();
+          const fileExtension = fileName.split('.').pop();
+
+          const validExtensions = ["glb", "gltf"];
+          const isValidExtension = validExtensions.includes(fileExtension);
+
+          if (file && file.size / (1024 * 1024) <= 50 && isValidExtension) {
+            const mesh = await sceneLayer.convertMesh([file]);
+            await mesh.load();
+            sketchVM.place(mesh, {
+              graphicProperties: {
+                layer: sketchLayer,
+                attributes: { deviceId: deviceId }
+              }
+            });
+            // Add success notice
+            const notice = document.createElement("calcite-notice");
+            notice.setAttribute("kind", "success");
+            notice.setAttribute("icon", "");
+            notice.setAttribute("open", "");
+            notice.innerHTML = `
+              <div slot="title">Model toegevoegd</div>
+              <div slot="message">Je model is succesvol geplaatst.</div>
+            `;
+            document.body.appendChild(notice);
+            setTimeout(() => notice.remove(), 4000);
+          } else {
+            let message = "Het bestand mag maximaal 50 MB zijn";
+            if (file && file.size / (1024 * 1024) > 50) {
+              message = `Bestand te groot (${(file.size / (1024 * 1024)).toFixed(2)} MB). Het bestand mag maximaal 50 MB zijn.`;
+            } else if (file && !isValidExtension) {
+              message = `Ongeldig bestandstype.  Alleen .glb en .gltf bestanden zijn toegestaan.`;
+            }
+            document.querySelector("#size-warning").innerHTML = `<div slot="title">Fout bij bestandsupload</div><div slot="message">${message}</div>`;
+            document.querySelector("#size-warning").open = true;
+          }
+        });
+        
+        // Simulation click event
+        view.on("click", function(event) {
+          const point = view.toMap(event);
+          if (!simulationStartPoint) { 
+            simulationStartPoint = [point.longitude, point.latitude]; 
+            simulationStartMarker.geometry = point; 
+            updateSimulationObjectPositions(simulationStartPoint[0], simulationStartPoint[1]); 
+          } else if (!simulationEndPoint) { 
+            simulationEndPoint = [point.longitude, point.latitude]; 
+            simulationEndMarker.geometry = point; 
+            simulationPath = [simulationStartPoint, simulationEndPoint]; 
+            simulationProgress = 0; 
+            simulationRunning = true; 
+          } else { 
+            simulationStartPoint = [point.longitude, point.latitude]; 
+            simulationEndPoint = null; 
+            simulationPath = null; 
+            simulationStartMarker.geometry = point; 
+            simulationEndMarker.geometry = null; 
+            updateSimulationObjectPositions(simulationStartPoint[0], simulationStartPoint[1]); 
+            simulationRunning = false; 
+            simulationProgress = 0; 
+          }
+        });
+      });
+
+      // Simulation functions
+      function createSimulationSymbol(type, fileUrl) {
+        let symbolLayer;
+        const color = [Math.random()*255, Math.random()*255, Math.random()*255, 0.8];
+        
+        switch(type) {
+          case "cone": 
+            symbolLayer = { 
+              type: "object", 
+              resource: {primitive: "cone"}, 
+              material: {color}, 
+              height: simulationConfig.height, 
+              width: simulationConfig.width, 
+              depth: simulationConfig.depth, 
+              heading: simulationConfig.modelRotation 
+            }; 
+            break;
+          case "cube": 
+            symbolLayer = { 
+              type: "object", 
+              resource: {primitive: "cube"}, 
+              material: {color}, 
+              height: simulationConfig.height, 
+              width: simulationConfig.width, 
+              depth: simulationConfig.depth, 
+              heading: simulationConfig.modelRotation 
+            }; 
+            break;
+          case "cylinder": 
+            symbolLayer = { 
+              type: "object", 
+              resource: {primitive: "cylinder"}, 
+              material: {color}, 
+              height: simulationConfig.height, 
+              width: simulationConfig.width, 
+              depth: simulationConfig.depth, 
+              heading: simulationConfig.modelRotation 
+            }; 
+            break;
+          case "diamond": 
+            symbolLayer = { 
+              type: "object", 
+              resource: {primitive: "diamond"}, 
+              material: {color}, 
+              height: simulationConfig.height, 
+              width: simulationConfig.width, 
+              depth: simulationConfig.depth, 
+              heading: simulationConfig.modelRotation 
+            }; 
+            break;
+          case "upload": 
+            symbolLayer = { 
+              type: "object", 
+              resource: {href: fileUrl || ""}, 
+              height: simulationConfig.height, 
+              width: simulationConfig.width, 
+              depth: simulationConfig.depth, 
+              heading: simulationConfig.modelRotation 
+            }; 
+            break;
+          default: 
+            symbolLayer = { 
+              type: "object", 
+              resource: {primitive: "sphere"}, 
+              material: {color}, 
+              height: simulationConfig.height, 
+              width: simulationConfig.width, 
+              depth: simulationConfig.depth, 
+              heading: simulationConfig.modelRotation 
+            };
+        }
+        
+        return { type: "point-3d", symbolLayers: [symbolLayer] };
+      }
+
+      function initSimulationObjects() {
+        simulationObjects.forEach(obj => view.graphics.remove(obj));
+        simulationObjects = [];
+        
+        const positions = calculateSimulationFormationPositions();
+        
+        for (let i = 0; i < simulationConfig.objectCount; i++) {
+          const pos = positions[i] || {x: 0, y: 0};
+          const object = new Graphic({
+            geometry: new Point({longitude: 0, latitude: 0}),
+            symbol: createSimulationSymbol(simulationConfig.modelType),
+            elevationInfo: {mode: "relative-to-ground", offset: simulationConfig.height/2 + simulationConfig.zOffset},
+            attributes: {offsetX: pos.x, offsetY: pos.y, index: i}
+          });
+          
+          simulationObjects.push(object);
+        }
+        
+        view.graphics.addMany(simulationObjects);
+        updateSimulationFormationPreview();
+      }
+
+      function calculateSimulationFormationPositions() {
+        const positions = [];
+        const totalObjects = Math.min(simulationConfig.objectCount, simulationConfig.rows * simulationConfig.columns);
+        let centerOffsetX = 0, centerOffsetY = 0;
+        
+        switch(simulationConfig.centerPosition) {
+          case "top-left": centerOffsetX = 0; centerOffsetY = 0; break;
+          case "top-center": centerOffsetX = (simulationConfig.columns - 1) * simulationConfig.spacing / 2; centerOffsetY = 0; break;
+          case "top-right": centerOffsetX = (simulationConfig.columns - 1) * simulationConfig.spacing; centerOffsetY = 0; break;
+          case "middle-left": centerOffsetX = 0; centerOffsetY = (simulationConfig.rows - 1) * simulationConfig.spacing / 2; break;
+          case "middle-center": centerOffsetX = (simulationConfig.columns - 1) * simulationConfig.spacing / 2; centerOffsetY = (simulationConfig.rows - 1) * simulationConfig.spacing / 2; break;
+          case "middle-right": centerOffsetX = (simulationConfig.columns - 1) * simulationConfig.spacing; centerOffsetY = (simulationConfig.rows - 1) * simulationConfig.spacing / 2; break;
+          case "bottom-left": centerOffsetX = 0; centerOffsetY = (simulationConfig.rows - 1) * simulationConfig.spacing; break;
+          case "bottom-center": centerOffsetX = (simulationConfig.columns - 1) * simulationConfig.spacing / 2; centerOffsetY = (simulationConfig.rows - 1) * simulationConfig.spacing; break;
+          case "bottom-right": centerOffsetX = (simulationConfig.columns - 1) * simulationConfig.spacing; centerOffsetY = (simulationConfig.rows - 1) * simulationConfig.spacing; break;
+        }
+        
+        for (let i = 0; i < totalObjects; i++) {
+          const row = Math.floor(i / simulationConfig.columns);
+          const col = i % simulationConfig.columns;
+          const x = col * simulationConfig.spacing - centerOffsetX;
+          const y = row * simulationConfig.spacing - centerOffsetY;
+          positions.push({ x: x / 111320, y: y / 110574 });
+        }
+        
+        return positions;
+      }
+
+      function updateSimulationFormationPreview() {
+        const preview = document.getElementById('formationPreview');
+        preview.innerHTML = '';
+        
+        const positions = calculateSimulationFormationPositions();
+        const totalObjects = Math.min(simulationConfig.objectCount, simulationConfig.rows * simulationConfig.columns);
+        let centerIndex = 0;
+        
+        switch(simulationConfig.centerPosition) {
+          case "top-left": centerIndex = 0; break;
+          case "top-center": centerIndex = Math.floor(simulationConfig.columns / 2); break;
+          case "top-right": centerIndex = simulationConfig.columns - 1; break;
+          case "middle-left": centerIndex = Math.floor(simulationConfig.rows / 2) * simulationConfig.columns; break;
+          case "middle-center": centerIndex = Math.floor(simulationConfig.rows / 2) * simulationConfig.columns + Math.floor(simulationConfig.columns / 2); break;
+          case "middle-right": centerIndex = Math.floor(simulationConfig.rows / 2) * simulationConfig.columns + simulationConfig.columns - 1; break;
+          case "bottom-left": centerIndex = (simulationConfig.rows - 1) * simulationConfig.columns; break;
+          case "bottom-center": centerIndex = (simulationConfig.rows - 1) * simulationConfig.columns + Math.floor(simulationConfig.columns / 2); break;
+          case "bottom-right": centerIndex = (simulationConfig.rows - 1) * simulationConfig.columns + simulationConfig.columns - 1; break;
+        }
+        
+        for (let i = 0; i < 9; i++) {
+          const dot = document.createElement('div');
+          dot.className = 'formation-dot';
+          
+          if (i < totalObjects) { 
+            if (i === centerIndex) dot.classList.add('center-dot'); 
+          } else { 
+            dot.style.visibility = 'hidden'; 
+          }
+          
+          preview.appendChild(dot);
+        }
+      }
+
+      function updateSimulationObjects() {
+        simulationObjects.forEach(obj => {
+          obj.symbol = (simulationConfig.modelType === "upload" && window.uploadedModelUrl) ? 
+            createSimulationSymbol("upload", window.uploadedModelUrl) : 
+            createSimulationSymbol(simulationConfig.modelType);
+            
+          obj.elevationInfo = {mode: "relative-to-ground", offset: simulationConfig.height/2 + simulationConfig.zOffset};
+        });
+      }
+
+      function updateSimulationObjectPositions(baseLon, baseLat) {
+        const positions = calculateSimulationFormationPositions();
+        
+        simulationObjects.forEach((obj, i) => {
+          if (i < positions.length) {
+            const pos = positions[i];
+            obj.geometry = new Point({
+              longitude: baseLon + pos.x + simulationConfig.xOffset / 111320,
+              latitude: baseLat + pos.y + simulationConfig.yOffset / 110574,
+              z: simulationConfig.zOffset
+            });
+            
+            obj.elevationInfo = {mode: "relative-to-ground", offset: simulationConfig.height/2 + simulationConfig.zOffset};
+          }
+        });
+      }
+
+      function simulationAnimate() {
+        if (simulationRunning && simulationPath && simulationPath.length === 2) {
+          const [x1, y1] = simulationPath[0]; 
+          const [x2, y2] = simulationPath[1];
+          const baseLon = x1 + (x2 - x1) * simulationProgress;
+          const baseLat = y1 + (y2 - y1) * simulationProgress;
+          
+          updateSimulationObjectPositions(baseLon, baseLat);
+          simulationProgress += simulationSpeed;
+          
+          if (simulationProgress >= 1) simulationRunning = false;
+        }
+        
+        requestAnimationFrame(simulationAnimate);
+      }
+      
+      simulationAnimate();
+
+      // Widgets
+      const searchExpand = new Expand({
+        view: view,
+        content: new Search({ view }),
+        expandIcon: "search",
+        expanded: false,
+        label: "Zoeken"
+      });
+      view.ui.add(searchExpand, "top-left");
+
+      const downloadsExpand = new Expand({
+        view: view,
+        content: document.getElementById("downloads"),
+        expandIcon: "download",
+        expanded: false,
+        label: "Downloads"
+      });
+      view.ui.add(downloadsExpand, "bottom-left");
+
+      const daylightExpand = new Expand({
+        view: view,
+        content: new Daylight({ view }),
+        expandIcon: "sun",
+        expanded: false,
+        label: "Daglicht"
+      });
+      view.ui.add(daylightExpand, { position: "bottom-right", index: 105 });
+
+      const weatherExpand = new Expand({
+        view: view,
+        content: new Weather({ view }),
+        expandIcon: "cloudy",
+        expanded: false,
+        label: "Weer"
+      });
+      view.ui.add(weatherExpand, { position: "bottom-right", index: 105 });
+
+      const fullscreen = new Fullscreen({ view: view });
+      view.ui.add(fullscreen, "top-left");
+
+      const uploadExpand = new Expand({
+        view: view,
+        expandIcon: "upload-to-cloud",
+        expanded: false,
+        content: document.getElementById("drop-zone"),
+        label: "Uploaden"
+      });
+      view.ui.add(uploadExpand, "top-left");
+
+      // LayerList
+      const layerListExpand = new Expand({
+        view: view,
+        content: new LayerList({
+          view: view,
+          listItemCreatedFunction: function (event) {
+            const item = event.item;
+            if (item.layer.title === "3D BAG" || item.layer.title === "3D Bomen") {
+              item.visible = false;
+            }
+          }
+        }),
+        expandIcon: "layers",
+        expanded: false,
+        group: "top-left",
+        label: "Lagen"
+      });
+      view.ui.add(layerListExpand, "top-left");
+
+      // BasemapGallery
+      const basemapGalleryExpand = new Expand({
+        view: view,
+        content: new BasemapGallery({ view }),
+        expandIcon: "basemap",
+        expanded: false,
+        group: "top-left",
+        label: "Basiskaart"
+      });
+      view.ui.add(basemapGalleryExpand, "top-left");
+
+      let distanceWidget = null;
+      let areaWidget = null;
+
+      // Buttons
+      const startDistanceBtn = document.getElementById("start-distance");
+      const startAreaBtn = document.getElementById("start-area");
+      const stopBtn = document.getElementById("stop-measurement");
+      stopBtn.disabled = true;
+
+      function clearMeasurements() {
+        if (distanceWidget) {
+          distanceWidget.destroy();
+          distanceWidget = null;
+        }
+        if (areaWidget) {
+          areaWidget.destroy();
+          areaWidget = null;
+        }
+        stopBtn.disabled = true;
+      }
+
+      startDistanceBtn.addEventListener("click", () => {
+        clearMeasurements();
+        require(["esri/widgets/DirectLineMeasurement3D"], (DirectLineMeasurement3D) => {
+          distanceWidget = new DirectLineMeasurement3D({ view, unit: "meters" });
+          view.ui.add(distanceWidget, "top-right");
+          stopBtn.disabled = false;
+        });
+      });
+
+      startAreaBtn.addEventListener("click", () => {
+        clearMeasurements();
+        require(["esri/widgets/AreaMeasurement3D"], (AreaMeasurement3D) => {
+          areaWidget = new AreaMeasurement3D({ view, unit: "square-meters" });
+          view.ui.add(areaWidget, "top-right");
+          stopBtn.disabled = false;
+        });
+      });
+
+      stopBtn.addEventListener("click", () => {
+        clearMeasurements();
+      });
+
+      // Simulation control handlers
+      document.getElementById("startBtn").onclick = () => simulationRunning = true;
+      document.getElementById("pauseBtn").onclick = () => simulationRunning = false;
+      document.getElementById("resetBtn").onclick = () => { 
+        simulationRunning = false; 
+        simulationProgress = 0; 
+        if (simulationStartPoint) updateSimulationObjectPositions(simulationStartPoint[0], simulationStartPoint[1]); 
+      };
+
+      // Verwijderknop
+      document.getElementById("removeBtn").onclick = () => {
+        // Verwijder alle objecten die in de simulatievariabelen zijn opgeslagen
+        simulationObjects.forEach(obj => view.graphics.remove(obj));
+        
+        // Reset de simulatiestatusvariabelen
+        simulationObjects = [];
+        simulationRunning = false;
+        simulationProgress = 0;
+        simulationStartPoint = null;
+        simulationEndPoint = null;
+        simulationPath = null;
+        
+        // Verwijder markeringen (bijvoorbeeld start- en eindpunten) op basis van hun symbolen
+        view.graphics.removeMany(view.graphics.filter(g =>
+            g.symbol && g.symbol.symbolLayers &&
+            (g.symbol.symbolLayers[0].material?.color === "green" ||
+             g.symbol.symbolLayers[0].material?.color === "blue")
+        ));
+      };
+
+
+      document.getElementById("speedSlider").oninput = e => { 
+        simulationSpeed = e.target.value / 1000; 
+        document.getElementById("speedValue").textContent = e.target.value; 
+      };
+      
+      document.getElementById("objectCount").oninput = e => { 
+        simulationConfig.objectCount = parseInt(e.target.value); 
+        document.getElementById("countValue").textContent = e.target.value; 
+        initSimulationObjects(); 
+        if (simulationStartPoint) updateSimulationObjectPositions(simulationStartPoint[0], simulationStartPoint[1]); 
+      };
+      
+      document.getElementById("rowsInput").oninput = e => { 
+        simulationConfig.rows = parseInt(e.target.value); 
+        document.getElementById("rowsValue").textContent = e.target.value; 
+        initSimulationObjects(); 
+        if (simulationStartPoint) updateSimulationObjectPositions(simulationStartPoint[0], simulationStartPoint[1]); 
+      };
+      
+      document.getElementById("columnsInput").oninput = e => { 
+        simulationConfig.columns = parseInt(e.target.value); 
+        document.getElementById("columnsValue").textContent = e.target.value; 
+        initSimulationObjects(); 
+        if (simulationStartPoint) updateSimulationObjectPositions(simulationStartPoint[0], simulationStartPoint[1]); 
+      };
+      
+      document.getElementById("spacingSlider").oninput = e => { 
+        simulationConfig.spacing = parseInt(e.target.value); 
+        document.getElementById("spacingValue").textContent = e.target.value; 
+        if (simulationStartPoint) updateSimulationObjectPositions(simulationStartPoint[0], simulationStartPoint[1]); 
+        updateSimulationFormationPreview(); 
+      };
+      
+      document.getElementById("centerPosition").addEventListener("change", e => { 
+        simulationConfig.centerPosition = e.target.value; 
+        if (simulationStartPoint) updateSimulationObjectPositions(simulationStartPoint[0], simulationStartPoint[1]); 
+        updateSimulationFormationPreview(); 
+      });
+
+      const modelSelect = document.getElementById("modelSelect");
+      const uploadInput = document.getElementById("uploadModel");
+      
+      modelSelect.addEventListener("change", e => { 
+        simulationConfig.modelType = e.target.value; 
+        if (simulationConfig.modelType === "upload") { 
+          uploadInput.style.display = "block"; 
+        } else { 
+          uploadInput.style.display = "none"; 
+          updateSimulationObjects(); 
+        } 
+      });
+      
+      uploadInput.addEventListener("change", e => { 
+        const file = e.target.files[0]; 
+        if (file) { 
+          window.uploadedModelUrl = URL.createObjectURL(file); 
+          updateSimulationObjects(); 
+        } 
+      });
+
+      document.getElementById("heightSlider").oninput = e => { 
+        simulationConfig.height = parseFloat(e.target.value); 
+        document.getElementById("heightValue").textContent = e.target.value; 
+        updateSimulationObjects(); 
+      };
+      
+      document.getElementById("widthSlider").oninput = e => { 
+        simulationConfig.width = parseFloat(e.target.value); 
+        document.getElementById("widthValue").textContent = e.target.value; 
+        updateSimulationObjects(); 
+      };
+      
+      document.getElementById("depthSlider").oninput = e => { 
+        simulationConfig.depth = parseFloat(e.target.value); 
+        document.getElementById("depthValue").textContent = e.target.value; 
+        updateSimulationObjects(); 
+      };
+      
+      document.getElementById("rotationSlider").oninput = e => { 
+        simulationConfig.modelRotation = parseInt(e.target.value); 
+        document.getElementById("rotationValue").textContent = e.target.value; 
+        updateSimulationObjects(); 
+      };
+
+      // X,Y,Z Offset sliders
+      document.getElementById("xOffsetSlider").oninput = e => { 
+        simulationConfig.xOffset = parseFloat(e.target.value); 
+        document.getElementById("xOffsetValue").textContent = e.target.value; 
+        if (simulationStartPoint) updateSimulationObjectPositions(simulationStartPoint[0], simulationStartPoint[1]); 
+      };
+      
+      document.getElementById("yOffsetSlider").oninput = e => { 
+        simulationConfig.yOffset = parseFloat(e.target.value); 
+        document.getElementById("yOffsetValue").textContent = e.target.value; 
+        if (simulationStartPoint) updateSimulationObjectPositions(simulationStartPoint[0], simulationStartPoint[1]); 
+      };
+      
+      document.getElementById("zOffsetSlider").oninput = e => { 
+        simulationConfig.zOffset = parseFloat(e.target.value); 
+        document.getElementById("zOffsetValue").textContent = e.target.value; 
+        if (simulationStartPoint) updateSimulationObjectPositions(simulationStartPoint[0], simulationStartPoint[1]); 
+      };
+    });
+  </script>
+</body>
+</html>
