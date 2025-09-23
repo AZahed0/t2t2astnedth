@@ -1,0 +1,708 @@
+
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable-no" />
+  <title>3D Scene met modellen en widgets</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+  <link rel="stylesheet" href="https://js.arcgis.com/calcite-components/3.0.3/calcite.css" />
+  <style>
+    html, body, #view-div {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    #drop-zone {
+      width: 250px;
+      padding: 12px;
+      background-color: white;
+      z-index: 99;
+    }
+    #drop-zone h1 {
+      font-size: 16px;
+      margin-top: 0;
+    }
+    #drop-zone section {
+      margin-top: 10px;
+    }
+    #downloads {
+      display: flex;
+      background: white;
+      gap: 10px;
+      padding: 10px;
+      z-index: 90;
+    }
+    #downloads a {
+      display: flex;
+      width: 200px;
+      height: 200px;
+    }
+    calcite-notice {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    calcite-notice[open] {
+      animation-duration: 0.2s;
+      animation-name: slidein;
+    }
+    @keyframes slidein {
+      from { opacity: 0; transform: translateY(-30%); }
+      to { opacity: 1; transform: translateY(0%); }
+    }
+    #drop-zone.dragover {
+      border: 2px dashed cornflowerblue;
+      background-color: #f0f8ff;
+    }
+    @media (max-width: 600px) {
+      #drop-zone {
+        width: 90%;
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      #downloads {
+        flex-direction: column;
+        height: auto;
+      }
+    }
+    #measurement-buttons {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 101;
+      display: flex;
+      gap: 10px;
+    }
+    /* Daylight & Weather widgets */
+    #daylight-widget,
+    #weather-widget {
+      position: absolute;
+      bottom: 40px;
+      right: 10px;
+      z-index: 105;
+    }
+    /* Spatial Filter Widget */
+    #spatial-filter-widget {
+      position: absolute;
+      top: 60px;
+      right: 10px;
+      background-color: white;
+      padding: 15px;
+      border-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      width: 280px;
+      z-index: 100;
+      display: none;
+    }
+    #spatial-filter-widget h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+    .filter-section {
+      margin-bottom: 15px;
+    }
+    .filter-section label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .geometry-buttons {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .geometry-button {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      background-color: #f5f5f5;
+      cursor: pointer;
+      text-align: center;
+    }
+    .geometry-button.selected {
+      background-color: #0079c1;
+      color: white;
+    }
+    .filter-options {
+      margin-bottom: 10px;
+    }
+    .filter-options select {
+      width: 100%;
+      padding: 5px;
+    }
+    .buffer-slider {
+      margin-bottom: 15px;
+    }
+    .buffer-slider label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .filter-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .filter-actions button {
+      flex: 1;
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="view-div"></div>
+  <div id="drop-zone">
+    <h1>Voeg je eigen model toe</h1>
+    <input id="model-input" type="file" />
+    <section>
+      <p>Sleep een bestand hierheen of klik om te uploaden.</p>
+    </section>
+  </div>
+  <div id="downloads">
+    <a download href="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/Tower.glb">
+      <calcite-card>
+        <img slot="thumbnail" alt="Torens" src="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/Tower.png" />
+        <div slot="title">Torens</div>
+      </calcite-card>
+    </a>
+    <a download href="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/GreenBuilding.fbx">
+      <calcite-card>
+        <img slot="thumbnail" alt="Gebouw" src="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/GreenBuilding.png" />
+        <div slot="title">Gebouw</div>
+      </calcite-card>
+    </a>
+  </div>
+  <calcite-notice id="size-warning" kind="danger" icon closable>
+    <div slot="title">Bestand te groot</div>
+    <div slot="message">Het bestand mag maximaal 50 MB zijn</div>
+  </calcite-notice>
+  <div id="measurement-buttons">
+    <calcite-button id="start-distance" appearance="solid" kind="brand">Afstand meten</calcite-button>
+    <calcite-button id="start-area" appearance="solid" kind="brand">Oppervlakte meten</calcite-button>
+    <calcite-button id="stop-measurement" appearance="outline" kind="neutral" disabled>Stop meting</calcite-button>
+    <calcite-button id="toggle-spatial-filter" appearance="solid" kind="brand">Spatial Filter</calcite-button>
+  </div>
+  <!-- Spatial Filter Widget -->
+  <div id="spatial-filter-widget">
+    <h3>Spatial Filter</h3>
+    <div class="filter-section">
+      <label>Lagen om te filteren:</label>
+      <div>
+        <input type="checkbox" id="bag-filter-checkbox" checked />
+        <label for="bag-filter-checkbox">3D BAG</label>
+      </div>
+      <div>
+        <input type="checkbox" id="bomen-filter-checkbox" checked />
+        <label for="bomen-filter-checkbox">3D Bomen</label>
+      </div>
+    </div>
+    <div class="filter-section">
+      <label>Teken een geometrie om te filteren:</label>
+      <div class="geometry-buttons">
+        <button class="geometry-button" id="point-geometry-button" value="point">Punt</button>
+        <button class="geometry-button" id="line-geometry-button" value="polyline">Lijn</button>
+        <button class="geometry-button" id="polygon-geometry-button" value="polygon">Vlak</button>
+      </div>
+    </div>
+    <div class="filter-section">
+      <label>Spatiale relatie:</label>
+      <select id="relationship-select" class="filter-options">
+        <option value="intersects">Bevat (include)</option>
+        <option value="disjoint" selected>Buiten (exclude)</option>
+      </select>
+    </div>
+    <div class="filter-section">
+      <label for="buffer-slider">Buffer grootte (meters):</label>
+      <div class="buffer-slider">
+        <input type="range" id="buffer-slider" min="0" max="1000" value="0" step="10" style="width: 100%;">
+        <span id="buffer-value">0 m</span>
+      </div>
+    </div>
+    <div class="filter-actions">
+      <button id="clear-filter" class="esri-button">Filter wissen</button>
+      <button id="close-filter" class="esri-button">Sluiten</button>
+    </div>
+  </div>
+  <script>
+    require([
+      "esri/core/reactiveUtils",
+      "esri/layers/SceneLayer",
+      "esri/WebScene",
+      "esri/views/SceneView",
+      "esri/widgets/Sketch/SketchViewModel",
+      "esri/layers/GraphicsLayer",
+      "esri/widgets/Expand",
+      "esri/widgets/Daylight",
+      "esri/widgets/Weather",
+      "esri/widgets/Search",
+      "esri/widgets/Fullscreen",
+      "esri/widgets/LayerList",
+      "esri/widgets/BasemapGallery",
+      "esri/Basemap",
+      "esri/portal/Portal",
+      "esri/widgets/AreaMeasurement3D",
+      "esri/widgets/DirectLineMeasurement3D",
+      "esri/layers/support/FeatureFilter",
+      "esri/geometry/geometryEngine"
+    ], function (
+      reactiveUtils,
+      SceneLayer,
+      WebScene,
+      SceneView,
+      SketchViewModel,
+      GraphicsLayer,
+      Expand,
+      Daylight,
+      Weather,
+      Search,
+      Fullscreen,
+      LayerList,
+      BasemapGallery,
+      Basemap,
+      Portal,
+      AreaMeasurement3D,
+      DirectLineMeasurement3D,
+      FeatureFilter,
+      geometryEngine
+    ) {
+      const deviceId = localStorage.getItem("deviceId") || (crypto.randomUUID() && localStorage.setItem("deviceId", crypto.randomUUID()));
+      const webscene = new WebScene({
+        portalItem: { id: "48a900de3c124a47993de5fe9090671d" }
+      });
+      const view = new SceneView({
+        container: "view-div",
+        map: webscene,
+        camera: {
+          position: {
+            x: 4.7589,
+            y: 52.9551,
+            z: 150,
+            spatialReference: { wkid: 4326 }
+          },
+          heading: 0,
+          tilt: 65
+        },
+        background: {
+          type: "color",
+          color: [100, 149, 237, 1]
+        }
+      });
+      const sketchLayer = new GraphicsLayer();
+      const filterSketchLayer = new GraphicsLayer();
+      const bufferLayer = new GraphicsLayer();
+      view.map.addMany([sketchLayer, filterSketchLayer, bufferLayer]);
+      const sketchVM = new SketchViewModel({
+        layer: sketchLayer,
+        view: view
+      });
+      // Spatial filter variables
+      let bag3DLayer = null;
+      let bomen3DLayer = null;
+      let bagLayerView = null;
+      let bomenLayerView = null;
+      let filterSketchVM = null;
+      let sketchGeometry = null;
+      let filterGeometry = null;
+      let bufferSize = 0;
+      let selectedFilter = "disjoint";
+      let bagFilterSelected = true;
+      let bomenFilterSelected = true;
+      view.when(() => {
+        // Find existing layers
+        sceneLayer = view.map.layers.find((layer) => layer.title === "EditableFeatures3DObject");
+        sceneLayer.definitionExpression = `deviceId = '${deviceId}' OR deviceId = 'initial-model'`;
+        // 3D BAG SceneLayer - now visible by default
+        bag3DLayer = new SceneLayer({
+          url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3DBAG_WGS_EGM_V2/SceneServer",
+          title: "3D BAG",
+          visible: true // Changed to true
+        });
+        view.map.add(bag3DLayer);
+        // 3D Bomen SceneLayer - now visible by default
+        bomen3DLayer = new SceneLayer({
+          url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3D_Bomen_WGS/SceneServer",
+          title: "3D Bomen",
+          visible: true // Changed to true
+        });
+        view.map.add(bomen3DLayer);
+        // Get layer views for filtering
+        view.whenLayerView(bag3DLayer).then(layerView => {
+          bagLayerView = layerView;
+        });
+        view.whenLayerView(bomen3DLayer).then(layerView => {
+          bomenLayerView = layerView;
+        });
+        // Initialize filter sketch view model
+        filterSketchVM = new SketchViewModel({
+          layer: filterSketchLayer,
+          view: view,
+          pointSymbol: {
+            type: "simple-marker",
+            style: "circle",
+            size: 10,
+            color: [255, 255, 255, 0.8],
+            outline: {
+              color: [211, 132, 80, 0.7],
+              size: 10,
+            },
+          },
+          polylineSymbol: {
+            type: "simple-line",
+            color: [211, 132, 80, 0.7],
+            width: 6,
+          },
+          polygonSymbol: {
+            type: "polygon-3d",
+            symbolLayers: [
+              {
+                type: "fill",
+                material: {
+                  color: [255, 255, 255, 0.8],
+                },
+                outline: {
+                  color: [211, 132, 80, 0.7],
+                  size: "10px",
+                },
+              },
+            ],
+          },
+          defaultCreateOptions: { hasZ: false },
+        });
+        // Model upload event
+        const input = document.querySelector("#model-input");
+        input.addEventListener("change", async (e) => {
+          const file = e.target.files[0];
+          const fileName = file.name.toLowerCase();
+          const fileExtension = fileName.split('.').pop();
+          const validExtensions = ["glb", "gltf"];
+          const isValidExtension = validExtensions.includes(fileExtension);
+          if (file && file.size / (1024 * 1024) <= 50 && isValidExtension) {
+            const mesh = await sceneLayer.convertMesh([file]);
+            await mesh.load();
+            sketchVM.place(mesh, {
+              graphicProperties: {
+                layer: sketchLayer,
+                attributes: { deviceId: deviceId }
+              }
+            });
+            // Add success notice
+            const notice = document.createElement("calcite-notice");
+            notice.setAttribute("kind", "success");
+            notice.setAttribute("icon", "");
+            notice.setAttribute("open", "");
+            notice.innerHTML = `
+              <div slot="title">Model toegevoegd</div>
+              <div slot="message">Je model is succesvol geplaatst.</div>
+            `;
+            document.body.appendChild(notice);
+            setTimeout(() => notice.remove(), 4000);
+          } else {
+            let message = "Het bestand mag maximaal 50 MB zijn";
+            if (file && file.size / (1024 * 1024) > 50) {
+              message = `Bestand te groot (${(file.size / (1024 * 1024)).toFixed(2)} MB). Het bestand mag maximaal 50 MB zijn.`;
+            } else if (file && !isValidExtension) {
+              message = `Ongeldig bestandstype.  Alleen .glb en .gltf bestanden zijn toegestaan.`;
+            }
+            document.querySelector("#size-warning").innerHTML = `<div slot="title">Fout bij bestandsupload</div><div slot="message">${message}</div>`;
+            document.querySelector("#size-warning").open = true;
+          }
+          input.value = "";
+        });
+        // Drop zone
+        const dropZone = document.getElementById("drop-zone");
+        dropZone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dropZone.classList.add("dragover");
+        });
+        dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+        dropZone.addEventListener("drop", async (e) => {
+          e.preventDefault();
+          dropZone.classList.remove("dragover");
+          const file = e.dataTransfer.files[0];
+          const fileName = file.name.toLowerCase();
+          const fileExtension = fileName.split('.').pop();
+          const validExtensions = ["glb", "gltf"];
+          const isValidExtension = validExtensions.includes(fileExtension);
+          if (file && file.size / (1024 * 1024) <= 50 && isValidExtension) {
+            const mesh = await sceneLayer.convertMesh([file]);
+            await mesh.load();
+            sketchVM.place(mesh, {
+              graphicProperties: {
+                layer: sketchLayer,
+                attributes: { deviceId: deviceId }
+              }
+            });
+             // Add success notice
+            const notice = document.createElement("calcite-notice");
+            notice.setAttribute("kind", "success");
+            notice.setAttribute("icon", "");
+            notice.setAttribute("open", "");
+            notice.innerHTML = `
+              <div slot="title">Model toegevoegd</div>
+              <div slot="message">Je model is succesvol geplaatst.</div>
+            `;
+            document.body.appendChild(notice);
+            setTimeout(() => notice.remove(), 4000);
+          } else {
+            let message = "Het bestand mag maximaal 50 MB zijn";
+            if (file && file.size / (1024 * 1024) > 50) {
+              message = `Bestand te groot (${(file.size / (1024 * 1024)).toFixed(2)} MB). Het bestand mag maximaal 50 MB zijn.`;
+            } else if (file && !isValidExtension) {
+              message = `Ongeldig bestandstype.  Alleen .glb en .gltf bestanden zijn toegestaan.`;
+            }
+            document.querySelector("#size-warning").innerHTML = `<div slot="title">Fout bij bestandsupload</div><div slot="message">${message}</div>`;
+            document.querySelector("#size-warning").open = true;
+          }
+        });
+        // Spatial Filter Events
+        setupSpatialFilterEvents();
+      });
+      // Widgets
+      const searchExpand = new Expand({
+        view: view,
+        content: new Search({ view }),
+        expandIcon: "search",
+        expanded: false,
+        label: "Zoeken"
+      });
+      view.ui.add(searchExpand, "top-left");
+      const downloadsExpand = new Expand({
+        view: view,
+        content: document.getElementById("downloads"),
+        expandIcon: "download",
+        expanded: false,
+        label: "Downloads"
+      });
+      view.ui.add(downloadsExpand, "bottom-left");
+      const daylightExpand = new Expand({
+        view: view,
+        content: new Daylight({ view }),
+        expandIcon: "sun",
+        expanded: false,
+        label: "Daglicht"
+      });
+      view.ui.add(daylightExpand, { position: "bottom-right", index: 105 });
+      const weatherExpand = new Expand({
+        view: view,
+        content: new Weather({ view }),
+        expandIcon: "cloudy",
+        expanded: false,
+        label: "Weer"
+      });
+      view.ui.add(weatherExpand, { position: "bottom-right", index: 105 });
+      const fullscreen = new Fullscreen({ view: view });
+      view.ui.add(fullscreen, "top-left");
+      const uploadExpand = new Expand({
+        view: view,
+        expandIcon: "upload-to-cloud",
+        expanded: false,
+        content: document.getElementById("drop-zone"),
+        label: "Uploaden"
+      });
+      view.ui.add(uploadExpand, "top-left");
+      // LayerList
+      const layerListExpand = new Expand({
+        view: view,
+        content: new LayerList({
+          view: view,
+          listItemCreatedFunction: function (event) {
+            const item = event.item;
+            if (item.layer.title === "3D BAG" || item.layer.title === "3D Bomen") {
+              item.visible = true; // Changed to true
+            }
+          }
+        }),
+        expandIcon: "layers",
+        expanded: false,
+        group: "top-left",
+        label: "Lagen"
+      });
+      view.ui.add(layerListExpand, "top-left");
+      // BasemapGallery
+      const basemapGalleryExpand = new Expand({
+        view: view,
+        content: new BasemapGallery({ view }),
+        expandIcon: "basemap",
+        expanded: false,
+        group: "top-left",
+        label: "Basiskaart"
+      });
+      view.ui.add(basemapGalleryExpand, "top-left");
+      
+      // Set default basemap to satellite imagery
+      view.when(() => {
+        view.map.basemap = "satellite";
+      });
+      
+      let distanceWidget = null;
+      let areaWidget = null;
+      // Buttons
+      const startDistanceBtn = document.getElementById("start-distance");
+      const startAreaBtn = document.getElementById("start-area");
+      const stopBtn = document.getElementById("stop-measurement");
+      stopBtn.disabled = true;
+      function clearMeasurements() {
+        if (distanceWidget) {
+          distanceWidget.destroy();
+          distanceWidget = null;
+        }
+        if (areaWidget) {
+          areaWidget.destroy();
+          areaWidget = null;
+        }
+        stopBtn.disabled = true;
+      }
+      startDistanceBtn.addEventListener("click", () => {
+        clearMeasurements();
+        require(["esri/widgets/DirectLineMeasurement3D"], (DirectLineMeasurement3D) => {
+          distanceWidget = new DirectLineMeasurement3D({ view, unit: "meters" });
+          view.ui.add(distanceWidget, "top-right");
+          stopBtn.disabled = false;
+        });
+      });
+      startAreaBtn.addEventListener("click", () => {
+        clearMeasurements();
+        require(["esri/widgets/AreaMeasurement3D"], (AreaMeasurement3D) => {
+          areaWidget = new AreaMeasurement3D({ view, unit: "square-meters" });
+          view.ui.add(areaWidget, "top-right");
+          stopBtn.disabled = false;
+        });
+      });
+      stopBtn.addEventListener("click", () => {
+        clearMeasurements();
+      });
+      // Spatial Filter Functions
+      function setupSpatialFilterEvents() {
+        // Toggle spatial filter widget
+        document.getElementById("toggle-spatial-filter").addEventListener("click", function() {
+          const widget = document.getElementById("spatial-filter-widget");
+          widget.style.display = widget.style.display === "none" ? "block" : "none";
+        });
+        // Close filter widget
+        document.getElementById("close-filter").addEventListener("click", function() {
+          document.getElementById("spatial-filter-widget").style.display = "none";
+        });
+        // Layer selection checkboxes
+        document.getElementById("bag-filter-checkbox").addEventListener("change", function(e) {
+          bagFilterSelected = e.target.checked;
+          updateFilter();
+        });
+        document.getElementById("bomen-filter-checkbox").addEventListener("change", function(e) {
+          bomenFilterSelected = e.target.checked;
+          updateFilter();
+        });
+        // Geometry buttons
+        document.getElementById("point-geometry-button").addEventListener("click", geometryButtonClickHandler);
+        document.getElementById("line-geometry-button").addEventListener("click", geometryButtonClickHandler);
+        document.getElementById("polygon-geometry-button").addEventListener("click", geometryButtonClickHandler);
+        // Spatial relationship select
+        document.getElementById("relationship-select").addEventListener("change", function(e) {
+          selectedFilter = e.target.value;
+          updateFilter();
+        });
+        // Buffer slider
+        const bufferSlider = document.getElementById("buffer-slider");
+        const bufferValue = document.getElementById("buffer-value");
+        bufferSlider.addEventListener("input", function(e) {
+          bufferSize = parseInt(e.target.value);
+          bufferValue.textContent = bufferSize + " m";
+          updateFilter();
+        });
+        // Clear filter button
+        document.getElementById("clear-filter").addEventListener("click", clearSpatialFilter);
+        // Sketch events for filter geometry
+        filterSketchVM.on(["create"], (event) => {
+          if (event.state == "complete") {
+            sketchGeometry = event.graphic.geometry;
+            updateFilter();
+          }
+        });
+        filterSketchVM.on(["update"], (event) => {
+          const eventInfo = event.toolEventInfo;
+          if (event.toolEventInfo && event.toolEventInfo.type.includes("stop")) {
+            sketchGeometry = event.graphics[0].geometry;
+            updateFilter();
+          }
+        });
+      }
+      function geometryButtonClickHandler(event) {
+        // Clear any existing filter geometry
+        clearSpatialFilter();
+        // Update button styles
+        document.querySelectorAll('.geometry-button').forEach(btn => {
+          btn.classList.remove('selected');
+        });
+        event.target.classList.add('selected');
+        // Start sketching the selected geometry type
+        const geometryType = event.target.value;
+        filterSketchVM.create(geometryType);
+      }
+      function clearSpatialFilter() {
+        sketchGeometry = null;
+        filterGeometry = null;
+        filterSketchLayer.removeAll();
+        bufferLayer.removeAll();
+        // Reset button styles
+        document.querySelectorAll('.geometry-button').forEach(btn => {
+          btn.classList.remove('selected');
+        });
+        // Clear filters from layers
+        if (bagLayerView) {
+          bagLayerView.filter = null;
+        }
+        if (bomenLayerView) {
+          bomenLayerView.filter = null;
+        }
+      }
+      function updateFilter() {
+        updateFilterGeometry();
+        if (!filterGeometry) {
+          clearSpatialFilter();
+          return;
+        }
+        const featureFilter = new FeatureFilter({
+          geometry: filterGeometry,
+          spatialRelationship: selectedFilter
+        });
+        // Apply filter to selected layers
+        if (bagLayerView && bagFilterSelected) {
+          bagLayerView.filter = featureFilter;
+        } else if (bagLayerView) {
+          bagLayerView.filter = null;
+        }
+        if (bomenLayerView && bomenFilterSelected) {
+          bomenLayerView.filter = featureFilter;
+        } else if (bomenLayerView) {
+          bomenLayerView.filter = null;
+        }
+      }
+      function updateFilterGeometry() {
+        // Add a polygon graphic for the bufferSize
+        if (sketchGeometry) {
+          if (bufferSize > 0) {
+            // Create buffer around the geometry
+            const bufferGeometry = geometryEngine.buffer(sketchGeometry, bufferSize, "meters");
+            if (bufferLayer.graphics.length === 0) {
+              bufferLayer.add({
+                geometry: bufferGeometry,
+                symbol: filterSketchVM.polygonSymbol
+              });
+            } else {
+              bufferLayer.graphics.getItemAt(0).geometry = bufferGeometry;
+            }
+            filterGeometry = bufferGeometry;
+          } else {
+            bufferLayer.removeAll();
+            filterGeometry = sketchGeometry;
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
