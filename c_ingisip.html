@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GISIB - C# Code Generator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #1b5e20; /* Donker groen */
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 14px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: #2e7d32;
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.4rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            border-color: #4caf50;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        button {
+            padding: 14px 25px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+        }
+        
+        .generate-btn {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .generate-btn:hover {
+            background: #388e3c;
+            transform: translateY(-2px);
+        }
+        
+        .download-btn {
+            background: #2e7d32;
+            color: white;
+        }
+        
+        .download-btn:hover {
+            background: #1b5e20;
+            transform: translateY(-2px);
+        }
+        
+        .reset-btn {
+            background: #a5d6a7;
+            color: #1b5e20;
+        }
+        
+        .reset-btn:hover {
+            background: #81c784;
+            transform: translateY(-2px);
+        }
+        
+        .output-section {
+            margin-top: 30px;
+        }
+        
+        h2 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8f5e9;
+        }
+        
+        .code-container {
+            background: #1e1e1e;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 2px solid #4caf50;
+        }
+        
+        .code-header {
+            background: #2d2d2d;
+            color: #4caf50;
+            padding: 12px 20px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #4caf50;
+        }
+        
+        .copy-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: #388e3c;
+        }
+        
+        .copy-btn.copied {
+            background: #2e7d32;
+        }
+        
+        pre {
+            padding: 20px;
+            color: #f8f8f2;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            line-height: 1.5;
+            margin: 0;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .instructions, .explanation {
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 5px solid #4caf50;
+        }
+        
+        .instructions h3, .explanation h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+        }
+        
+        .explanation p, .instructions li {
+            margin-bottom: 10px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #2e7d32;
+            font-size: 14px;
+            border-top: 1px solid #e8f5e9;
+        }
+
+        .gisib-logo {
+            font-weight: bold;
+            color: #2e7d32;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span class="gisib-logo">GISIB</span> - C# Code Generator</h1>
+            <p class="subtitle">Genereer C# event handler code met aangepaste parameters</p>
+        </header>
+        
+        <div class="content">
+            <div class="instructions">
+                <h3>Hoe gebruik je dit?</h3>
+                <ul>
+                    <li>Voer de veldnaam in (bijv. <b>INSPECTEUR</b>)</li>
+                    <li>Klik op "Code Genereren"</li>
+                    <li>Kopieer de code of download deze als een .cs bestand</li>
+                </ul>
+            </div>
+            
+            <div class="input-section">
+                <div class="form-group">
+                    <label for="fieldName">Veld Naam:</label>
+                    <input type="text" id="fieldName" placeholder="Voer veldnaam in" value="INSPECTEUR">
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="generate-btn" onclick="generateCode()">Code Genereren</button>
+                <button class="download-btn" onclick="downloadCode()">Downloaden als .cs</button>
+                <button class="reset-btn" onclick="resetForm()">Reset</button>
+            </div>
+            
+            <div class="output-section">
+                <h2>Gegenereerde C# Code:</h2>
+                <div class="code-container">
+                    <div class="code-header">
+                        <span>Inspectie_Events.cs</span>
+                        <button class="copy-btn" onclick="copyCode()">Code Kopiëren</button>
+                    </div>
+                    <pre id="output">// Gegenereerde code verschijnt hier</pre>
+                </div>
+            </div>
+            
+            <div class="explanation">
+                <h3>Wat doet deze code in GISIB?</h3>
+                <p>✅ Deze <b>C# code</b> zorgt ervoor dat, vlak <b>voor het opslaan</b> van een object in GISIB, automatisch de naam van de huidige gebruiker wordt ingevuld in het veld <code>INSPECTEUR</code> (indien dit veld leeg is).</p>
+                <ul>
+                    <li><b>field</b> – De veldnaam die wordt gecontroleerd</li>
+                    <li><b>ApplicationSettings.ActiveUser.Name</b> – Haalt de huidige gebruikersnaam op</li>
+                    <li><b>PropertyBag</b> – Slaat de waarde op in het object</li>
+                    <li><b>ChangedProperties</b> – Markeert dat dit veld gewijzigd is</li>
+                </ul>
+                <hr>
+                
+            </div>
+        </div>
+        
+        <footer>
+            <p><span class="gisib-logo">GISIB</span> C# Code Generator &copy; 2025</p>
+        </footer>
+    </div>
+
+    <script>
+        function generateCode() {
+            const field = document.getElementById("fieldName").value.trim();
+            
+            if (!field) {
+                alert("Vul alstublieft een veldnaam in");
+                return;
+            }
+
+            const code = `using System;
+using System.Windows.Forms;
+using gisib.Model.Base;
+using gisib.Core.Classes;
+using gisib.Core.Repositories;
+
+public static class Inspectie_Events
+{
+    public static void VoorOpslaan(BaseObject baseObject)
+    {
+        string field = "${field}";
+        if (baseObject[field] == null)
+        {
+            string valuestr = ApplicationSettings.GetInstance().ActiveUser.Name;
+
+            if (!String.IsNullOrWhiteSpace(valuestr))
+            {
+                baseObject.PropertyBag[field] = valuestr;
+                baseObject.ChangedProperties.Add(field);
+            }
+        }
+    }
+}`;
+
+            document.getElementById("output").textContent = code;
+        }
+
+        function downloadCode() {
+            const code = document.getElementById("output").textContent;
+            
+            if (code === "// Gegenereerde code verschijnt hier") {
+                alert("Genereer eerst code voordat u downloadt");
+                return;
+            }
+            
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Inspectie_Events.cs';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function copyCode() {
+            const code = document.getElementById("output").textContent;
+            
+            if (code === "// Gegenereerde code verschijnt hier") {
+                alert("Genereer eerst code voordat u kopieert");
+                return;
+            }
+            
+            navigator.clipboard.writeText(code).then(() => {
+                const copyBtn = document.querySelector('.copy-btn');
+                copyBtn.textContent = 'Gekopieerd!';
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                    copyBtn.textContent = 'Code Kopiëren';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                alert('Kan code niet naar klembord kopiëren. Gebruik Ctrl+C.');
+            });
+        }
+
+        function resetForm() {
+            document.getElementById("fieldName").value = "INSPECTEUR";
+            document.getElementById("output").textContent = "// Gegenereerde code verschijnt hier";
+        }
+
+        // Genereer code bij het laden van de pagina
+        window.onload = generateCode;
+    </script>
+</body>
+</html>
