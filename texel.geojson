@@ -1,0 +1,16 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "TESO Veerboot Livecam",
+        "popupContent": "<figure class='image image_resized' style='height:auto;width:100%;'><img style='border-radius:8px;display:block;' src='https://img.youtube.com/vi/U8m7Fr6xMqM/maxresdefault.jpg' alt='TESO Livecam thumbnail'></figure><div style='color:#606060;font-size:14px;margin-top:10px;'><p><a target='_blank' rel='noopener noreferrer' href='https://www.youtube.com/watch?v=U8m7Fr6xMqM'><strong>TESO Veerboot Livecam - Den Helder naar Texel&nbsp;</strong></a></p></div><div style='align-items:center;color:#e74c3c;display:flex;font-size:13px;gap:8px;margin-top:8px;'><a target='_blank' rel='noopener noreferrer' href='https://www.youtube.com/watch?v=U8m7Fr6xMqM'><span style='color:#c20003;'><strong><u>LIVE</u></strong></span></a></div>"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.77746, 52.96456]
+      }
+    }
+  ]
+}
