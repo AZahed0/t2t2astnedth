@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <!-- Let op: maximum-scale=1 en user-scalable=no is meestal ongewenst voor webtoegankelijkheid. Ik heb deze laten staan omdat het in de vorige versie stond, maar overweeg deze te verwijderen. -->
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no" />
+  <title>Den Helder — Texel Veerboot Livecam ArcGIS SDK</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    html, body, #viewDiv { 
+      height: 100%; 
+      margin: 0; 
+      padding: 0; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .esri-popup__main-container {
+      width: 800px !important;
+      max-width: 90vw !important;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .esri-popup__content {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: white;
+    }
+
+    .popup-video { 
+      width: 100%;
+      height: 450px;
+      background: #000;
+    }
+
+    .popup-video iframe { 
+      width: 100%; 
+      height: 100%; 
+      border: 0; 
+    }
+
+    .esri-popup__header {
+      background: white;
+      color: #333;
+      padding: 15px 20px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .esri-popup__header-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .esri-popup__button {
+      color: #333 !important;
+    }
+
+    .esri-popup__footer {
+      background: white;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .info-panel {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      max-width: 300px;
+      z-index: 100;
+      backdrop-filter: blur(5px);
+    }
+
+    .info-panel h2 {
+      margin-top: 0;
+      color: #2c5aa0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-panel p {
+      margin: 10px 0;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .highlight {
+      color: #e74c3c;
+      font-weight: 600;
+    }
+
+    /* Oude CSS voor instructions-button, modal en overlay verwijderd */
+
+    /* --- Pulsing dot CSS removed here --- */
+
+    .youtube-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 15px;
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .youtube-logo {
+      color: #ff0000;
+      font-size: 24px;
+    }
+
+    .youtube-title {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .video-info {
+      padding: 15px;
+      background: white;
+    }
+
+    .video-info h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+    }
+
+    .video-info p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #606060;
+    }
+
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      color: #e74c3c;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .live-indicator .dot {
+      width: 10px;
+      height: 10px;
+      background: #e74c3c;
+      border-radius: 50%;
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="viewDiv"></div>
+
+  <div class="info-panel">
+    <h2><i class="fas fa-ship"></i> Texel Veerboot Livecam </h2>
+    <!-- De instructie paragraaf is hier verwijderd. -->
+    <p>Kijk live naar de <span class="highlight">TESO-veerboot</span> tussen Den Helder en Texel.</p>
+  </div>
+
+  <!-- De 'Instructies' knop, overlay en modal zijn hier verwijderd. -->
+
+  <script src="https://js.arcgis.com/4.26/"></script>
+  <script>
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/Graphic",
+      "esri/layers/GraphicsLayer",
+      "esri/PopupTemplate"
+    ], function(Map, MapView, Graphic, GraphicsLayer, PopupTemplate) {
+
+      // Coördinaten voor de kaartweergave (bijgewerkt)
+      const viewLon = 4.785590095039936; 
+      const viewLat = 52.96423431628614; 
+
+      // Coördinaten voor de rode marker (gehandhaafd op de oorspronkelijke waarde)
+      const markerLon = 4.77746;
+      const markerLat = 52.96456;
+
+      const map = new Map({ basemap: "streets-navigation-vector" });
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: map,
+        // Gebruikt de nieuwe view coördinaten voor de kaartpositie
+        center: [viewLon, viewLat], 
+        // Zoom niveau gehandhaafd op 15 (laatste instelling)
+        zoom: 15, 
+        popup: {
+          dockEnabled: true,
+          dockOptions: {
+            buttonEnabled: false,
+            breakpoint: false,
+            position: "top-right"
+          }
+        }
+      });
+
+      const gl = new GraphicsLayer();
+      map.add(gl);
+
+      const youtubeId = 'U8m7Fr6xMqM';
+
+      function createVideoContent() {
+        const div = document.createElement("div");
+        
+        // YouTube header
+        const header = document.createElement("div");
+        header.className = "youtube-header";
+        header.innerHTML = `
+          <i class="fab fa-youtube youtube-logo"></i>
+          <div class="youtube-title">YouTube</div>
+        `;
+        
+        // Video container
+        const videoContainer = document.createElement("div");
+        videoContainer.className = "popup-video";
+        videoContainer.innerHTML = `
+          <iframe src="https://www.youtube.com/embed/${youtubeId}?rel=0&playsinline=1&autoplay=1&mute=1"
+                  title="Livecam Texel Veerboot" frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen></iframe>
+        `;
+        
+        // Video info
+        const info = document.createElement("div");
+        info.className = "video-info";
+        info.innerHTML = `
+          <h3>TESO Veerboot Livecam - Den Helder naar Texel</h3>
+          <p>Live beelden van de TESO veerboot tussen Den Helder en Texel</p>
+          <div class="live-indicator">
+            <div class="dot"></div>
+            <span>LIVE</span>
+          </div>
+        `;
+        
+        div.appendChild(header);
+        div.appendChild(videoContainer);
+        div.appendChild(info);
+        
+        return div;
+      }
+
+      const popupTemplate = new PopupTemplate({
+        title: "Livecam: TESO Veerboot (Texel - Den Helder)",
+        content: createVideoContent
+      });
+
+      const point = {
+        type: "point",
+        // Gebruikt de marker coördinaten voor de positie van de rode stip
+        longitude: markerLon,
+        latitude: markerLat
+      };
+
+      // Create a simple red dot marker (This is now the only clickable element on the map)
+      const markerSymbol = {
+        type: "simple-marker",
+        color: [231, 76, 60, 0.9],
+        // Grootte gehandhaafd op 18
+        size: 18, 
+        outline: {
+          color: [255, 255, 255, 0.9],
+          // Rand gehandhaafd op 3
+          width: 3 
+        }
+      };
+
+      const pointGraphic = new Graphic({
+        geometry: point,
+        symbol: markerSymbol,
+        popupTemplate: popupTemplate
+      });
+
+      gl.add(pointGraphic);
+
+      view.when(() => {
+        /*
+          De code om de pulserende 'live-dot' als een HTML element toe te voegen is hier verwijderd.
+          De functionaliteit is nu afhankelijk van de klik op de ArcGIS Graphic (pointGraphic).
+        */
+
+        // Open popup automatically when page loads
+        view.popup.open({
+          title: "Livecam: TESO Veerboot (Texel - Den Helder)",
+          location: point,
+          content: createVideoContent()
+        });
+      });
+
+      // De code voor de modal functionaliteit is hier verwijderd.
+
+    });
+  </script>
+</body>
+</html>
