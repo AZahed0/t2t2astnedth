@@ -1,0 +1,488 @@
+```json
+{
+  "type": "FeatureCollection",
+  "generator": "overpass-turbo",
+  "copyright": "De gegevens in dit document zijn afkomstig van www.openstreetmap.org. De gegevens zijn beschikbaar gesteld onder ODbL.",
+  "timestamp": "2025-10-04T17:24:14Z",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "way/1385141498",
+        "toegang": "privé",
+        "voorziening": "toiletten",
+        "gebouw": "ja"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              4.7290054,
+              52.9015451
+            ],
+            [
+              4.7289981,
+              52.9014789
+            ],
+            [
+              4.7290549,
+              52.9014766
+            ],
+            [
+              4.7290622,
+              52.9015429
+            ],
+            [
+              4.7290054,
+              52.9015451
+            ]
+          ]
+        ]
+      },
+      "id": "way/1385141498"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/1360342996",
+        "voorziening": "toiletten",
+        "seamark:small_craft_facility:category": "toiletten;douches",
+        "seamark:type": "small_craft_facility",
+        "rolstoel": "ja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7814578,
+          52.9639656
+        ]
+      },
+      "id": "node/1360342996"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/2858248944",
+        "voorziening": "toiletten"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.718448,
+          52.8994151
+        ]
+      },
+      "id": "node/2858248944"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/3096564949",
+        "voorziening": "toiletten",
+        "controle_datum": "2025-05-26",
+        "toegangsprijs": "ja",
+        "betaling:contant": "ja",
+        "toiletten:handenwassen": "ja",
+        "rolstoel": "ja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7536433,
+          52.8979189
+        ]
+      },
+      "id": "node/3096564949"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/3738942415",
+        "toegang": "ja",
+        "voorziening": "toiletten",
+        "toegangsprijs": "nee",
+        "toiletten:afvoer": "doorspoelen",
+        "rolstoel": "ja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7216182,
+          52.9507788
+        ]
+      },
+      "id": "node/3738942415"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/4934568086",
+        "voorziening": "toiletten",
+        "toegangsprijs": "ja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7607339,
+          52.9569483
+        ]
+      },
+      "id": "node/4934568086"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5095800779",
+        "toegang": "ja",
+        "voorziening": "toiletten",
+        "controle_datum:openingstijden": "2023-10-21",
+        "toegangsprijs": "nee",
+        "openingstijden": "apr-sep: ma-zo,feestdagen 10:00-18:00",
+        "beheerder": "Reddingsbrigade Den Helder",
+        "toiletten:afvoer": "doorspoelen",
+        "uniseks": "ja",
+        "rolstoel": "ja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7125655,
+          52.8958834
+        ]
+      },
+      "id": "node/5095800779"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5948319509",
+        "toegang": "ja",
+        "voorziening": "toiletten",
+        "aankleedtafel": "nee",
+        "drinkwater": "nee",
+        "toegangsprijs": "nee",
+        "mannen": "ja",
+        "toiletten:positie": "urinoir",
+        "rolstoel": "nee"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7672616,
+          52.9612559
+        ]
+      },
+      "id": "node/5948319509"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5948322538",
+        "voorziening": "toiletten",
+        "beheerder": "KopGroep Bibliotheken",
+        "toiletten:afvoer": "doorspoelen",
+        "rolstoel": "ja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7670134,
+          52.9577751
+        ]
+      },
+      "id": "node/5948322538"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5948340822",
+        "toegang": "ja",
+        "voorziening": "toiletten",
+        "aankleedtafel": "nee",
+        "mannen": "ja",
+        "rolstoel": "nee"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7339646,
+          52.9444681
+        ]
+      },
+      "id": "node/5948340822"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/8017435829",
+        "toegang": "ja",
+        "voorziening": "toiletten",
+        "aankleedtafel": "nee",
+        "toegangsprijs": "nee",
+        "mannen": "ja",
+        "beheerder": "Gemeente Den Helder",
+        "toiletten:handenwassen": "nee",
+        "toiletten:menstruatieproducten": "nee",
+        "toiletten:positie": "urinoir",
+        "rolstoel": "nee"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7479206,
+          52.955891
+        ]
+      },
+      "id": "node/8017435829"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/8044716835",
+        "toegang": "ja",
+        "voorziening": "toiletten",
+        "aankleedtafel": "nee",
+        "toegangsprijs": "nee",
+        "douche": "nee",
+        "toiletten:afvoer": "doorspoelen",
+        "toiletten:handenwassen": "ja",
+        "toiletten:handenwassen:zeep": "nee",
+        "uniseks": "ja",
+        "rolstoel": "ja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7382485,
+          52.9512624
+        ]
+      },
+      "id": "node/8044716835"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/8138297474",
+        "voorziening": "toiletten",
+        "rolstoel": "beperkt"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.714323,
+          52.9297321
+        ]
+      },
+      "id": "node/8138297474"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/9624442947",
+        "toegang": "privé",
+        "voorziening": "toiletten"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7210648,
+          52.9149066
+        ]
+      },
+      "id": "node/9624442947"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/9655966852",
+        "voorziening": "toiletten"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7700986,
+          52.9599433
+        ]
+      },
+      "id": "node/9655966852"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11042906240",
+        "toegang": "klanten",
+        "voorziening": "toiletten",
+        "aankleedtafel": "ja",
+        "aankleedtafel:toegangsprijs": "nee",
+        "aankleedtafel:locatie": "rolstoeltoilet",
+        "drinkwater": "ja",
+        "toegangsprijs": "nee",
+        "vrouwen": "ja",
+        "mannen": "ja",
+        "beheerder": "Marinemuseum",
+        "toiletten:afvoer": "doorspoelen",
+        "toiletten:positie": "zittend;urinoir",
+        "rolstoel": "ja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7687838,
+          52.9631954
+        ]
+      },
+      "id": "node/11042906240"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11164945805",
+        "voorziening": "toiletten"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7330722,
+          52.9336017
+        ]
+      },
+      "id": "node/11164945805"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12077979591",
+        "toegang": "klanten",
+        "voorziening": "toiletten",
+        "vrouwen": "ja",
+        "mannen": "ja",
+        "toiletten:afvoer": "doorspoelen",
+        "rolstoel": "nee"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7527819,
+          52.9252441
+        ]
+      },
+      "id": "node/12077979591"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12143029913",
+        "voorziening": "toiletten",
+        "toegangsprijs": "nee",
+        "rolstoel": "ja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7266818,
+          52.9072201
+        ]
+      },
+      "id": "node/12143029913"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12144322769",
+        "voorziening": "toiletten",
+        "toegangsprijs": "nee",
+        "rolstoel": "ja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7133204,
+          52.904183
+        ]
+      },
+      "id": "node/12144322769"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/13185351462",
+        "toegang": "klanten",
+        "voorziening": "toiletten",
+        "mannen": "ja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.718256,
+          52.8982464
+        ]
+      },
+      "id": "node/13185351462"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/13185362108",
+        "toegang": "klanten",
+        "voorziening": "toiletten",
+        "vrouwen": "ja"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7182644,
+          52.8981953
+        ]
+      },
+      "id": "node/13185362108"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/13187893363",
+        "voorziening": "toiletten"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7182949,
+          52.8982632
+        ]
+      },
+      "id": "node/13187893363"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/13187893398",
+        "voorziening": "toiletten"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7182961,
+          52.8982521
+        ]
+      },
+      "id": "node/13187893398"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/13187893409",
+        "voorziening": "toiletten",
+        "rolstoel": "aangewezen"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.7183044,
+          52.8981791
+        ]
+      },
+      "id": "node/13187893409"
+    }
+  ]
+}
+```
