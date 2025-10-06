@@ -1,0 +1,759 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.776298812,
+          52.95264848
+        ]
+      },
+      "properties": {
+        "Nr.": "1",
+        "Naam": "Shell",
+        "y": "52.95264848",
+        "x": "4.776298812",
+        "Adres": "Ruyghweg 200, Den Helder",
+        "Prijs": "0,50 Euro ",
+        "Beoordeling": "-",
+        "Maandag": "06:00-21:00",
+        "Dinsdag": "06:00-21:00",
+        "Woensdag": "06:00-21:00",
+        "Donderdag": "06:00-21:00",
+        "Vrijdag": "06:00-21:00",
+        "Zaterdag": "07:00-21:00",
+        "Zondag": "08:00-21:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.767074811,
+          52.95784524
+        ]
+      },
+      "properties": {
+        "Nr.": "2",
+        "Naam": "Bibliotheek",
+        "y": "52.95784524",
+        "x": "4.767074811",
+        "Adres": "Keizersgracht 94, Den Helder",
+        "Prijs": "0,50 Euro ",
+        "Beoordeling": "-",
+        "Maandag": "10:00-20:00",
+        "Dinsdag": "10:00-20:00",
+        "Woensdag": "10:00-20:00",
+        "Donderdag": "10:00-20:00",
+        "Vrijdag": "10:00-20:00",
+        "Zaterdag": "10:00-16:00",
+        "Zondag": "Gesloten"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.767300773,
+          52.96125888
+        ]
+      },
+      "properties": {
+        "Nr.": "3",
+        "Naam": "Urinoir",
+        "y": "52.96125888",
+        "x": "4.767300773",
+        "Adres": "Keizersgracht, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "-",
+        "Maandag": "Geopend",
+        "Dinsdag": "Geopend",
+        "Woensdag": "Geopend",
+        "Donderdag": "Geopend",
+        "Vrijdag": "Geopend",
+        "Zaterdag": "Geopend",
+        "Zondag": "Geopend"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.778008424,
+          52.9622209
+        ]
+      },
+      "properties": {
+        "Nr.": "4",
+        "Naam": "TESO loket",
+        "y": "52.9622209",
+        "x": "4.778008424",
+        "Adres": "Havenplein 3, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "9.0 (5)",
+        "Maandag": "08:00-21:30",
+        "Dinsdag": "08:00-21:30",
+        "Woensdag": "08:00-21:30",
+        "Donderdag": "08:00-21:30",
+        "Vrijdag": "08:00-21:30",
+        "Zaterdag": "08:00-21:30",
+        "Zondag": "08:00-21:30"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.76055571,
+          52.95862508
+        ]
+      },
+      "properties": {
+        "Nr.": "5",
+        "Naam": "McDonald's",
+        "y": "52.95862508",
+        "x": "4.76055571",
+        "Adres": "Bernhardplein 16, Den Helder",
+        "Prijs": "0,50 Euro ",
+        "Beoordeling": "4.8 (4)",
+        "Maandag": "09:00-23:59",
+        "Dinsdag": "09:00-23:59",
+        "Woensdag": "09:00-23:59",
+        "Donderdag": "09:00-23:59",
+        "Vrijdag": "09:00-01:00",
+        "Zaterdag": "09:00-01:00",
+        "Zondag": "10:00-23:59"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.761090693,
+          52.95768022
+        ]
+      },
+      "properties": {
+        "Nr.": "6",
+        "Naam": "HEMA",
+        "y": "52.95768022",
+        "x": "4.761090693",
+        "Adres": "Beatrixstraat 1, Den Helder",
+        "Prijs": "0,70 Euro ",
+        "Beoordeling": "7.3 (8)",
+        "Maandag": "09:00-18:00",
+        "Dinsdag": "09:00-18:00",
+        "Woensdag": "09:00-18:00",
+        "Donderdag": "09:00-21:00",
+        "Vrijdag": "09:00-18:00",
+        "Zaterdag": "08:30-17:30",
+        "Zondag": "Gesloten"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.760634834,
+          52.95697426
+        ]
+      },
+      "properties": {
+        "Nr.": "7",
+        "Naam": "NS Station",
+        "y": "52.95697426",
+        "x": "4.760634834",
+        "Adres": "Middenweg 176, Den Helder",
+        "Prijs": "0,50 Euro ",
+        "Beoordeling": "3.9 (4)",
+        "Maandag": "Geopend",
+        "Dinsdag": "Geopend",
+        "Woensdag": "Geopend",
+        "Donderdag": "Geopend",
+        "Vrijdag": "Geopend",
+        "Zaterdag": "Geopend",
+        "Zondag": "Geopend"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.748983983,
+          52.95508655
+        ]
+      },
+      "properties": {
+        "Nr.": "8",
+        "Naam": "Paviljoen van Toen",
+        "y": "52.95508655",
+        "x": "4.748983983",
+        "Adres": "Borneolaan 1, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "8.0 (1)",
+        "Maandag": "Gesloten",
+        "Dinsdag": "Gesloten",
+        "Woensdag": "10:00-17:30",
+        "Donderdag": "10:00-17:30",
+        "Vrijdag": "10:00-17:30",
+        "Zaterdag": "12:00-17:30",
+        "Zondag": "12:00-17:30"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.74447332,
+          52.95800599
+        ]
+      },
+      "properties": {
+        "Nr.": "9",
+        "Naam": "Noord West Ziekenhuis",
+        "y": "52.95800599",
+        "x": "4.74447332",
+        "Adres": "Huisduinerweg 3, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "7.5 (1)",
+        "Maandag": "Geopend",
+        "Dinsdag": "Geopend",
+        "Woensdag": "Geopend",
+        "Donderdag": "Geopend",
+        "Vrijdag": "Geopend",
+        "Zaterdag": "Geopend",
+        "Zondag": "Geopend"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.771307718,
+          52.94290627
+        ]
+      },
+      "properties": {
+        "Nr.": "10",
+        "Naam": "Gamma",
+        "y": "52.94290627",
+        "x": "4.771307718",
+        "Adres": "Ravelijncenter 21, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "7.0 (3)",
+        "Maandag": "09:00-21:00",
+        "Dinsdag": "09:00-17:00",
+        "Woensdag": "Gesloten",
+        "Donderdag": "09:00-17:00",
+        "Vrijdag": "09:00-21:00",
+        "Zaterdag": "09:00-18:00",
+        "Zondag": "12:00-17:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.771093042,
+          52.93615877
+        ]
+      },
+      "properties": {
+        "Nr.": "11",
+        "Naam": "AH SchootenPlaza",
+        "y": "52.93615877",
+        "x": "4.771093042",
+        "Adres": "De Garst 60, Den Helder",
+        "Prijs": "0,50 Euro ",
+        "Beoordeling": "-",
+        "Maandag": "08:00-22:00",
+        "Dinsdag": "08:00-22:00",
+        "Woensdag": "08:00-22:00",
+        "Donderdag": "08:00-22:00",
+        "Vrijdag": "08:00-22:00",
+        "Zaterdag": "08:00-22:00",
+        "Zondag": "08:00-22:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.776396921,
+          52.93507019
+        ]
+      },
+      "properties": {
+        "Nr.": "12",
+        "Naam": "De Gastronomoom",
+        "y": "52.93507019",
+        "x": "4.776396921",
+        "Adres": "Torplaan 24, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "-",
+        "Maandag": "Gesloten",
+        "Dinsdag": "11:45-20:30",
+        "Woensdag": "11:45-20:30",
+        "Donderdag": "11:45-20:30",
+        "Vrijdag": "11:45-20:30",
+        "Zaterdag": "11:45-20:30",
+        "Zondag": "12:00-20:30"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.756497287,
+          52.92968536
+        ]
+      },
+      "properties": {
+        "Nr.": "13",
+        "Naam": "Tankstation",
+        "y": "52.92968536",
+        "x": "4.756497287",
+        "Adres": "Nieuwweg 15 A, Den Helder",
+        "Prijs": "0,50 Euro ",
+        "Beoordeling": "7.5 (1)",
+        "Maandag": "Geopend",
+        "Dinsdag": "Geopend",
+        "Woensdag": "Geopend",
+        "Donderdag": "Geopend",
+        "Vrijdag": "Geopend",
+        "Zaterdag": "Geopend",
+        "Zondag": "Geopend"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.754652257,
+          52.93899068
+        ]
+      },
+      "properties": {
+        "Nr.": "14",
+        "Naam": "Den Koogh",
+        "y": "52.93899068",
+        "x": "4.754652257",
+        "Adres": "Doctorandus F. Bijlweg 4, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "9.0 (2)",
+        "Maandag": "10:00-16:00",
+        "Dinsdag": "10:00-16:00",
+        "Woensdag": "10:00-16:00",
+        "Donderdag": "10:00-16:00",
+        "Vrijdag": "10:00-16:00",
+        "Zaterdag": "12:00-16:00",
+        "Zondag": "Gesloten"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.754353936,
+          52.94015385
+        ]
+      },
+      "properties": {
+        "Nr.": "15",
+        "Naam": "Lyceum aan Zee",
+        "y": "52.94015385",
+        "x": "4.754353936",
+        "Adres": "Doctorandus F. Bijlweg 6, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "1.0 (1)",
+        "Maandag": "08:00-17:00",
+        "Dinsdag": "08:00-17:00",
+        "Woensdag": "08:00-17:00",
+        "Donderdag": "08:00-17:00",
+        "Vrijdag": "08:00-17:00",
+        "Zaterdag": "06:06-16:16",
+        "Zondag": "06:06-16:16"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.740931237,
+          52.94344272
+        ]
+      },
+      "properties": {
+        "Nr.": "16",
+        "Naam": "Bibliotheek Marsdiepstraat",
+        "y": "52.94344272",
+        "x": "4.740931237",
+        "Adres": "Marsdiepstraat 272, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "9.5 (2)",
+        "Maandag": "Gesloten",
+        "Dinsdag": "14:00-17:00",
+        "Woensdag": "10:00-17:00",
+        "Donderdag": "Gesloten",
+        "Vrijdag": "14:00-20:00",
+        "Zaterdag": "Gesloten",
+        "Zondag": "Gesloten"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.733990638,
+          52.94456515
+        ]
+      },
+      "properties": {
+        "Nr.": "17",
+        "Naam": "Urinoir (Duinroosstraat)",
+        "y": "52.94456515",
+        "x": "4.733990638",
+        "Adres": "Duinroosstraat 2a, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "3.3 (1)",
+        "Maandag": "Geopend",
+        "Dinsdag": "Geopend",
+        "Woensdag": "Geopend",
+        "Donderdag": "Geopend",
+        "Vrijdag": "Geopend",
+        "Zaterdag": "Geopend",
+        "Zondag": "Geopend"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.73272891,
+          52.9347766
+        ]
+      },
+      "properties": {
+        "Nr.": "18",
+        "Naam": "De Helderse Vallei",
+        "y": "52.9347766",
+        "x": "4.73272891",
+        "Adres": "Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "-",
+        "Maandag": "Gesloten",
+        "Dinsdag": "10:00-16:30",
+        "Woensdag": "10:00-16:30",
+        "Donderdag": "10:00-16:30",
+        "Vrijdag": "10:00-16:30",
+        "Zaterdag": "10:00-16:30",
+        "Zondag": "10:00-16:30"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.73336509,
+          52.93382109
+        ]
+      },
+      "properties": {
+        "Nr.": "19",
+        "Naam": "De Helderse Vallei (locatie 9)",
+        "y": "52.93382109",
+        "x": "4.73336509",
+        "Adres": "De Helderse Vallei 9, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "-",
+        "Maandag": "Gesloten",
+        "Dinsdag": "10:00-16:30",
+        "Woensdag": "10:00-16:30",
+        "Donderdag": "10:00-16:30",
+        "Vrijdag": "10:00-16:30",
+        "Zaterdag": "10:00-16:30",
+        "Zondag": "10:00-16:30"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.784819166,
+          52.92088108
+        ]
+      },
+      "properties": {
+        "Nr.": "20",
+        "Naam": "Den Helder Airport",
+        "y": "52.92088108",
+        "x": "4.784819166",
+        "Adres": "Luchthavenweg 6C, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "9.7 (5)",
+        "Maandag": "Geopend",
+        "Dinsdag": "Geopend",
+        "Woensdag": "Geopend",
+        "Donderdag": "Geopend",
+        "Vrijdag": "Geopend",
+        "Zaterdag": "Geopend",
+        "Zondag": "Geopend"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.79329703,
+          52.91627971
+        ]
+      },
+      "properties": {
+        "Nr.": "21",
+        "Naam": "McDonald's (Verkeerstorenweg)",
+        "y": "52.91627971",
+        "x": "4.79329703",
+        "Adres": "Verkeerstorenweg 2, Den Helder",
+        "Prijs": "Gratis",
+        "Beoordeling": "6.3 (2)",
+        "Maandag": "09:00-23:00",
+        "Dinsdag": "09:00-23:00",
+        "Woensdag": "09:00-23:00",
+        "Donderdag": "09:00-23:00",
+        "Vrijdag": "09:00-23:59",
+        "Zaterdag": "09:00-23:59",
+        "Zondag": "09:00-23:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.757613508,
+          52.8918686
+        ]
+      },
+      "properties": {
+        "Nr.": "22",
+        "Naam": "Juniorcollege",
+        "y": "52.8918686",
+        "x": "4.757613508",
+        "Adres": "Akkerbouwstraat 1, Julianadorp",
+        "Prijs": "Gratis",
+        "Beoordeling": "9.0 (1)",
+        "Maandag": "09:00-17:00",
+        "Dinsdag": "09:00-17:00",
+        "Woensdag": "09:00-17:00",
+        "Donderdag": "09:00-17:00",
+        "Vrijdag": "09:00-17:00",
+        "Zaterdag": "Gesloten",
+        "Zondag": "Gesloten"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.753633867,
+          52.8978236
+        ]
+      },
+      "properties": {
+        "Nr.": "23",
+        "Naam": "Winkelcentrum De Riepel",
+        "y": "52.8978236",
+        "x": "4.753633867",
+        "Adres": "Schoolweg, Julianadorp",
+        "Prijs": "1 Euro ",
+        "Beoordeling": "6.5 (12)",
+        "Maandag": "08:00-20:00",
+        "Dinsdag": "08:00-20:00",
+        "Woensdag": "08:00-20:00",
+        "Donderdag": "08:00-20:00",
+        "Vrijdag": "08:00-20:00",
+        "Zaterdag": "08:00-20:00",
+        "Zondag": "08:00-20:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.747545401,
+          52.89486869
+        ]
+      },
+      "properties": {
+        "Nr.": "24",
+        "Naam": "Bibliotheek Keysers Plaet",
+        "y": "52.89486869",
+        "x": "4.747545401",
+        "Adres": "Keysers Plaet 1023, Julianadorp",
+        "Prijs": "Gratis",
+        "Beoordeling": "-",
+        "Maandag": "14:00-17:00",
+        "Dinsdag": "10:00-17:00",
+        "Woensdag": "14:00-20:00",
+        "Donderdag": "14:00-17:00",
+        "Vrijdag": "14:00-17:00",
+        "Zaterdag": "10:00-13:00",
+        "Zondag": "Gesloten"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.732074728,
+          52.89906319
+        ]
+      },
+      "properties": {
+        "Nr.": "25",
+        "Naam": "Eetcaf� het Juffertje",
+        "y": "52.89906319",
+        "x": "4.732074728",
+        "Adres": "De Keizerskroon 1, Julianadorp",
+        "Prijs": "Gratis",
+        "Beoordeling": "-",
+        "Maandag": "Gesloten",
+        "Dinsdag": "Gesloten",
+        "Woensdag": "14:00-22:00",
+        "Donderdag": "14:00-22:00",
+        "Vrijdag": "14:00-23:59",
+        "Zaterdag": "14:00-23:59",
+        "Zondag": "14:00-22:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.729465214,
+          52.90123912
+        ]
+      },
+      "properties": {
+        "Nr.": "26",
+        "Naam": "Camping Julianadorp aan Zee",
+        "y": "52.90123912",
+        "x": "4.729465214",
+        "Adres": "Van Foreestweg 13a, Julianadorp",
+        "Prijs": "Gratis",
+        "Beoordeling": "-",
+        "Maandag": "10:00-22:00",
+        "Dinsdag": "10:00-22:00",
+        "Woensdag": "10:00-22:00",
+        "Donderdag": "10:00-22:00",
+        "Vrijdag": "10:00-22:00",
+        "Zaterdag": "10:00-22:00",
+        "Zondag": "10:00-22:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.72501538,
+          52.90630217
+        ]
+      },
+      "properties": {
+        "Nr.": "27",
+        "Naam": "Camping het Noorder Sandt",
+        "y": "52.90630217",
+        "x": "4.72501538",
+        "Adres": "Noorder Sandt 2, Julianadorp",
+        "Prijs": "Gratis",
+        "Beoordeling": "-",
+        "Maandag": "10:00-22:00",
+        "Dinsdag": "10:00-22:00",
+        "Woensdag": "10:00-22:00",
+        "Donderdag": "10:00-22:00",
+        "Vrijdag": "10:00-22:00",
+        "Zaterdag": "10:00-22:59",
+        "Zondag": "10:00-22:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.713381209,
+          52.90471416
+        ]
+      },
+      "properties": {
+        "Nr.": "28",
+        "Naam": "Zee van Tijd",
+        "y": "52.90471416",
+        "x": "4.713381209",
+        "Adres": "Strandslag 5, Julianadorp",
+        "Prijs": "Gratis",
+        "Beoordeling": "-",
+        "Maandag": "10:00-22:00",
+        "Dinsdag": "10:00-22:00",
+        "Woensdag": "10:00-22:00",
+        "Donderdag": "10:00-22:00",
+        "Vrijdag": "10:00-22:00",
+        "Zaterdag": "10:00-22:00",
+        "Zondag": "10:00-22:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.712500977,
+          52.89527377
+        ]
+      },
+      "properties": {
+        "Nr.": "29",
+        "Naam": "Paal 6",
+        "y": "52.89527377",
+        "x": "4.712500977",
+        "Adres": "Zanddijk 200, Julianadorp",
+        "Prijs": "0,50 Euro ",
+        "Beoordeling": "-",
+        "Maandag": "09:00-17:00",
+        "Dinsdag": "09:00-17:00",
+        "Woensdag": "09:00-17:00",
+        "Donderdag": "09:00-17:00",
+        "Vrijdag": "09:00-17:00",
+        "Zaterdag": "09:00-17:00",
+        "Zondag": "09:00-17:00"
+      }
+    }
+  ]
+}
