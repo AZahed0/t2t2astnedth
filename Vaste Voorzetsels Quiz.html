@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🃏 Vaste Voorzetsels Quiz - Oefenmodus</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #FFD700, #FFA500); /* Zonnebloem-geel */
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        h1 { color: #FF6B35; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            margin: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        button:hover { background: #45a049; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .option { 
+            background: #2196F3; 
+            width: 200px; 
+            display: inline-block; 
+            margin: 10px; 
+        }
+        .option:hover { background: #0b7dda; }
+        .correct { background: #4CAF50 !important; }
+        .wrong { background: #f44336 !important; }
+        #question { font-size: 24px; margin: 20px 0; color: #333; }
+        #explanation { margin: 20px; padding: 15px; background: #f0f8ff; border-radius: 10px; display: none; }
+        #score { font-size: 20px; color: #FF6B35; }
+        /* Timer stijlen zijn nu niet meer nodig, maar de Streak stijl blijft */
+        .streak { color: gold; font-weight: bold; }
+        .progress { width: 100%; height: 20px; background: #ddd; border-radius: 10px; margin: 10px 0; }
+        .progress-bar { height: 100%; background: #4CAF50; width: 0%; border-radius: 10px; transition: width 0.5s; }
+        .mode-selector { margin: 20px; }
+        .blank { font-weight: bold; color: #FF6B35; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🃏 Vaste Voorzetsels Quiz</h1>
+        <p>Kies het juiste voorzetsel om de zin compleet te maken!</p>
+        
+        <!-- Alleen de Start Quiz knop is overgebleven -->
+        <div class="mode-selector">
+            <button onclick="startGame()">🧠 Start Quiz</button>
+        </div>
+        
+        <div id="game" style="display: none;">
+            <!-- Timer is verwijderd -->
+            <div class="progress">
+                <div class="progress-bar" id="progress"></div>
+            </div>
+            <div id="question"></div>
+            <div id="options"></div>
+            <div id="explanation"></div>
+            <div>
+                <button id="next" onclick="nextQuestion()" disabled>Volgende Vraag</button>
+                <button onclick="restartGame()">Herstart</button>
+            </div>
+        </div>
+        
+        <div id="score">Score: 0 / 0 (0%)</div>
+        <div id="streak" class="streak">Streak: 0</div>
+        <div id="best">Beste Score: <span id="bestScore">0</span>%</div>
+    </div>
+
+    <script>
+        // Alle 107 flashcards
+        const flashcards = [
+            { q: "Ik hou ___ inventieve oplossingen.", a: "van" },
+            { q: "Ik denk ___ de zomer.", a: "aan" },
+            { q: "Ik heb ___ haar gesproken.", a: "met" },
+            { q: "Ik wacht ___ de resultaten.", a: "op" },
+            { q: "Ik geloof ___ het effect van complimenten.", a: "in" },
+            { q: "Ik luister ___ de radio.", a: "naar" },
+            { q: "Die foto herinnert mij ___ mijn jeugd.", a: "aan" },
+            { q: "Ik hoop ___ een mooie zomer.", a: "op" },
+            { q: "Ik ben voorbereid ___ het Staatsexamen NT2.", a: "op" },
+            { q: "Ik zoek ___ het lokaal.", a: "naar" },
+            { q: "Ik geniet ___ het mooie weer.", a: "van" },
+            { q: "Je kunt geen appels vergelijken ___ peren.", a: "met" },
+            { q: "Ik moest wennen ___ al die fietsen in Nederland.", a: "aan" },
+            { q: "Deze discussie leidt ___ niets.", a: "tot" },
+            { q: "Die film behoort ___ het genre drama.", a: "tot" },
+            { q: "Hij rekent ___ uw komst.", a: "op" },
+            { q: "Hij ging niet ___ de kwestie.", a: "op" },
+            { q: "Ik heb toegegeven ___ hun eisen.", a: "aan" },
+            { q: "Ik heb dat verteld ___ mijn docent.", a: "aan" },
+            { q: "Ze moest lachen ___ die grap.", a: "om" },
+            { q: "Jij kunt mij helpen ___ mijn Nederlands.", a: "met" },
+            { q: "Ik heb gesproken ___ mijn plannen.", a: "over" },
+            { q: "De directie heeft beslist ___ de reorganisatie.", a: "over" },
+            { q: "Deze methode bestaat ___ een boek en een website.", a: "uit" },
+            { q: "Ik wijs ___ de kaart.", a: "naar" },
+            { q: "Pas ___ het afstapje!", a: "op" },
+            { q: "Ik stop ___ deze discussie.", a: "met" },
+            { q: "Ik schrok ___ dat lawaai.", a: "van" },
+            { q: "Ik beperk me ___ het onderwerp.", a: "tot" },
+            { q: "Ik stem ___ een politieke partij.", a: "op" },
+            { q: "Ik trok hem ___ zijn jasje.", a: "aan" },
+            { q: "Hij is getrouwd ___ mijn beste vriendin.", a: "met" },
+            { q: "Ik vraag iemand ___ de weg.", a: "naar" },
+            { q: "Ik heb gedacht ___ mijn familie.", a: "aan" },
+            { q: "Ik schrijf ___ een instantie.", a: "aan" },
+            { q: "Ik geloof niet ___ sprookjes.", a: "in" },
+            { q: "Ik breng iemand ___ het station.", a: "naar" },
+            { q: "Ik begin ___ deze cursus.", a: "met" },
+            { q: "Ik reageer ___ een mail.", a: "op" },
+            { q: "Ik denk vaak ___ de toekomst.", a: "over" },
+            { q: "Ik droom ___ reizen.", a: "over" },
+            { q: "Ik deel mijn ervaring ___ vrienden.", a: "met" },
+            { q: "Ik ben bang ___ spinnen.", a: "voor" },
+            { q: "Ik heb zin ___ vakantie.", a: "in" },
+            { q: "Ik let ___ details.", a: "op" },
+            { q: "Ik praat met iemand ___ zijn werk.", a: "over" },
+            { q: "Ik ben boos ___ mijn collega.", a: "op" },
+            { q: "Ik vertrouw ___ mijn gevoel.", a: "op" },
+            { q: "Ik heb behoefte ___ rust.", a: "aan" },
+            { q: "Ik ben trots ___ mijn prestaties.", a: "op" },
+            { q: "Ik bedank iemand ___ zijn hulp.", a: "voor" },
+            { q: "Ik besteed veel tijd ___ mijn studie.", a: "aan" },
+            { q: "Ik kijk ___ de vakantie.", a: "naar" },
+            { q: "Ik maak me zorgen ___ mijn examen.", a: "over" },
+            { q: "Ik heb spijt ___ mijn beslissing.", a: "van" },
+            { q: "Ik verdien geld ___ mijn werk.", a: "met" },
+            { q: "Ik geef geld uit ___ kleding.", a: "aan" },
+            { q: "Ik wacht nog ___ een antwoord.", a: "op" },
+            { q: "Ik ben gek ___ chocola.", a: "op" },
+            { q: "Ik ben bang ___ hoogtes.", a: "voor" },
+            { q: "Ik bereid me ___ een sollicitatiegesprek.", a: "voor" },
+            { q: "Ik besteed aandacht ___ details.", a: "aan" },
+            { q: "Ik feliciteer iemand ___ zijn verjaardag.", a: "met" },
+            { q: "Ik ga akkoord ___ het voorstel.", a: "met" },
+            { q: "Ik ben nieuwsgierig ___ het resultaat.", a: "naar" },
+            { q: "Ik verlang ___ de zomer.", a: "naar" },
+            { q: "Ik erger me ___ het lawaai.", a: "aan" },
+            { q: "Ik ga in discussie ___ politiek.", a: "over" },
+            { q: "Ik reageer fel ___ onrecht.", a: "op" },
+            { q: "Ik werk ___ een groot project.", a: "aan" },
+            { q: "Ik kijk ___ een spannende film.", a: "naar" },
+            { q: "Ik vraag ___ hulp.", a: "om" },
+            { q: "Ik neem afscheid ___ mijn vrienden.", a: "van" },
+            { q: "Ik ben dol ___ pizza.", a: "op" },
+            { q: "Ik geef les ___ Nederlands.", a: "in" },
+            { q: "Ik strijd ___ gelijke rechten.", a: "voor" },
+            { q: "Ik klop ___ de deur.", a: "op" },
+            { q: "Dit boek gaat ___ de Tweede Wereldoorlog.", a: "over" },
+            { q: "Ik kan niet zonder mijn telefoon.", a: "" }, // Geen voorzetsel, aangepast
+            { q: "Ik heb ervaring ___ computers.", a: "met" },
+            { q: "Je mag me uitnodigen ___ je feestje.", a: "voor" },
+            { q: "Ik ben verantwoordelijk ___ de administratie.", a: "voor" },
+            { q: "Ik ben tevreden ___ mijn cijfers.", a: "over" },
+            { q: "Ik klaag ___ de hoge prijzen.", a: "over" },
+            { q: "Ik kijk neer ___ mensen die liegen.", a: "op" },
+            { q: "Ik richt me ___ mijn studie.", a: "op" },
+            { q: "Ik stem ___ een politieke partij.", a: "op" },
+            { q: "Ik verlang soms ___ rust.", a: "naar" },
+            { q: "Ik wacht ___ de bus.", a: "op" },
+            { q: "Ik schrijf ___ mijn vakantie.", a: "over" },
+            { q: "Ik ben allergisch ___ noten.", a: "voor" },
+            { q: "Ik feliciteer iemand ___ zijn diploma.", a: "met" },
+            { q: "Ik besteed geld ___ boeken.", a: "aan" },
+            { q: "Ik vertel ___ mijn werk.", a: "over" },
+            { q: "Ik concentreer me ___ mijn taak.", a: "op" },
+            { q: "Ik heb belangstelling ___ kunst.", a: "voor" },
+            { q: "Ik maak gebruik ___ internet.", a: "van" },
+            { q: "Ik reageer niet ___ roddels.", a: "op" },
+            { q: "Ik ben jaloers ___ haar talent.", a: "op" },
+            { q: "Ik leer ___ mijn fouten.", a: "van" },
+            { q: "Ik heb zin ___ een kop koffie.", a: "in" },
+            { q: "Ik nodig iemand uit ___ een etentje.", a: "voor" },
+            { q: "Ik ben gevoelig ___ kritiek.", a: "voor" },
+            { q: "Ik lach ___ een grappige film.", a: "om" },
+            { q: "Ik ben klaar ___ discussiëren.", a: "met" },
+            { q: "Ik ga door ___ mijn werk.", a: "met" },
+            { q: "Ik bereid me ___ het examen.", a: "voor" }
+        ];
+
+        // Variabelen
+        let currentIndex = 0;
+        let score = 0;
+        let total = 0;
+        let streak = 0;
+        let gameData = [];
+        let bestScore = localStorage.getItem('bestScore') || 0;
+
+        document.getElementById('bestScore').textContent = bestScore;
+
+        // Start spel (selecteert nu automatisch 'practice' modus)
+        function startGame() {
+            // mode = 'practice' is nu de enige optie
+            gameData = flashcards.filter(card => card.a !== ""); // Filter lege voorzetsels
+            gameData = [...gameData].sort(() => Math.random() - 0.5); // Shuffle
+            total = gameData.length;
+            currentIndex = 0;
+            score = 0;
+            streak = 0;
+
+            document.getElementById('game').style.display = 'block';
+            document.querySelector('.mode-selector').style.display = 'none'; // Verberg de startknop
+            
+            nextQuestion();
+            // Verwijderde: if (mode === 'challenge') startTimer();
+        }
+
+        // Volgende vraag
+        function nextQuestion() {
+            if (currentIndex >= total) {
+                endGame();
+                return;
+            }
+            document.getElementById('explanation').style.display = 'none';
+            document.getElementById('next').disabled = true;
+            const card = gameData[currentIndex];
+            document.getElementById('question').innerHTML = card.q.replace("___", "<span class='blank'>___</span>");
+
+            // Genereer 4 opties (1 correct + 3 random distractors)
+            const options = [card.a];
+            const allPreps = [...new Set(flashcards.map(c => c.a).filter(p => p && p !== card.a))];
+            while (options.length < 4) {
+                const randomPrep = allPreps[Math.floor(Math.random() * allPreps.length)];
+                if (!options.includes(randomPrep)) options.push(randomPrep);
+            }
+            options.sort(() => Math.random() - 0.5); // Shuffle opties
+
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option';
+                btn.textContent = opt;
+                btn.onclick = () => selectAnswer(opt, card.a, card.q);
+                optionsDiv.appendChild(btn);
+            });
+
+            // Progress bar
+            document.getElementById('progress').style.width = ((currentIndex / total) * 100) + '%';
+        }
+
+        // Antwoord selecteren
+        function selectAnswer(selected, correct, question) {
+            // Verwijderde: clearInterval(timerInterval);
+            const buttons = document.querySelectorAll('.option');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if (btn.textContent === correct) btn.classList.add('correct');
+                if (btn.textContent === selected && selected !== correct) btn.classList.add('wrong');
+            });
+
+            const explanationDiv = document.getElementById('explanation');
+            const fullSentence = question.replace("___", `<strong>${correct}</strong>`);
+            if (selected === correct) {
+                score++;
+                streak++;
+                explanationDiv.innerHTML = `<strong>✅ Correct!</strong> <br> Zin: ${fullSentence}`;
+            } else {
+                streak = 0;
+                explanationDiv.innerHTML = `<strong>❌ Fout!</strong> Het juiste voorzetsel is: <strong>${correct}</strong> <br> Zin: ${fullSentence}`;
+            }
+            explanationDiv.style.display = 'block';
+            document.getElementById('next').disabled = false;
+            updateScore();
+            currentIndex++;
+        }
+
+        // De functie startTimer is verwijderd
+
+        // Score updaten
+        function updateScore() {
+            const percentage = Math.round((score / total) * 100);
+            document.getElementById('score').textContent = `Score: ${score} / ${total} (${percentage}%)`;
+            document.getElementById('streak').textContent = `Streak: ${streak}`;
+        }
+
+        // Einde spel
+        function endGame() {
+            const percentage = Math.round((score / total) * 100);
+            if (percentage > bestScore) {
+                bestScore = percentage;
+                localStorage.setItem('bestScore', bestScore);
+                document.getElementById('bestScore').textContent = bestScore;
+            }
+            alert(`🎉 Spel afgelopen! Score: ${percentage}%\nBeste ooit: ${bestScore}%`);
+            restartGame();
+        }
+
+        // Herstart
+        function restartGame() {
+            // Verwijderde: clearInterval(timerInterval);
+            document.getElementById('game').style.display = 'none';
+            document.querySelector('.mode-selector').style.display = 'block'; // Toon de startknop opnieuw
+            document.getElementById('score').textContent = 'Score: 0 / 0 (0%)';
+            document.getElementById('streak').textContent = 'Streak: 0';
+            // Optioneel: reset weergave van vraag/opties
+            document.getElementById('question').innerHTML = '';
+            document.getElementById('options').innerHTML = '';
+            document.getElementById('explanation').style.display = 'none';
+            document.getElementById('next').disabled = true;
+        }
+    </script>
+</body>
+</html>
