@@ -306,6 +306,1595 @@
         },
         "locatieActief": true
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.739815058, 52.88505796]
+      },
+      "properties": {
+        "partnerLocatieId": "259162",
+        "locatieNaam": "Kruidvat (7402) Rayon L - K94343 🏪",
+        "adres": {
+          "straatnaam": "Drooghe Bol",
+          "huisnummer": 1038,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1788VB",
+          "plaatsnaam": "Julianadorp",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "1730 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 3,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.739299518, 52.8847586]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_7512",
+        "locatieNaam": "Drooghe Bol 🏘️",
+        "adres": {
+          "straatnaam": "Drooghe Bol",
+          "huisnummer": 1035,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1788VB",
+          "plaatsnaam": "Julianadorp",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "1752 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74395871162414, 52.9326742051783]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_2338",
+        "locatieNaam": "Galjoenstraat 🏘️",
+        "adres": {
+          "straatnaam": "Galjoenstraat",
+          "huisnummer": 1,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1784RA",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "3730 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.78538274765014, 52.914230086241]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_2335",
+        "locatieNaam": "Scheepmakersweg 🏘️",
+        "adres": {
+          "straatnaam": "Scheepmakersweg",
+          "huisnummer": 5,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1786PD",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "3915 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.75586235523223, 52.9361629240159]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_2342",
+        "locatieNaam": "Drs. F. Bijlweg 🏘️",
+        "adres": {
+          "straatnaam": "Drs. F. Bijlweg",
+          "huisnummer": 53,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1784MC",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "4336 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.740923366, 52.93866925]
+      },
+      "properties": {
+        "partnerLocatieId": "259173",
+        "locatieNaam": "Trekpleister (1509) Den helder 🏪",
+        "adres": {
+          "straatnaam": "Texelstroomlaan",
+          "huisnummer": 110,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1784ED",
+          "plaatsnaam": "Den Helder",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "4351 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 3,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74397480487823, 52.9383937460092]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_13744",
+        "locatieNaam": "IJsselmeerstraat 🏘️",
+        "adres": {
+          "straatnaam": "IJsselmeerstraat",
+          "huisnummer": 4,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1784MA",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "4354 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74092150146658, 52.9387950518175]
+      },
+      "properties": {
+        "partnerLocatieId": "406838",
+        "locatieNaam": "Neuman Speciaal Tabakszaak 🚬",
+        "adres": {
+          "straatnaam": "Texelstroomlaan",
+          "huisnummer": 104,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1784ED",
+          "plaatsnaam": "DEN HELDER",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "4365 meter",
+        "openingstijden": "09:00-18:00 🕘",
+        "leegtijd": "09:00 🕘",
+        "eigenschappen": {
+          "id": 404,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.718594409, 52.86114407]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_1982",
+        "locatieNaam": "Helmweg 🏘️",
+        "adres": {
+          "straatnaam": "Helmweg",
+          "huisnummer": 13,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1759NE",
+          "plaatsnaam": "Callantsoog",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "4402 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.77009415626526, 52.9353869589742]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_2345",
+        "locatieNaam": "Baljuwstraat 🏘️",
+        "adres": {
+          "straatnaam": "Baljuwstraat",
+          "huisnummer": 42,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1785SK",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "4698 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.770270879, 52.93555327]
+      },
+      "properties": {
+        "partnerLocatieId": "259175",
+        "locatieNaam": "Trekpleister (1519) Den Helder 🏪",
+        "adres": {
+          "straatnaam": "Vrede En Vrijheid",
+          "huisnummer": 18,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1785RM",
+          "plaatsnaam": "Den Helder",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "4720 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 3,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.770804899, 52.93565488]
+      },
+      "properties": {
+        "partnerLocatieId": "161493",
+        "locatieNaam": "Bruna 📚",
+        "adres": {
+          "straatnaam": "Vrede en Vrijheid",
+          "huisnummer": 8,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1785RM",
+          "plaatsnaam": "Den Helder",
+          "landcode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 4,
+            "naam": "Zaterdag open",
+            "vertalingItem": 2004
+          }
+        ],
+        "afstand": "4749 meter",
+        "openingstijden": "08:00-17:00 🕗",
+        "leegtijd": "15:00 🕒",
+        "eigenschappen": {
+          "id": 1,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.771646556, 52.93609058]
+      },
+      "properties": {
+        "partnerLocatieId": "259177",
+        "locatieNaam": "Albert Heijn 🛒",
+        "adres": {
+          "straatnaam": "Vrede En Vrijheid",
+          "huisnummer": 19,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1785RL",
+          "plaatsnaam": "Den Helder",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "4820 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 3,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74182367324829, 52.9435953175043]
+      },
+      "properties": {
+        "partnerLocatieId": "395803",
+        "locatieNaam": "Primera Marsdiep 🏪",
+        "adres": {
+          "straatnaam": "Marsdiepstraat",
+          "huisnummer": 264,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1784AV",
+          "plaatsnaam": "Den Helder",
+          "landcode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 4,
+            "naam": "Zaterdag open",
+            "vertalingItem": 2004
+          },
+          {
+            "id": 6,
+            "naam": "Zondag open",
+            "vertalingItem": 2006
+          }
+        ],
+        "afstand": "4902 meter",
+        "openingstijden": "08:30-17:00 🕣",
+        "leegtijd": "15:00 🕒",
+        "eigenschappen": {
+          "id": 2,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74182367324829, 52.9435953175043]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_7637",
+        "locatieNaam": "Marsdiepstraat 🏘️",
+        "adres": {
+          "straatnaam": "Marsdiepstraat",
+          "huisnummer": 264,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1784AV",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "4902 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.803875168, 52.88849753]
+      },
+      "properties": {
+        "partnerLocatieId": "218952",
+        "locatieNaam": "Dekamarkt 🛒",
+        "adres": {
+          "straatnaam": "Zandvaart",
+          "huisnummer": 100,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1764NW",
+          "plaatsnaam": "BREEZAND",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "4982 meter",
+        "openingstijden": "08:00-20:00 🕗",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 404,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.741940389, 52.94432729]
+      },
+      "properties": {
+        "partnerLocatieId": "259168",
+        "locatieNaam": "Kruidvat(7785)DenHelder 🏪",
+        "adres": {
+          "straatnaam": "Marsdiepstraat",
+          "huisnummer": 256,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1784AV",
+          "plaatsnaam": "Den Helder",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "4984 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 3,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.741791234, 52.94435345]
+      },
+      "properties": {
+        "partnerLocatieId": "259166",
+        "locatieNaam": "Albert Heijn 🛒",
+        "adres": {
+          "straatnaam": "Marsdiepstraat",
+          "huisnummer": 262,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1784AV",
+          "plaatsnaam": "Den Helder",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "4985 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 3,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.8045927286148, 52.8879490947938]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_14047",
+        "locatieNaam": "Ceresplein 🏘️",
+        "adres": {
+          "straatnaam": "Ceresplein",
+          "huisnummer": 1,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1764HD",
+          "plaatsnaam": "BREEZAND",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "5044 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.809348607, 52.89367349]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_1921",
+        "locatieNaam": "Pastoor Verhoeffpark 🏘️",
+        "adres": {
+          "straatnaam": "Pastoor Verhoeffpark",
+          "huisnummer": 11,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1764GM",
+          "plaatsnaam": "BREEZAND",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "5230 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.77995932102203, 52.937323612419]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_13745",
+        "locatieNaam": "Jacob Sijmonsz Kleijnstr 🏘️",
+        "adres": {
+          "straatnaam": "Jacob Sijmonsz Kleijnstr",
+          "huisnummer": 2,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1785CA",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "5256 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.771613335, 52.94265957]
+      },
+      "properties": {
+        "partnerLocatieId": "406820",
+        "locatieNaam": "GAMMA Den Helder 🛠️",
+        "adres": {
+          "straatnaam": "Ravelijncenter",
+          "huisnummer": 21,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1785LX",
+          "plaatsnaam": "Den Helder",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "5444 meter",
+        "openingstijden": "09:00-18:00 🕘",
+        "leegtijd": "16:00 🕓",
+        "eigenschappen": {
+          "id": 404,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.80387926101684, 52.8723321542433]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_1920",
+        "locatieNaam": "Molenvaart 🏘️",
+        "adres": {
+          "straatnaam": "Molenvaart",
+          "huisnummer": 353,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1761AH",
+          "plaatsnaam": "Anna Paulowna",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "5711 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.76831316947937, 52.9466403227249]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_2343",
+        "locatieNaam": "Nijverheidsweg 🏘️",
+        "adres": {
+          "straatnaam": "Nijverheidsweg",
+          "huisnummer": 1,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1785AA",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "5737 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.72652907, 52.95309484]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_2339",
+        "locatieNaam": "Badhuisstraat 🏘️",
+        "adres": {
+          "straatnaam": "Badhuisstraat",
+          "huisnummer": 42,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1789AK",
+          "plaatsnaam": "Huisduinen",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "5926 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.766905341, 52.95048046]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_2334",
+        "locatieNaam": "Fazantenstraat 🏘️",
+        "adres": {
+          "straatnaam": "Fazantenstraat",
+          "huisnummer": 70,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1781XM",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "6090 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74950015544891, 52.9554928942453]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_19500",
+        "locatieNaam": "Timorlaan 🏘️",
+        "adres": {
+          "straatnaam": "Timorlaan",
+          "huisnummer": 139,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1782DK",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "6291 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.7450852394104, 52.9575999206664]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_13928",
+        "locatieNaam": "Huisduinerweg 🏘️",
+        "adres": {
+          "straatnaam": "Huisduinerweg",
+          "huisnummer": 3,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1782GZ",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [
+          {
+            "id": 5,
+            "naam": "Medisch",
+            "vertalingItem": 2005
+          }
+        ],
+        "afstand": "6474 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.812458169, 52.86740251]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_17933",
+        "locatieNaam": "Stationsweg 🏘️",
+        "adres": {
+          "straatnaam": "Stationsweg",
+          "huisnummer": 21,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1761EB",
+          "plaatsnaam": "Anna Paulowna",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "6493 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.76102292537689, 52.8437772090381]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_1883",
+        "locatieNaam": "Koning Willem II-Weg 🏘️",
+        "adres": {
+          "straatnaam": "Koning Willem II-Weg",
+          "huisnummer": 6,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1756BH",
+          "plaatsnaam": "'T ZAND NH",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "6536 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.762011487, 52.95765316]
+      },
+      "properties": {
+        "partnerLocatieId": "259160",
+        "locatieNaam": "Kruidvat (4782) Rayon L - K94326 🏪",
+        "adres": {
+          "straatnaam": "Beatrixstraat",
+          "huisnummer": 3,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1781EL",
+          "plaatsnaam": "Den Helder",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "6728 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 3,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.767649617, 52.95673893]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_2333",
+        "locatieNaam": "Spoorgracht 🏘️",
+        "adres": {
+          "straatnaam": "Spoorgracht",
+          "huisnummer": 5,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1781CC",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "6755 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.760888113, 52.95815951]
+      },
+      "properties": {
+        "partnerLocatieId": "259163",
+        "locatieNaam": "Albert Heijn 🛒",
+        "adres": {
+          "straatnaam": "Julianaplein",
+          "huisnummer": 9,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1781HA",
+          "plaatsnaam": "Den Helder",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "6760 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 3,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.760902864, 52.95816857]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_7639",
+        "locatieNaam": "Julianaplein 🏘️",
+        "adres": {
+          "straatnaam": "Julianaplein",
+          "huisnummer": 9,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1781HA",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "6761 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.763567994, 52.95807467]
+      },
+      "properties": {
+        "partnerLocatieId": "168788",
+        "locatieNaam": "Bruna Den Helder 📚",
+        "adres": {
+          "straatnaam": "Keizerstraat",
+          "huisnummer": 47,
+          "huisnummerToevoeging": "-49",
+          "postcode": "1781GE",
+          "plaatsnaam": "Den Helder",
+          "landcode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 4,
+            "naam": "Zaterdag open",
+            "vertalingItem": 2004
+          }
+        ],
+        "afstand": "6804 meter",
+        "openingstijden": "08:30-17:00 🕣",
+        "leegtijd": "15:00 🕒",
+        "eigenschappen": {
+          "id": 2,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.762954811, 52.95828714]
+      },
+      "properties": {
+        "partnerLocatieId": "259164",
+        "locatieNaam": "Kruidvat (7496) Rayon L - K94348 🏪",
+        "adres": {
+          "straatnaam": "Keizerstraat",
+          "huisnummer": 34,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1781GH",
+          "plaatsnaam": "Den Helder",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "6814 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 3,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.763402306, 52.96029347]
+      },
+      "properties": {
+        "partnerLocatieId": "393992",
+        "locatieNaam": "Used Products Den Helder 🔄",
+        "adres": {
+          "straatnaam": "Koningstraat",
+          "huisnummer": 115,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1781KE",
+          "plaatsnaam": "DEN HELDER",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "7036 meter",
+        "openingstijden": "10:00-17:00 🕙",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 408,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.75534997, 52.83610047]
+      },
+      "properties": {
+        "partnerLocatieId": "163038",
+        "locatieNaam": "Spar 🛒",
+        "adres": {
+          "straatnaam": "Keinsmerweg",
+          "huisnummer": 30,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1756AG",
+          "plaatsnaam": "'T ZAND NH",
+          "landcode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 3,
+            "naam": "Na 18:00 open",
+            "vertalingItem": 2003
+          },
+          {
+            "id": 4,
+            "naam": "Zaterdag open",
+            "vertalingItem": 2004
+          },
+          {
+            "id": 6,
+            "naam": "Zondag open",
+            "vertalingItem": 2006
+          }
+        ],
+        "afstand": "7264 meter",
+        "openingstijden": "08:00-20:00 🕗",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 2,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.75534997, 52.83610047]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_1970",
+        "locatieNaam": "Keinsmerweg 🏘️",
+        "adres": {
+          "straatnaam": "Keinsmerweg",
+          "huisnummer": 30,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1756AG",
+          "plaatsnaam": "'T ZAND NH",
+          "landcode": "Onbekend"
+        },
+        "criteria": [
+          {
+            "id": 1,
+            "naam": "Verlaagd",
+            "vertalingItem": 2001
+          }
+        ],
+        "afstand": "7264 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.817402806, 52.85947299]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_19388",
+        "locatieNaam": "Ruysdaellaan 🏘️",
+        "adres": {
+          "straatnaam": "Ruysdaellaan",
+          "huisnummer": 1,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1761WV",
+          "plaatsnaam": "ANNA PAULOWNA",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "7280 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.69601768, 52.83622976]
+      },
+      "properties": {
+        "partnerLocatieId": "162470",
+        "locatieNaam": "Albert Heijn 🛒",
+        "adres": {
+          "straatnaam": "Schoolstraat",
+          "huisnummer": 3,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1759GP",
+          "plaatsnaam": "Callantsoog",
+          "landcode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 3,
+            "naam": "Na 18:00 open",
+            "vertalingItem": 2003
+          },
+          {
+            "id": 4,
+            "naam": "Zaterdag open",
+            "vertalingItem": 2004
+          },
+          {
+            "id": 6,
+            "naam": "Zondag open",
+            "vertalingItem": 2006
+          }
+        ],
+        "afstand": "7481 meter",
+        "openingstijden": "07:00-22:00 🕖",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 2,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.77570533752441, 52.9626150061056]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_2330",
+        "locatieNaam": "Het Nieuwe Diep 🏘️",
+        "adres": {
+          "straatnaam": "Het Nieuwe Diep",
+          "huisnummer": 8,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1781AC",
+          "plaatsnaam": "Den Helder",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "7562 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.692747314, 52.8356446]
+      },
+      "properties": {
+        "partnerLocatieId": "207870",
+        "locatieNaam": "Firma Leguit V.O.F. 🏪",
+        "adres": {
+          "straatnaam": "Dorpsplein",
+          "huisnummer": 9,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1759GM",
+          "plaatsnaam": "Callantsoog",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "7615 meter",
+        "openingstijden": "09:00-17:00 🕘",
+        "leegtijd": "10:00 🕙",
+        "eigenschappen": {
+          "id": 404,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.830955023, 52.86210713]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_1919",
+        "locatieNaam": "Sluisplein 🏘️",
+        "adres": {
+          "straatnaam": "Sluisplein",
+          "huisnummer": 24,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1761BT",
+          "plaatsnaam": "Anna Paulowna",
+          "landcode": "Onbekend"
+        },
+        "criteria": [
+          {
+            "id": 1,
+            "naam": "Verlaagd",
+            "vertalingItem": 2001
+          },
+          {
+            "id": 5,
+            "naam": "Medisch",
+            "vertalingItem": 2005
+          }
+        ],
+        "afstand": "7855 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.83113594005129, 52.8618922880574]
+      },
+      "properties": {
+        "partnerLocatieId": "407480",
+        "locatieNaam": "Primera Anna Paulowna 🏪",
+        "adres": {
+          "straatnaam": "Sluisplein",
+          "huisnummer": 27,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1761BT",
+          "plaatsnaam": "ANNA PAULOWNA",
+          "landcode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 3,
+            "naam": "Na 18:00 open",
+            "vertalingItem": 2003
+          },
+          {
+            "id": 4,
+            "naam": "Zaterdag open",
+            "vertalingItem": 2004
+          }
+        ],
+        "afstand": "7878 meter",
+        "openingstijden": "08:30-18:00 🕣",
+        "leegtijd": "15:00 🕒",
+        "eigenschappen": {
+          "id": 2,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.831667032, 52.86216436]
+      },
+      "properties": {
+        "partnerLocatieId": "257761",
+        "locatieNaam": "Kruidvat (7125) Rayon L - K94324 🏪",
+        "adres": {
+          "straatnaam": "Koshof",
+          "huisnummer": 5,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1761AT",
+          "plaatsnaam": "Anna Paulowna",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "7892 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 3,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.83215335940507, 52.8624541994056]
+      },
+      "properties": {
+        "partnerLocatieId": "261589",
+        "locatieNaam": "Parwan GSM 📱",
+        "adres": {
+          "straatnaam": "Molenvaart",
+          "huisnummer": 39,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1761AB",
+          "plaatsnaam": "Anna paulowna",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "7902 meter",
+        "openingstijden": "10:00-17:00 🕙",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 408,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.832255566, 52.8614212]
+      },
+      "properties": {
+        "partnerLocatieId": "257765",
+        "locatieNaam": "Jumbo (3048) ANNA PAULOWNA 🛒",
+        "adres": {
+          "straatnaam": "Molengang",
+          "huisnummer": 10,
+          "huisnummerToevoeging": "-14",
+          "postcode": "1761BV",
+          "plaatsnaam": "Anna Paulowna",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "7969 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 3,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.831342914, 52.85846033]
+      },
+      "properties": {
+        "partnerLocatieId": "BBN_1918",
+        "locatieNaam": "Burg Mijnlieffstraat 🏘️",
+        "adres": {
+          "straatnaam": "Burg Mijnlieffstraat",
+          "huisnummer": 51,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1761BL",
+          "plaatsnaam": "Anna Paulowna",
+          "landcode": "Onbekend"
+        },
+        "criteria": [],
+        "afstand": "8100 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 4,
+          "icoonPad": "images/icon_brievenbus.png",
+          "naam": "Onbekend",
+          "type": "Brievenbus 📮"
+        },
+        "locatieActief": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.83486908, 52.86140637]
+      },
+      "properties": {
+        "partnerLocatieId": "257766",
+        "locatieNaam": "Sigarenmagazijn Jeanette 🚬",
+        "adres": {
+          "straatnaam": "Molenvaart",
+          "huisnummer": 15,
+          "huisnummerToevoeging": "Onbekend",
+          "postcode": "1761AA",
+          "plaatsnaam": "Anna Paulowna",
+          "landcode": "NL"
+        },
+        "criteria": [],
+        "afstand": "8118 meter",
+        "openingstijden": "Onbekend",
+        "leegtijd": "Onbekend",
+        "eigenschappen": {
+          "id": 3,
+          "icoonPad": "images/icon_postkantoor.png",
+          "naam": "Onbekend",
+          "type": "Postkantoor 📮"
+        },
+        "locatieActief": true
+      }
     }
   ]
 }
