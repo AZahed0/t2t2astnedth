@@ -1,0 +1,1840 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.744413943, 52.89863473]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_4351",
+        "locationName": "Van Foreestweg",
+        "internationalAddress": {
+          "streetName": "Van Foreestweg",
+          "buildingNumber": 37,
+          "buildingNumberExtension": null,
+          "postalCode": "1787BG",
+          "cityName": "Julianadorp",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 841,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.734404537, 52.8892163]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_2340",
+        "locationName": "Wierbalg",
+        "internationalAddress": {
+          "streetName": "Wierbalg",
+          "buildingNumber": 1152,
+          "buildingNumberExtension": null,
+          "postalCode": "1788TR",
+          "cityName": "Julianadorp",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 1198,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.753959311, 52.89832626]
+      },
+      "properties": {
+        "partnerLocationId": "259171",
+        "locationName": "Albert Heijn",
+        "internationalAddress": {
+          "streetName": "Schoolweg",
+          "buildingNumber": 15,
+          "buildingNumberExtension": null,
+          "postalCode": "1787AV",
+          "cityName": "Julianadorp",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 1479,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.754437694, 52.89813109]
+      },
+      "properties": {
+        "partnerLocationId": "209533",
+        "locationName": "Primera Julianadorp",
+        "internationalAddress": {
+          "streetName": "Schoolweg",
+          "buildingNumber": 59,
+          "buildingNumberExtension": null,
+          "postalCode": "1787AV",
+          "cityName": "Julianadorp",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 1514,
+        "openingTimeWindow": "09:00-17:00",
+        "emptyingTime": "15:00",
+        "properties": {
+          "id": 404,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.754674801, 52.89817728]
+      },
+      "properties": {
+        "partnerLocationId": "259170",
+        "locationName": "Kooistra Supermarkten",
+        "internationalAddress": {
+          "streetName": "Schoolweg",
+          "buildingNumber": 63,
+          "buildingNumberExtension": null,
+          "postalCode": "1787AV",
+          "cityName": "Julianadorp",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 1529,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.754721854, 52.89800679]
+      },
+      "properties": {
+        "partnerLocationId": "259169",
+        "locationName": "Kruidvat (6209) Julianadorp",
+        "internationalAddress": {
+          "streetName": "Schoolweg",
+          "buildingNumber": 43,
+          "buildingNumberExtension": "-49",
+          "postalCode": "1787AV",
+          "cityName": "Julianadorp",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 1535,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.755060864, 52.89790575]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_20347",
+        "locationName": "Schoolweg",
+        "internationalAddress": {
+          "streetName": "Schoolweg",
+          "buildingNumber": 35,
+          "buildingNumberExtension": null,
+          "postalCode": "1787AV",
+          "cityName": "Julianadorp",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 1559,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74921584129333, 52.8900302812824]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_7634",
+        "locationName": "Doorzwin",
+        "internationalAddress": {
+          "streetName": "Doorzwin",
+          "buildingNumber": 2502,
+          "buildingNumberExtension": null,
+          "postalCode": "1788KR",
+          "cityName": "Julianadorp",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 1590,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.75336253643036, 52.8927845439913]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_4350",
+        "locationName": "Landbouwstraat",
+        "internationalAddress": {
+          "streetName": "Landbouwstraat",
+          "buildingNumber": 66,
+          "buildingNumberExtension": null,
+          "postalCode": "1787AM",
+          "cityName": "Julianadorp",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 1633,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.739532939, 52.88504744]
+      },
+      "properties": {
+        "partnerLocationId": "163527",
+        "locationName": "Bruna",
+        "internationalAddress": {
+          "streetName": "Drooghe Bol",
+          "buildingNumber": 1034,
+          "buildingNumberExtension": "-1036",
+          "postalCode": "1788VB",
+          "cityName": "Julianadorp",
+          "countryCode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 4,
+            "name": "Zaterdag open",
+            "translationItem": 2004
+          }
+        ],
+        "distance": 1726,
+        "openingTimeWindow": "08:30-17:00",
+        "emptyingTime": "15:00",
+        "properties": {
+          "id": 2,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.739815058, 52.88505796]
+      },
+      "properties": {
+        "partnerLocationId": "259162",
+        "locationName": "Kruidvat (7402) Rayon L - K94343",
+        "internationalAddress": {
+          "streetName": "Drooghe Bol",
+          "buildingNumber": 1038,
+          "buildingNumberExtension": null,
+          "postalCode": "1788VB",
+          "cityName": "Julianadorp",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 1730,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.739299518, 52.8847586]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_7512",
+        "locationName": "Drooghe Bol",
+        "internationalAddress": {
+          "streetName": "Drooghe Bol",
+          "buildingNumber": 1035,
+          "buildingNumberExtension": null,
+          "postalCode": "1788VB",
+          "cityName": "Julianadorp",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 1752,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74395871162414, 52.9326742051783]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_2338",
+        "locationName": "Galjoenstraat",
+        "internationalAddress": {
+          "streetName": "Galjoenstraat",
+          "buildingNumber": 1,
+          "buildingNumberExtension": null,
+          "postalCode": "1784RA",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 3730,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.78538274765014, 52.914230086241]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_2335",
+        "locationName": "Scheepmakersweg",
+        "internationalAddress": {
+          "streetName": "Scheepmakersweg",
+          "buildingNumber": 5,
+          "buildingNumberExtension": null,
+          "postalCode": "1786PD",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 3915,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.75586235523223, 52.9361629240159]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_2342",
+        "locationName": "Drs. F. Bijlweg",
+        "internationalAddress": {
+          "streetName": "Drs. F. Bijlweg",
+          "buildingNumber": 53,
+          "buildingNumberExtension": null,
+          "postalCode": "1784MC",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 4336,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.740923366, 52.93866925]
+      },
+      "properties": {
+        "partnerLocationId": "259173",
+        "locationName": "Trekpleister (1509) Den helder",
+        "internationalAddress": {
+          "streetName": "Texelstroomlaan",
+          "buildingNumber": 110,
+          "buildingNumberExtension": null,
+          "postalCode": "1784ED",
+          "cityName": "Den Helder",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 4351,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74397480487823, 52.9383937460092]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_13744",
+        "locationName": "IJsselmeerstraat",
+        "internationalAddress": {
+          "streetName": "IJsselmeerstraat",
+          "buildingNumber": 4,
+          "buildingNumberExtension": null,
+          "postalCode": "1784MA",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 4354,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74092150146658, 52.9387950518175]
+      },
+      "properties": {
+        "partnerLocationId": "406838",
+        "locationName": "Neuman Speciaal Tabakszaak",
+        "internationalAddress": {
+          "streetName": "Texelstroomlaan",
+          "buildingNumber": 104,
+          "buildingNumberExtension": null,
+          "postalCode": "1784ED",
+          "cityName": "DEN HELDER",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 4365,
+        "openingTimeWindow": "09:00-18:00",
+        "emptyingTime": "09:00",
+        "properties": {
+          "id": 404,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.718594409, 52.86114407]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_1982",
+        "locationName": "Helmweg",
+        "internationalAddress": {
+          "streetName": "Helmweg",
+          "buildingNumber": 13,
+          "buildingNumberExtension": null,
+          "postalCode": "1759NE",
+          "cityName": "Callantsoog",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 4402,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.77009415626526, 52.9353869589742]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_2345",
+        "locationName": "Baljuwstraat",
+        "internationalAddress": {
+          "streetName": "Baljuwstraat",
+          "buildingNumber": 42,
+          "buildingNumberExtension": null,
+          "postalCode": "1785SK",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 4698,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.770270879, 52.93555327]
+      },
+      "properties": {
+        "partnerLocationId": "259175",
+        "locationName": "Trekpleister (1519) Den Helder",
+        "internationalAddress": {
+          "streetName": "Vrede En Vrijheid",
+          "buildingNumber": 18,
+          "buildingNumberExtension": null,
+          "postalCode": "1785RM",
+          "cityName": "Den Helder",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 4720,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.770804899, 52.93565488]
+      },
+      "properties": {
+        "partnerLocationId": "161493",
+        "locationName": "Bruna",
+        "internationalAddress": {
+          "streetName": "Vrede en Vrijheid",
+          "buildingNumber": 8,
+          "buildingNumberExtension": null,
+          "postalCode": "1785RM",
+          "cityName": "Den Helder",
+          "countryCode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 4,
+            "name": "Zaterdag open",
+            "translationItem": 2004
+          }
+        ],
+        "distance": 4749,
+        "openingTimeWindow": "08:00-17:00",
+        "emptyingTime": "15:00",
+        "properties": {
+          "id": 1,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.771646556, 52.93609058]
+      },
+      "properties": {
+        "partnerLocationId": "259177",
+        "locationName": "Albert Heijn",
+        "internationalAddress": {
+          "streetName": "Vrede En Vrijheid",
+          "buildingNumber": 19,
+          "buildingNumberExtension": null,
+          "postalCode": "1785RL",
+          "cityName": "Den Helder",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 4820,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74182367324829, 52.9435953175043]
+      },
+      "properties": {
+        "partnerLocationId": "395803",
+        "locationName": "Primera Marsdiep",
+        "internationalAddress": {
+          "streetName": "Marsdiepstraat",
+          "buildingNumber": 264,
+          "buildingNumberExtension": null,
+          "postalCode": "1784AV",
+          "cityName": "Den Helder",
+          "countryCode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 4,
+            "name": "Zaterdag open",
+            "translationItem": 2004
+          },
+          {
+            "id": 6,
+            "name": "Zondag open",
+            "translationItem": 2006
+          }
+        ],
+        "distance": 4902,
+        "openingTimeWindow": "08:30-17:00",
+        "emptyingTime": "15:00",
+        "properties": {
+          "id": 2,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74182367324829, 52.9435953175043]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_7637",
+        "locationName": "Marsdiepstraat",
+        "internationalAddress": {
+          "streetName": "Marsdiepstraat",
+          "buildingNumber": 264,
+          "buildingNumberExtension": null,
+          "postalCode": "1784AV",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 4902,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.803875168, 52.88849753]
+      },
+      "properties": {
+        "partnerLocationId": "218952",
+        "locationName": "Dekamarkt",
+        "internationalAddress": {
+          "streetName": "Zandvaart",
+          "buildingNumber": 100,
+          "buildingNumberExtension": null,
+          "postalCode": "1764NW",
+          "cityName": "BREEZAND",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 4982,
+        "openingTimeWindow": "08:00-20:00",
+        "emptyingTime": "",
+        "properties": {
+          "id": 404,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.741940389, 52.94432729]
+      },
+      "properties": {
+        "partnerLocationId": "259168",
+        "locationName": "Kruidvat(7785)DenHelder",
+        "internationalAddress": {
+          "streetName": "Marsdiepstraat",
+          "buildingNumber": 256,
+          "buildingNumberExtension": null,
+          "postalCode": "1784AV",
+          "cityName": "Den Helder",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 4984,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.741791234, 52.94435345]
+      },
+      "properties": {
+        "partnerLocationId": "259166",
+        "locationName": "Albert Heijn",
+        "internationalAddress": {
+          "streetName": "Marsdiepstraat",
+          "buildingNumber": 262,
+          "buildingNumberExtension": null,
+          "postalCode": "1784AV",
+          "cityName": "Den Helder",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 4985,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.8045927286148, 52.8879490947938]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_14047",
+        "locationName": "Ceresplein",
+        "internationalAddress": {
+          "streetName": "Ceresplein",
+          "buildingNumber": 1,
+          "buildingNumberExtension": null,
+          "postalCode": "1764HD",
+          "cityName": "BREEZAND",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 5044,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.809348607, 52.89367349]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_1921",
+        "locationName": "Pastoor Verhoeffpark",
+        "internationalAddress": {
+          "streetName": "Pastoor Verhoeffpark",
+          "buildingNumber": 11,
+          "buildingNumberExtension": null,
+          "postalCode": "1764GM",
+          "cityName": "BREEZAND",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 5230,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.77995932102203, 52.937323612419]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_13745",
+        "locationName": "Jacob Sijmonsz Kleijnstr",
+        "internationalAddress": {
+          "streetName": "Jacob Sijmonsz Kleijnstr",
+          "buildingNumber": 2,
+          "buildingNumberExtension": null,
+          "postalCode": "1785CA",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 5256,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.771613335, 52.94265957]
+      },
+      "properties": {
+        "partnerLocationId": "406820",
+        "locationName": "GAMMA Den Helder",
+        "internationalAddress": {
+          "streetName": "Ravelijncenter",
+          "buildingNumber": 21,
+          "buildingNumberExtension": null,
+          "postalCode": "1785LX",
+          "cityName": "Den Helder",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 5444,
+        "openingTimeWindow": "09:00-18:00",
+        "emptyingTime": "16:00",
+        "properties": {
+          "id": 404,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.80387926101684, 52.8723321542433]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_1920",
+        "locationName": "Molenvaart",
+        "internationalAddress": {
+          "streetName": "Molenvaart",
+          "buildingNumber": 353,
+          "buildingNumberExtension": null,
+          "postalCode": "1761AH",
+          "cityName": "Anna Paulowna",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 5711,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.76831316947937, 52.9466403227249]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_2343",
+        "locationName": "Nijverheidsweg",
+        "internationalAddress": {
+          "streetName": "Nijverheidsweg",
+          "buildingNumber": 1,
+          "buildingNumberExtension": null,
+          "postalCode": "1785AA",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 5737,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.72652907, 52.95309484]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_2339",
+        "locationName": "Badhuisstraat",
+        "internationalAddress": {
+          "streetName": "Badhuisstraat",
+          "buildingNumber": 42,
+          "buildingNumberExtension": null,
+          "postalCode": "1789AK",
+          "cityName": "Huisduinen",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 5926,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.766905341, 52.95048046]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_2334",
+        "locationName": "Fazantenstraat",
+        "internationalAddress": {
+          "streetName": "Fazantenstraat",
+          "buildingNumber": 70,
+          "buildingNumberExtension": null,
+          "postalCode": "1781XM",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 6090,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74950015544891, 52.9554928942453]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_19500",
+        "locationName": "Timorlaan",
+        "internationalAddress": {
+          "streetName": "Timorlaan",
+          "buildingNumber": 139,
+          "buildingNumberExtension": null,
+          "postalCode": "1782DK",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 6291,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.7450852394104, 52.9575999206664]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_13928",
+        "locationName": "Huisduinerweg",
+        "internationalAddress": {
+          "streetName": "Huisduinerweg",
+          "buildingNumber": 3,
+          "buildingNumberExtension": null,
+          "postalCode": "1782GZ",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [
+          {
+            "id": 5,
+            "name": "Medisch",
+            "translationItem": 2005
+          }
+        ],
+        "distance": 6474,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.812458169, 52.86740251]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_17933",
+        "locationName": "Stationsweg",
+        "internationalAddress": {
+          "streetName": "Stationsweg",
+          "buildingNumber": 21,
+          "buildingNumberExtension": null,
+          "postalCode": "1761EB",
+          "cityName": "Anna Paulowna",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 6493,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.76102292537689, 52.8437772090381]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_1883",
+        "locationName": "Koning Willem II-Weg",
+        "internationalAddress": {
+          "streetName": "Koning Willem II-Weg",
+          "buildingNumber": 6,
+          "buildingNumberExtension": null,
+          "postalCode": "1756BH",
+          "cityName": "'T ZAND NH",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 6536,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.762011487, 52.95765316]
+      },
+      "properties": {
+        "partnerLocationId": "259160",
+        "locationName": "Kruidvat (4782) Rayon L - K94326",
+        "internationalAddress": {
+          "streetName": "Beatrixstraat",
+          "buildingNumber": 3,
+          "buildingNumberExtension": null,
+          "postalCode": "1781EL",
+          "cityName": "Den Helder",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 6728,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.767649617, 52.95673893]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_2333",
+        "locationName": "Spoorgracht",
+        "internationalAddress": {
+          "streetName": "Spoorgracht",
+          "buildingNumber": 5,
+          "buildingNumberExtension": null,
+          "postalCode": "1781CC",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 6755,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.760888113, 52.95815951]
+      },
+      "properties": {
+        "partnerLocationId": "259163",
+        "locationName": "Albert Heijn",
+        "internationalAddress": {
+          "streetName": "Julianaplein",
+          "buildingNumber": 9,
+          "buildingNumberExtension": null,
+          "postalCode": "1781HA",
+          "cityName": "Den Helder",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 6760,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.760902864, 52.95816857]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_7639",
+        "locationName": "Julianaplein",
+        "internationalAddress": {
+          "streetName": "Julianaplein",
+          "buildingNumber": 9,
+          "buildingNumberExtension": null,
+          "postalCode": "1781HA",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 6761,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.763567994, 52.95807467]
+      },
+      "properties": {
+        "partnerLocationId": "168788",
+        "locationName": "Bruna Den Helder",
+        "internationalAddress": {
+          "streetName": "Keizerstraat",
+          "buildingNumber": 47,
+          "buildingNumberExtension": "-49",
+          "postalCode": "1781GE",
+          "cityName": "Den Helder",
+          "countryCode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 4,
+            "name": "Zaterdag open",
+            "translationItem": 2004
+          }
+        ],
+        "distance": 6804,
+        "openingTimeWindow": "08:30-17:00",
+        "emptyingTime": "15:00",
+        "properties": {
+          "id": 2,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.762954811, 52.95828714]
+      },
+      "properties": {
+        "partnerLocationId": "259164",
+        "locationName": "Kruidvat (7496) Rayon L - K94348",
+        "internationalAddress": {
+          "streetName": "Keizerstraat",
+          "buildingNumber": 34,
+          "buildingNumberExtension": null,
+          "postalCode": "1781GH",
+          "cityName": "Den Helder",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 6814,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.763402306, 52.96029347]
+      },
+      "properties": {
+        "partnerLocationId": "393992",
+        "locationName": "Used Products Den Helder",
+        "internationalAddress": {
+          "streetName": "Koningstraat",
+          "buildingNumber": 115,
+          "buildingNumberExtension": null,
+          "postalCode": "1781KE",
+          "cityName": "DEN HELDER",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 7036,
+        "openingTimeWindow": "10:00-17:00",
+        "emptyingTime": "",
+        "properties": {
+          "id": 408,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.75534997, 52.83610047]
+      },
+      "properties": {
+        "partnerLocationId": "163038",
+        "locationName": "Spar",
+        "internationalAddress": {
+          "streetName": "Keinsmerweg",
+          "buildingNumber": 30,
+          "buildingNumberExtension": null,
+          "postalCode": "1756AG",
+          "cityName": "'T ZAND NH",
+          "countryCode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 3,
+            "name": "Na 18:00 open",
+            "translationItem": 2003
+          },
+          {
+            "id": 4,
+            "name": "Zaterdag open",
+            "translationItem": 2004
+          },
+          {
+            "id": 6,
+            "name": "Zondag open",
+            "translationItem": 2006
+          }
+        ],
+        "distance": 7264,
+        "openingTimeWindow": "08:00-20:00",
+        "emptyingTime": "",
+        "properties": {
+          "id": 2,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.75534997, 52.83610047]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_1970",
+        "locationName": "Keinsmerweg",
+        "internationalAddress": {
+          "streetName": "Keinsmerweg",
+          "buildingNumber": 30,
+          "buildingNumberExtension": null,
+          "postalCode": "1756AG",
+          "cityName": "'T ZAND NH",
+          "countryCode": ""
+        },
+        "criteria": [
+          {
+            "id": 1,
+            "name": "Verlaagd",
+            "translationItem": 2001
+          }
+        ],
+        "distance": 7264,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.817402806, 52.85947299]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_19388",
+        "locationName": "Ruysdaellaan",
+        "internationalAddress": {
+          "streetName": "Ruysdaellaan",
+          "buildingNumber": 1,
+          "buildingNumberExtension": null,
+          "postalCode": "1761WV",
+          "cityName": "ANNA PAULOWNA",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 7280,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.69601768, 52.83622976]
+      },
+      "properties": {
+        "partnerLocationId": "162470",
+        "locationName": "Albert Heijn",
+        "internationalAddress": {
+          "streetName": "Schoolstraat",
+          "buildingNumber": 3,
+          "buildingNumberExtension": null,
+          "postalCode": "1759GP",
+          "cityName": "Callantsoog",
+          "countryCode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 3,
+            "name": "Na 18:00 open",
+            "translationItem": 2003
+          },
+          {
+            "id": 4,
+            "name": "Zaterdag open",
+            "translationItem": 2004
+          },
+          {
+            "id": 6,
+            "name": "Zondag open",
+            "translationItem": 2006
+          }
+        ],
+        "distance": 7481,
+        "openingTimeWindow": "07:00-22:00",
+        "emptyingTime": "",
+        "properties": {
+          "id": 2,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.77570533752441, 52.9626150061056]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_2330",
+        "locationName": "Het Nieuwe Diep",
+        "internationalAddress": {
+          "streetName": "Het Nieuwe Diep",
+          "buildingNumber": 8,
+          "buildingNumberExtension": null,
+          "postalCode": "1781AC",
+          "cityName": "Den Helder",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 7562,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.692747314, 52.8356446]
+      },
+      "properties": {
+        "partnerLocationId": "207870",
+        "locationName": "Firma Leguit V.O.F.",
+        "internationalAddress": {
+          "streetName": "Dorpsplein",
+          "buildingNumber": 9,
+          "buildingNumberExtension": null,
+          "postalCode": "1759GM",
+          "cityName": "Callantsoog",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 7615,
+        "openingTimeWindow": "09:00-17:00",
+        "emptyingTime": "10:00",
+        "properties": {
+          "id": 404,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.830955023, 52.86210713]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_1919",
+        "locationName": "Sluisplein",
+        "internationalAddress": {
+          "streetName": "Sluisplein",
+          "buildingNumber": 24,
+          "buildingNumberExtension": null,
+          "postalCode": "1761BT",
+          "cityName": "Anna Paulowna",
+          "countryCode": ""
+        },
+        "criteria": [
+          {
+            "id": 1,
+            "name": "Verlaagd",
+            "translationItem": 2001
+          },
+          {
+            "id": 5,
+            "name": "Medisch",
+            "translationItem": 2005
+          }
+        ],
+        "distance": 7855,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.83113594005129, 52.8618922880574]
+      },
+      "properties": {
+        "partnerLocationId": "407480",
+        "locationName": "Primera Anna Paulowna",
+        "internationalAddress": {
+          "streetName": "Sluisplein",
+          "buildingNumber": 27,
+          "buildingNumberExtension": null,
+          "postalCode": "1761BT",
+          "cityName": "ANNA PAULOWNA",
+          "countryCode": "NL"
+        },
+        "criteria": [
+          {
+            "id": 3,
+            "name": "Na 18:00 open",
+            "translationItem": 2003
+          },
+          {
+            "id": 4,
+            "name": "Zaterdag open",
+            "translationItem": 2004
+          }
+        ],
+        "distance": 7878,
+        "openingTimeWindow": "08:30-18:00",
+        "emptyingTime": "15:00",
+        "properties": {
+          "id": 2,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.831667032, 52.86216436]
+      },
+      "properties": {
+        "partnerLocationId": "257761",
+        "locationName": "Kruidvat (7125) Rayon L - K94324",
+        "internationalAddress": {
+          "streetName": "Koshof",
+          "buildingNumber": 5,
+          "buildingNumberExtension": null,
+          "postalCode": "1761AT",
+          "cityName": "Anna Paulowna",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 7892,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.83215335940507, 52.8624541994056]
+      },
+      "properties": {
+        "partnerLocationId": "261589",
+        "locationName": "Parwan GSM",
+        "internationalAddress": {
+          "streetName": "Molenvaart",
+          "buildingNumber": 39,
+          "buildingNumberExtension": null,
+          "postalCode": "1761AB",
+          "cityName": "Anna paulowna",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 7902,
+        "openingTimeWindow": "10:00-17:00",
+        "emptyingTime": "",
+        "properties": {
+          "id": 408,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.832255566, 52.8614212]
+      },
+      "properties": {
+        "partnerLocationId": "257765",
+        "locationName": "Jumbo (3048) ANNA PAULOWNA",
+        "internationalAddress": {
+          "streetName": "Molengang",
+          "buildingNumber": 10,
+          "buildingNumberExtension": "-14",
+          "postalCode": "1761BV",
+          "cityName": "Anna Paulowna",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 7969,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.831342914, 52.85846033]
+      },
+      "properties": {
+        "partnerLocationId": "BBN_1918",
+        "locationName": "Burg Mijnlieffstraat",
+        "internationalAddress": {
+          "streetName": "Burg Mijnlieffstraat",
+          "buildingNumber": 51,
+          "buildingNumberExtension": null,
+          "postalCode": "1761BL",
+          "cityName": "Anna Paulowna",
+          "countryCode": ""
+        },
+        "criteria": [],
+        "distance": 8100,
+        "openingTimeWindow": null,
+        "emptyingTime": null,
+        "properties": {
+          "id": 4,
+          "iconPath": "images/icon_brievenbus.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.83486908, 52.86140637]
+      },
+      "properties": {
+        "partnerLocationId": "257766",
+        "locationName": "Sigarenmagazijn Jeanette",
+        "internationalAddress": {
+          "streetName": "Molenvaart",
+          "buildingNumber": 15,
+          "buildingNumberExtension": null,
+          "postalCode": "1761AA",
+          "cityName": "Anna Paulowna",
+          "countryCode": "NL"
+        },
+        "criteria": [],
+        "distance": 8118,
+        "openingTimeWindow": "",
+        "emptyingTime": "",
+        "properties": {
+          "id": 3,
+          "iconPath": "images/icon_postkantoor.png",
+          "name": null
+        },
+        "locationActive": true
+      }
+    }
+  ]
+}
