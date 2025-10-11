@@ -1,0 +1,53 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.738167, 52.950544]
+      },
+      "properties": {
+        "naam": "Den Helder",
+        "beschrijving": "Hier zijn staalslakken gebruikt als fundering onder de wandelpaden van begraafplaats Huisduinen.",
+        "gemeente": "Den Helder",
+        "problemen": null,
+        "maatregelen": null,
+        "bron": "Binnengekomen als tip, bevestigd door gemeente Den Helder",
+        "status": "Groen"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.7473461846476, 52.9440883597644]
+      },
+      "properties": {
+        "naam": "Den Helder",
+        "beschrijving": "Er zijn staalslakken als fundering van de Texelstroomlaan gebruikt.",
+        "gemeente": "Den Helder",
+        "problemen": null,
+        "maatregelen": null,
+        "bron": "Bevestigd door de gemeente Den Helder",
+        "status": "Groen"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.74721527588357, 52.9377800651557]
+      },
+      "properties": {
+        "naam": "Den Helder", 
+        "beschrijving": "Er zijn staalslakken als fundering van de IJsselmeerstraat gebruikt.",
+        "gemeente": "Den Helder",
+        "problemen": null,
+        "maatregelen": null,
+        "bron": "Bevestigd door de gemeente Den Helder",
+        "status": "Groen"
+      }
+    }
+  ]
+}
