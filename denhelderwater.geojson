@@ -1,0 +1,123 @@
+{
+  "type": "FeatureCollection",
+  "name": "PWN_Watertap_Locaties_Den_Helder_Regio",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.7606773, 52.958073]
+      },
+      "properties": {
+        "title": "PWN Watertap",
+        "subtitle": "Julianaplein 11, Den Helder, Nederland",
+        "categoryName": "PWN Watertap",
+        "plaats": "Den Helder"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.746185, 52.945568]
+      },
+      "properties": {
+        "title": "PWN Watertap",
+        "subtitle": "IJsselstraat 2, Den Helder, Nederland",
+        "categoryName": "PWN Watertap",
+        "plaats": "Den Helder"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.7660503, 52.951176]
+      },
+      "properties": {
+        "title": "PWN Watertap",
+        "subtitle": "Kemphaanstraat 24A, Den Helder, Nederland",
+        "categoryName": "PWN Watertap",
+        "plaats": "Den Helder"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.746455, 52.962326]
+      },
+      "properties": {
+        "title": "PWN Watertap",
+        "subtitle": "Adrianus IJsbrand Kuiperstraat 13, Den Helder, Nederland",
+        "categoryName": "PWN Watertap",
+        "plaats": "Den Helder"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.7605104, 52.957054]
+      },
+      "properties": {
+        "title": "PWN Watertap",
+        "subtitle": "Middenweg 176, Den Helder, Nederland",
+        "categoryName": "PWN Watertap",
+        "plaats": "Den Helder"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.77624, 52.935238]
+      },
+      "properties": {
+        "title": "PWN Watertap",
+        "subtitle": "Torplaan 24, Den Helder, Nederland",
+        "categoryName": "PWN Watertap",
+        "plaats": "Den Helder"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.724337, 52.953228]
+      },
+      "properties": {
+        "title": "PWN Watertap",
+        "subtitle": "Badhuisstraat 26, Huisduinen, Nederland",
+        "categoryName": "PWN Watertap",
+        "plaats": "Huisduinen"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.7536936, 52.894466]
+      },
+      "properties": {
+        "title": "PWN Watertap",
+        "subtitle": "Landbouwstraat 20, Julianadorp, Nederland",
+        "categoryName": "PWN Watertap",
+        "plaats": "Julianadorp"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.7387815, 52.88481]
+      },
+      "properties": {
+        "title": "PWN Watertap",
+        "subtitle": "Boterzwin 1101, Julianadorp, Nederland",
+        "categoryName": "PWN Watertap",
+        "plaats": "Julianadorp"
+      }
+    }
+  ]
+}
