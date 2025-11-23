@@ -1,0 +1,5 @@
+{
+  "name": "GISIB SQL Converter",
+  "description": "Een geavanceerde tool om Excel-data om te zetten naar ArcGIS SQL queries.",
+  "requestFramePermissions": []
+}
