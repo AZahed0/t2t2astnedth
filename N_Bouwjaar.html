@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-    <title> Bouwjaar | ArcGIS Map</title>
+    <title>Bouwjaar | ArcGIS Map</title>
 
     <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/dark/main.css" />
     <script src="https://js.arcgis.com/4.32/"></script>
@@ -19,7 +19,7 @@
         "esri/widgets/Fullscreen",
         "esri/symbols/SimpleFillSymbol",
         "esri/renderers/ClassBreaksRenderer",
-        "esri/PopupTemplate" // Import PopupTemplate
+        "esri/PopupTemplate"
       ], (Map, FeatureLayer, MapView, Legend, Home, Slider, Fullscreen, SimpleFillSymbol, ClassBreaksRenderer, PopupTemplate) => {
         
         //-------------------------------------------------------------------------- 
@@ -30,9 +30,8 @@
 
         const layer = new FeatureLayer({
           url: "https://basisregistraties.arcgisonline.nl/arcgis/rest/services/BAG/BAGv3/FeatureServer/4", 
-          outFields: ["*"], // Alle velden zijn nodig voor de pop-up
+          outFields: ["*"],
           minScale: 72223.819286,
-          //definitionExpression: "bouwjaar < 2000"
         });
 
         // Define the PopupTemplate
@@ -46,52 +45,47 @@
                 title: "Popup Content",
                 expression: `
 // ALGEMENE INFORMATIE EN OPPERVLAKTE
-
-// Check of de minimale oppervlakte NIET hetzelfde is als de maximale oppervlakte in het pand. Wanneer dit zo is, vul de HTML, anders laat de variabele leeg.
 var Min_max = When($feature.oppervlakte_min != $feature.oppervlakte_max, \`<div style="background-color:#ffffff;border-radius:8px;border:2px solid #E0B0A2;padding:10px; width: 100%; overflow:auto; grid-column:2; grid-row:1/span 3">
-            <div style="display: grid; grid-template-columns: auto auto;">
-                <div style="grid-column: 1;text-align:center; background-color:#EBEBEB;border-radius:8px 8px 0px 0px; margin-right:2px; font-size:11px">Kleinste object</div>
-                <div style="grid-column: 2;text-align:center; background-color:#EBEBEB;border-radius:8px 8px 0px 0px; margin-left:2px; font-size:11px">Grootste object</div>
-                <div style="grid-column: 1;text-align:center; background-color:#EBEBEB; margin-right:2px; display: flex; justify-content:center; align-items:center;"><img src="https://i.imgur.com/JPvFbVC.png" width="30px" height="30px"></div>
-                <div style="grid-column: 2;text-align:center; background-color:#EBEBEB; margin-left:2px; display: flex; justify-content:center; align-items:center;"><img src="https://i.imgur.com/JPvFbVC.png" width="40px" height="40px"></div>
-                <div style="grid-column: 1;text-align:center; background-color:#EBEBEB;border-radius:0px 0px 8px 8px; margin-right:2px; font-size:11px">\${Text($feature.oppervlakte_min, '#,##0')} m<sup>2</sup></div>
-                <div style="grid-column: 2;text-align:center; background-color:#EBEBEB;border-radius:0px 0px 8px 8px; margin-left:2px; font-size:11px">\${Text($feature.oppervlakte_max, '#,##0')} m<sup>2</sup></div>
-            </div>
-        </div>\`,
-        \`\`)
+            <div style="display: grid; grid-template-columns: auto auto;">
+                <div style="grid-column: 1;text-align:center; background-color:#EBEBEB;border-radius:8px 8px 0px 0px; margin-right:2px; font-size:11px">Kleinste object</div>
+                <div style="grid-column: 2;text-align:center; background-color:#EBEBEB;border-radius:8px 8px 0px 0px; margin-left:2px; font-size:11px">Grootste object</div>
+                <div style="grid-column: 1;text-align:center; background-color:#EBEBEB; margin-right:2px; display: flex; justify-content:center; align-items:center;"><img src="https://i.imgur.com/JPvFbVC.png" width="30px" height="30px"></div>
+                <div style="grid-column: 2;text-align:center; background-color:#EBEBEB; margin-left:2px; display: flex; justify-content:center; align-items:center;"><img src="https://i.imgur.com/JPvFbVC.png" width="40px" height="40px"></div>
+                <div style="grid-column: 1;text-align:center; background-color:#EBEBEB;border-radius:0px 0px 8px 8px; margin-right:2px; font-size:11px">\${Text($feature.oppervlakte_min, '#,##0')} m<sup>2</sup></div>
+                <div style="grid-column: 2;text-align:center; background-color:#EBEBEB;border-radius:0px 0px 8px 8px; margin-left:2px; font-size:11px">\${Text($feature.oppervlakte_max, '#,##0')} m<sup>2</sup></div>
+            </div>
+        </div>\`,
+        \`\`)
 
-// Bouw de HTML op voor de sectie van algemene informatie met daaronder/naast (grid-column 2) de HTML voor de oppervlakte. Hierin komt bovenstaande variabele terug. 
 var html_alg_info_en_opp = \`
 <div style="display: grid; grid-template-columns: auto auto; color:black;">
-    <div style="background-color:#ffffff;border-radius:8px;border:2px solid #E0B0A2;box-shadow:4px 4px 8px rgba(0, 0, 0, 0.2);padding:10px;grid-column:1;grid-row:1;margin-right:5px;display:flex;flex-direction:column;justify-content:space-between">
-        <div style="flex:1; width: 100%; background-color:#EBEBEB;border-radius:8px 8px 8px 8px;margin-bottom:5px;display:flex;flex-direction:column;justify-content:space-between">
-            <div style="text-align: center;flex:1; width: 100%; padding: 3px; font-size:11px"><strong>Identificatie</strong></div>
-            <div style="text-align: center; margin-bottom:3px;flex:1; width: 100%;">\${$feature.identificatie}</div>
-        </div>
-        <div style="flex:1; width: 100%; background-color:#EBEBEB;border-radius:8px 8px 8px 8px;margin-bottom:5px;display:flex;flex-direction:column;justify-content:space-between">
-            <div style="text-align: center;flex:1; width: 100%; padding: 3px; font-size:11px"><strong>Bouwjaar</strong></div>
-            <div style="text-align: center; margin-bottom:3px;flex:1; width: 100%;">\${$feature.bouwjaar}</div>
-        </div>
-        <div style="flex:1; width: 100%; background-color:#EBEBEB;border-radius:8px 8px 8px 8px;margin-bottom:5px;display:flex;flex-direction:column;justify-content:space-between">
-            <div style="text-align: center;flex:1; width: 100%; padding: 3px; font-size:11px"><strong>Status</strong></div>
-            <div style="text-align: center; margin-bottom:3px;flex:1; width: 100%;">\${$feature.status}</div>
-        </div>
-        <div style="flex:1; width: 100%; background-color:#EBEBEB;border-radius:8px 8px 8px 8px;margin-bottom:5px;display:flex;flex-direction:column;justify-content:space-between">
-            <div style="text-align: center;flex:1; width: 100%; padding: 3px; font-size:11px"><strong>Aantal verblijfsobjecten</strong></div>
-            <div style="text-align: center; margin-bottom:3px;flex:1; width: 100%;">\${$feature.aantal_verblijfsobjecten}</div>
-        </div>
-    </div>
-    <div style="background-color:#ffffff;border-radius:8px;border:2px solid #E0B0A2;box-shadow:4px 4px 8px rgba(0, 0, 0, 0.2);padding:10px; overflow:auto; float:left;grid-column:2;grid-row:1;margin-left:5px;display:flex;flex-direction:column;justify-content:space-between">
-        <div style="text-align:center; center;flex:1; width: 100%; margin-bottom:3px; font-size:11px"><strong>Oppervlakte</strong></div>
-        <div style="text-align:center; center;flex:1; width: 100%; margin-bottom:-10px"><img src="https://i.imgur.com/JPvFbVC.png" width="60px" height="60px"></div>
-        <div style="text-align:center; center;flex:1; width: 100%; margin-bottom:3px"><strong>\${Text($feature.oppervlakte, '#,##0')} m<sup>2</sup></strong></div>
-        \${Min_max}
-    </div>
+    <div style="background-color:#ffffff;border-radius:8px;border:2px solid #E0B0A2;box-shadow:4px 4px 8px rgba(0, 0, 0, 0.2);padding:10px;grid-column:1;grid-row:1;margin-right:5px;display:flex;flex-direction:column;justify-content:space-between">
+        <div style="flex:1; width: 100%; background-color:#EBEBEB;border-radius:8px 8px 8px 8px;margin-bottom:5px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="text-align: center;flex:1; width: 100%; padding: 3px; font-size:11px"><strong>Identificatie</strong></div>
+            <div style="text-align: center; margin-bottom:3px;flex:1; width: 100%;">\${$feature.identificatie}</div>
+        </div>
+        <div style="flex:1; width: 100%; background-color:#EBEBEB;border-radius:8px 8px 8px 8px;margin-bottom:5px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="text-align: center;flex:1; width: 100%; padding: 3px; font-size:11px"><strong>Bouwjaar</strong></div>
+            <div style="text-align: center; margin-bottom:3px;flex:1; width: 100%;">\${$feature.bouwjaar}</div>
+        </div>
+        <div style="flex:1; width: 100%; background-color:#EBEBEB;border-radius:8px 8px 8px 8px;margin-bottom:5px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="text-align: center;flex:1; width: 100%; padding: 3px; font-size:11px"><strong>Status</strong></div>
+            <div style="text-align: center; margin-bottom:3px;flex:1; width: 100%;">\${$feature.status}</div>
+        </div>
+        <div style="flex:1; width: 100%; background-color:#EBEBEB;border-radius:8px 8px 8px 8px;margin-bottom:5px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="text-align: center;flex:1; width: 100%; padding: 3px; font-size:11px"><strong>Aantal verblijfsobjecten</strong></div>
+            <div style="text-align: center; margin-bottom:3px;flex:1; width: 100%;">\${$feature.aantal_verblijfsobjecten}</div>
+        </div>
+    </div>
+    <div style="background-color:#ffffff;border-radius:8px;border:2px solid #E0B0A2;box-shadow:4px 4px 8px rgba(0, 0, 0, 0.2);padding:10px; overflow:auto; float:left;grid-column:2;grid-row:1;margin-left:5px;display:flex;flex-direction:column;justify-content:space-between">
+        <div style="text-align:center; center;flex:1; width: 100%; margin-bottom:3px; font-size:11px"><strong>Oppervlakte</strong></div>
+        <div style="text-align:center; center;flex:1; width: 100%; margin-bottom:-10px"><img src="https://i.imgur.com/JPvFbVC.png" width="60px" height="60px"></div>
+        <div style="text-align:center; center;flex:1; width: 100%; margin-bottom:3px"><strong>\${Text($feature.oppervlakte, '#,##0')} m<sup>2</sup></strong></div>
+        \${Min_max}
+    </div>
 </div>\`
 
 // GEBRUIKSFUNCTIES
-
-// Dictionary voor het koppelen van Naam en Aantal.
 var dict = [{'Naam': 'Bijeenkomst', 'Aantal': $feature.gebr_bijeenkomstfunctie},
 {'Naam': 'Cel', 'Aantal': $feature.gebr_celfunctie},
 {'Naam': 'Gezondheidszorg', 'Aantal': $feature.gebr_gezondheidszorgfunctie},
@@ -104,97 +98,84 @@ var dict = [{'Naam': 'Bijeenkomst', 'Aantal': $feature.gebr_bijeenkomstfunctie},
 {'Naam': 'Winkel', 'Aantal': $feature.gebr_winkelfunctie},
 {'Naam': 'Woon', 'Aantal': $feature.gebr_woonfunctie}]
 
-// Sorteer de gebruiksfuncties zodat deze van hoog naar laag lopen
 function compareAantal(a,b){
-  if (a['Aantal']<b['Aantal'])
-    return 1;
-  if (a['Aantal']>b['Aantal'])
-    return -1;
-  return 0;
+  if (a['Aantal']<b['Aantal'])
+    return 1;
+  if (a['Aantal']>b['Aantal'])
+    return -1;
+  return 0;
 }
 var sorted = Sort(dict, compareAantal)
 
-// Bereken het totaal aantal gebruiksfuncties in het pand
 var totaal_aantal = 0
 for (var gebrfunc in sorted){
-  var func = sorted[gebrfunc]
-  var at = func['Aantal']
-  totaal_aantal += at;
+  var func = sorted[gebrfunc]
+  var at = func['Aantal']
+  totaal_aantal += at;
 }
 
-// Maak HTML-code per gebruiksfunctie. Dit bestaat uit een bar met daaronder een legenda.Min_max
-// Twee lege array's voor de HTML voor de bar en de legenda.
 var html_array_bar = []
 var html_array_legend = []
 
-// Loop door elk item uit de gesoorteerde dictionary.
 for (var item in sorted){
-  // Access dictionary
-  var ar = sorted[item]
+  var ar = sorted[item]
+  var aantal = ar['Aantal']
+  var naam = ar['Naam']
+  var kleur = When(
+        naam == 'Bijeenkomst', "#00E6A9",
+        naam == 'Cel', "#895A44",
+        naam == 'Gezondheidszorg', "#E69800",
+        naam == 'Industrie', "#E60000",
+        naam == 'Kantoor', "#A900E6",
+        naam == 'Logies', "#005CE6",
+        naam == 'Onderwijs', "#E600A9",
+        naam == 'Overig', "#B36D47",
+        naam == 'Sport', "#98E600",
+        naam == 'Winkel', "#E1E111",
+        naam == 'Woon', "#00A9E6",
+        "#B36D47"
+    );
 
-  // Definieer aantal, naam en kleur voor in de bargraph
-  var aantal = ar['Aantal']
-  var naam = ar['Naam']
-  var kleur = When(
-        naam == 'Bijeenkomst', "#00E6A9",
-        naam == 'Cel', "#895A44",
-        naam == 'Gezondheidszorg', "#E69800",
-        naam == 'Industrie', "#E60000",
-        naam == 'Kantoor', "#A900E6",
-        naam == 'Logies', "#005CE6",
-        naam == 'Onderwijs', "#E600A9",
-        naam == 'Overig', "#B36D47",
-        naam == 'Sport', "#98E600",
-        naam == 'Winkel', "#E1E111",
-        naam == 'Woon', "#00A9E6",
-        "#B36D47"
-    );
+  var perc = aantal/totaal_aantal*100;
 
-  // Bereken het percentage per gebruiksfunctie dat deze breed is in de pop-up
-  var perc = aantal/totaal_aantal*100;
-
-  // Schrijf een stukje HTML naar de output-array. Er wordt een stukje HTML naar de array voor de bargraph geschreven en een stukje naar de array voor de legenda.
-  if (aantal != 0){
-    if (perc > 3){
-        Push(html_array_bar, Text(\`<div style="background-color:\${kleur}; color:white; height:20px; line-height:20px; text-align:center; width:\${perc}%; float:left;"><strong>\${aantal}</strong></div>\`));
-    } else {
-        Push(html_array_bar, Text(\`<div style="background-color:\${kleur}; color:white; height:20px; line-height:20px; text-align:center; width:\${perc}%; float:left;"></div>\`));
-    }}
-  if (aantal != 0){
-  Push(html_array_legend, Text(\`<div style="display: inline-block;"><div style="background-color: \${kleur}; width: 10px; height: 10px ; margin-left:3px; margin-top:3px; float:left;"></div><div style="list-style: none outside none; margin-right:3px;margin-left:3px; text-align: center;display: inline; font-size:12px">\${naam} (\${aantal})</div></div>\`));
-  }
+  if (aantal != 0){
+    if (perc > 3){
+        Push(html_array_bar, Text(\`<div style="background-color:\${kleur}; color:white; height:20px; line-height:20px; text-align:center; width:\${perc}%; float:left;"><strong>\${aantal}</strong></div>\`));
+    } else {
+        Push(html_array_bar, Text(\`<div style="background-color:\${kleur}; color:white; height:20px; line-height:20px; text-align:center; width:\${perc}%; float:left;"></div>\`));
+    }}
+  if (aantal != 0){
+  Push(html_array_legend, Text(\`<div style="display: inline-block;"><div style="background-color: \${kleur}; width: 10px; height: 10px ; margin-left:3px; margin-top:3px; float:left;"></div><div style="list-style: none outside none; margin-right:3px;margin-left:3px; text-align: center;display: inline; font-size:12px">\${naam} (\${aantal})</div></div>\`));
+  }
 }
 
-// Plak de HTML in de output-arrays achter elkaar om deze te kunnen gebruiken in de output tekst. 
 var output_html_bar = "";
 var output_html_legend = "";
 for (var html in html_array_bar) {
-    output_html_bar += html_array_bar[html];
+    output_html_bar += html_array_bar[html];
 }
 for (var html in html_array_legend) {
-    output_html_legend += html_array_legend[html];
+    output_html_legend += html_array_legend[html];
 }
 
-// Variabele met variendere tekst afhankelijk van het totaal aantal gebruiksfuncties in het pand. 
 var titel = When(totaal_aantal == 1, \`Dit pand heeft de volgende gebruiksfunctie:\`,
 totaal_aantal == 0, \`Dit pand heeft geen/onbekende gebruiksfuncties\`,
 \`Verdeling gebruiksfuncties in pand:\`)
 
-// Bouw de uiteindelijke HTML op voor de gebruiksfuncties. Hierin worden de bargraph en de legenda opgenomen. 
 var html_gebruiksfuncties = \`<div style="background-color:#ffffff;border-radius:8px;border:2px solid #E0B0A2;box-shadow:4px 4px 8px rgba(0, 0, 0, 0.2);padding:10px; margin-top:10px; color:black;">
-  <div style="margin-bottom:5px; text-align:center"><strong>\${titel}</strong></div>
-  <div style="background-color:#D2D8CA;border-radius:5px;overflow:hidden;width:100%;margin-bottom:5px;">
-        \${output_html_bar}
-    </div>  
-    <div style="padding: 5px;">
-        <div style="display: inline;">
-            \${output_html_legend}
-        </div></div>            
+  <div style="margin-bottom:5px; text-align:center"><strong>\${titel}</strong></div>
+  <div style="background-color:#D2D8CA;border-radius:5px;overflow:hidden;width:100%;margin-bottom:5px;">
+        \${output_html_bar}
+    </div>  
+    <div style="padding: 5px;">
+        <div style="display: inline;">
+            \${output_html_legend}
+        </div></div>            
 </div>\`
 
 return { 
-  type : 'text', 
-  text : 
+  type : 'text', 
+  text : 
 \`
 \${html_alg_info_en_opp}
 \${html_gebruiksfuncties}
@@ -209,77 +190,101 @@ return {
         // Assign the popupTemplate to the layer
         layer.popupTemplate = popupTemplate;
 
-        // Renderer met kleurcondities voor bouwjaar
+        // Renderer met professionele legenda-indeling
         const renderer = new ClassBreaksRenderer({
           field: "bouwjaar",
           defaultSymbol: new SimpleFillSymbol({
-            color: "#555555", // Donkergrijs voor 'anders'
+            color: "#ffffff", // WIT voor 'Anders'
             outline: {
-              color: "white",
-              width: 0.02
+              color: "#333333",
+              width: 0.5
             }
           }),
           defaultLabel: "Anders",
           classBreakInfos: [
             {
               minValue: 0,
-              maxValue: 1999.99,
-              symbol: new SimpleFillSymbol({
-                color: "#ffaa00", // Neon Oranje
-                outline: {
-                  color: "white",
-                  width: 0.02
-                }
-              }),
-              label: "Voor 2000"
-            },
-            {
-              minValue: 2000,
               maxValue: 2000,
               symbol: new SimpleFillSymbol({
-                color: "#ff66cc", // Neon Roze
+                color: "#ffaa00", // Oranje voor oudere bebouwing
                 outline: {
                   color: "white",
                   width: 0.02
                 }
               }),
-              label: "Rond 2000"
+              label: "≤ 2000"
             },
             {
-              minValue: 2000.01,
-              maxValue: 2023.99,
+              minValue: 2001,
+              maxValue: 2010,
               symbol: new SimpleFillSymbol({
-                color: "#00ffff", // Cyaan neon
+                color: "#33ccff", // Lichtblauw
                 outline: {
                   color: "white",
                   width: 0.02
                 }
               }),
-              label: "Na 2000"
+              label: "2001–2010"
+            },
+            {
+              minValue: 2011,
+              maxValue: 2020,
+              symbol: new SimpleFillSymbol({
+                color: "#66ff33", // Groen
+                outline: {
+                  color: "white",
+                  width: 0.02
+                }
+              }),
+              label: "2011–2020"
+            },
+            {
+              minValue: 2021,
+              maxValue: 2023,
+              symbol: new SimpleFillSymbol({
+                color: "#ff3333", // Rood
+                outline: {
+                  color: "white",
+                  width: 0.02
+                }
+              }),
+              label: "2021–2023"
             },
             {
               minValue: 2024,
               maxValue: 2024,
               symbol: new SimpleFillSymbol({
-                color: "#39ff14", // Neon Groen
+                color: "#cc00ff", // Paars
                 outline: {
                   color: "white",
                   width: 0.02
                 }
               }),
-              label: "2024" // Aangepast label
+              label: "2024"
             },
             {
               minValue: 2025,
               maxValue: 2025,
               symbol: new SimpleFillSymbol({
-                color: "#ff0000", // Rood
+                color: "#ff1493", // Diep roze
                 outline: {
                   color: "white",
                   width: 0.02
                 }
               }),
-              label: "2025" // Aangepast label
+              label: "2025"
+            },
+            {
+              minValue: 2026,
+              maxValue: 2026,
+              symbol: new SimpleFillSymbol({
+                color: "#ff4500", // Oranjerood
+                outline: {
+                  color: "white",
+                  width: 0.02
+                }
+              }),
+              label: "2026"
             }
           ]
         });
@@ -313,7 +318,7 @@ return {
         const slider = new Slider({
           container: "slider",
           min: 1800, 
-          max: 2025, 
+          max: 2026,
           values: [1990],
           step: 1,
           visibleElements: {
@@ -349,7 +354,6 @@ return {
         //--------------------------------------------------------------------------
 
         function setYear(year) {
-          // De filterexpressie combineert nu bouwjaar en identificatie
           const filterExpression = "bouwjaar <= " + year + " AND Identificatie LIKE '0400%'";
           layer.definitionExpression = filterExpression;
           view.whenLayerView(layer).then((layerView) => {
@@ -364,7 +368,7 @@ return {
           view: view,
           layerInfos: [{
             layer: layer,
-            title: "Bouwjaar per gebouw"
+            title: "Bouwjaar"
           }] 
         });
         view.ui.add(new Home({ view: view }), "top-left");
@@ -442,37 +446,27 @@ return {
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
       }
 
-      #sliderInnerContainer {
-        flex: 1 1 auto;
-        order: 2;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding: 0 20px;
-      }
-
-      #playButton {
-        flex: 0 0 100px;
-        order: 3;
-        margin: 20px 0;
-      }
-
-      .tooltip {
-        position: absolute;
-        pointer-events: none;
-        transition: opacity 200ms;
-      }
-
-      .tooltip>div {
-        margin: 0 auto;
+      /* Aanpassingen voor de legenda */
+      .esri-legend__service {
         padding: 12px;
-        border-radius: 4px;
-        box-shadow: 0px 0px 4px rgba(255, 255, 255, 0.75);
-        transform: translate3d(-50%, -125%, 0);
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
       }
-
-      /* Style for the logo */
-  
+      
+      .esri-legend__layer-caption {
+        font-size: 1.1em;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: white;
+      }
+      
+      .esri-legend__layer-table {
+        width: 100%;
+      }
+      
+      .esri-legend__symbol {
+        border: 1px solid #ccc;
+      }
 
       /* Extra glow-effect simuleren */
       .esri-view-surface {
