@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Bouwjaar 3D | ArcGIS Map</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/dark/main.css" />
+    <script src="https://js.arcgis.com/4.32/"></script>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/layers/FeatureLayer",
+        "esri/views/SceneView",
+        "esri/widgets/Legend",
+        "esri/widgets/Home",
+        "esri/widgets/Slider",
+        "esri/widgets/Fullscreen",
+        "esri/symbols/SimpleFillSymbol",
+        "esri/symbols/ExtrudeSymbol3DLayer",
+        "esri/symbols/PolygonSymbol3D",
+        "esri/renderers/ClassBreaksRenderer",
+        "esri/PopupTemplate"
+      ], (Map, FeatureLayer, SceneView, Legend, Home, Slider, Fullscreen, SimpleFillSymbol, ExtrudeSymbol3DLayer, PolygonSymbol3D, ClassBreaksRenderer, PopupTemplate) => {
+        
+        //-------------------------------------------------------------------------- 
+        //
+        //  Kaart en 3D View instellen
+        //
+        //--------------------------------------------------------------------------
+
+        const layer = new FeatureLayer({
+          url: "https://basisregistraties.arcgisonline.nl/arcgis/rest/services/BAG/BAGv3/FeatureServer/4", 
+          outFields: ["*"],
+          minScale: 72223.819286,
+        });
+
+        // Define the PopupTemplate
+        const popupTemplate = new PopupTemplate({
+          title: "Gegevens van het gebouw",
+          content: [
+            {
+              type: "expression",
+              expressionInfo: {
+                name: "popup-content",
+                title: "Popup Content",
+                expression: `
+// ALGEMENE INFORMATIE EN OPPERVLAKTE
+var Min_max = When($feature.oppervlakte_min != $feature.oppervlakte_max, \`<div style="background-color:#ffffff;border-radius:8px;border:2px solid #E0B0A2;padding:10px; width: 100%; overflow:auto; grid-column:2; grid-row:1/span 3">
+            <div style="display: grid; grid-template-columns: auto auto;">
+                <div style="grid-column: 1;text-align:center; background-color:#EBEBEB;border-radius:8px 8px 0px 0px; margin-right:2px; font-size:11px">Kleinste object</div>
+                <div style="grid-column: 2;text-align:center; background-color:#EBEBEB;border-radius:8px 8px 0px 0px; margin-left:2px; font-size:11px">Grootste object</div>
+                <div style="grid-column: 1;text-align:center; background-color:#EBEBEB; margin-right:2px; display: flex; justify-content:center; align-items:center;"><img src="https://i.imgur.com/JPvFbVC.png" width="30px" height="30px"></div>
+                <div style="grid-column: 2;text-align:center; background-color:#EBEBEB; margin-left:2px; display: flex; justify-content:center; align-items:center;"><img src="https://i.imgur.com/JPvFbVC.png" width="40px" height="40px"></div>
+                <div style="grid-column: 1;text-align:center; background-color:#EBEBEB;border-radius:0px 0px 8px 8px; margin-right:2px; font-size:11px">\${Text($feature.oppervlakte_min, '#,##0')} m<sup>2</sup></div>
+                <div style="grid-column: 2;text-align:center; background-color:#EBEBEB;border-radius:0px 0px 8px 8px; margin-left:2px; font-size:11px">\${Text($feature.oppervlakte_max, '#,##0')} m<sup>2</sup></div>
+            </div>
+        </div>\`,
+        \`\`)
+
+var html_alg_info_en_opp = \`
+<div style="display: grid; grid-template-columns: auto auto; color:black;">
+    <div style="background-color:#ffffff;border-radius:8px;border:2px solid #E0B0A2;box-shadow:4px 4px 8px rgba(0, 0, 0, 0.2);padding:10px;grid-column:1;grid-row:1;margin-right:5px;display:flex;flex-direction:column;justify-content:space-between">
+        <div style="flex:1; width: 100%; background-color:#EBEBEB;border-radius:8px 8px 8px 8px;margin-bottom:5px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="text-align: center;flex:1; width: 100%; padding: 3px; font-size:11px"><strong>Identificatie</strong></div>
+            <div style="text-align: center; margin-bottom:3px;flex:1; width: 100%;">\${$feature.identificatie}</div>
+        </div>
+        <div style="flex:1; width: 100%; background-color:#EBEBEB;border-radius:8px 8px 8px 8px;margin-bottom:5px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="text-align: center;flex:1; width: 100%; padding: 3px; font-size:11px"><strong>Bouwjaar</strong></div>
+            <div style="text-align: center; margin-bottom:3px;flex:1; width: 100%;">\${$feature.bouwjaar}</div>
+        </div>
+        <div style="flex:1; width: 100%; background-color:#EBEBEB;border-radius:8px 8px 8px 8px;margin-bottom:5px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="text-align: center;flex:1; width: 100%; padding: 3px; font-size:11px"><strong>Status</strong></div>
+            <div style="text-align: center; margin-bottom:3px;flex:1; width: 100%;">\${$feature.status}</div>
+        </div>
+        <div style="flex:1; width: 100%; background-color:#EBEBEB;border-radius:8px 8px 8px 8px;margin-bottom:5px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="text-align: center;flex:1; width: 100%; padding: 3px; font-size:11px"><strong>Aantal verblijfsobjecten</strong></div>
+            <div style="text-align: center; margin-bottom:3px;flex:1; width: 100%;">\${$feature.aantal_verblijfsobjecten}</div>
+        </div>
+    </div>
+    <div style="background-color:#ffffff;border-radius:8px;border:2px solid #E0B0A2;box-shadow:4px 4px 8px rgba(0, 0, 0, 0.2);padding:10px; overflow:auto; float:left;grid-column:2;grid-row:1;margin-left:5px;display:flex;flex-direction:column;justify-content:space-between">
+        <div style="text-align:center; center;flex:1; width: 100%; margin-bottom:3px; font-size:11px"><strong>Oppervlakte</strong></div>
+        <div style="text-align:center; center;flex:1; width: 100%; margin-bottom:-10px"><img src="https://i.imgur.com/JPvFbVC.png" width="60px" height="60px"></div>
+        <div style="text-align:center; center;flex:1; width: 100%; margin-bottom:3px"><strong>\${Text($feature.oppervlakte, '#,##0')} m<sup>2</sup></strong></div>
+        \${Min_max}
+    </div>
+</div>\`
+
+// GEBRUIKSFUNCTIES
+var dict = [{'Naam': 'Bijeenkomst', 'Aantal': $feature.gebr_bijeenkomstfunctie},
+{'Naam': 'Cel', 'Aantal': $feature.gebr_celfunctie},
+{'Naam': 'Gezondheidszorg', 'Aantal': $feature.gebr_gezondheidszorgfunctie},
+{'Naam': 'Industrie', 'Aantal': $feature.gebr_industriefunctie},
+{'Naam': 'Kantoor', 'Aantal': $feature.gebr_kantoorfunctie},
+{'Naam': 'Logies', 'Aantal': $feature.gebr_logiesfunctie},
+{'Naam': 'Onderwijs', 'Aantal': $feature.gebr_onderwijsfunctie},
+{'Naam': 'Overig', 'Aantal': $feature.gebr_overige_gebruiksfunctie},
+{'Naam': 'Sport', 'Aantal': $feature.gebr_sportfunctie},
+{'Naam': 'Winkel', 'Aantal': $feature.gebr_winkelfunctie},
+{'Naam': 'Woon', 'Aantal': $feature.gebr_woonfunctie}]
+
+function compareAantal(a,b){
+  if (a['Aantal']<b['Aantal'])
+    return 1;
+  if (a['Aantal']>b['Aantal'])
+    return -1;
+  return 0;
+}
+var sorted = Sort(dict, compareAantal)
+
+var totaal_aantal = 0
+for (var gebrfunc in sorted){
+  var func = sorted[gebrfunc]
+  var at = func['Aantal']
+  totaal_aantal += at;
+}
+
+var html_array_bar = []
+var html_array_legend = []
+
+for (var item in sorted){
+  var ar = sorted[item]
+  var aantal = ar['Aantal']
+  var naam = ar['Naam']
+  var kleur = When(
+        naam == 'Bijeenkomst', "#00E6A9",
+        naam == 'Cel', "#895A44",
+        naam == 'Gezondheidszorg', "#E69800",
+        naam == 'Industrie', "#E60000",
+        naam == 'Kantoor', "#A900E6",
+        naam == 'Logies', "#005CE6",
+        naam == 'Onderwijs', "#E600A9",
+        naam == 'Overig', "#B36D47",
+        naam == 'Sport', "#98E600",
+        naam == 'Winkel', "#E1E111",
+        naam == 'Woon', "#00A9E6",
+        "#B36D47"
+    );
+
+  var perc = aantal/totaal_aantal*100;
+
+  if (aantal != 0){
+    if (perc > 3){
+        Push(html_array_bar, Text(\`<div style="background-color:\${kleur}; color:white; height:20px; line-height:20px; text-align:center; width:\${perc}%; float:left;"><strong>\${aantal}</strong></div>\`));
+    } else {
+        Push(html_array_bar, Text(\`<div style="background-color:\${kleur}; color:white; height:20px; line-height:20px; text-align:center; width:\${perc}%; float:left;"></div>\`));
+    }}
+  if (aantal != 0){
+  Push(html_array_legend, Text(\`<div style="display: inline-block;"><div style="background-color: \${kleur}; width: 10px; height: 10px ; margin-left:3px; margin-top:3px; float:left;"></div><div style="list-style: none outside none; margin-right:3px;margin-left:3px; text-align: center;display: inline; font-size:12px">\${naam} (\${aantal})</div></div>\`));
+  }
+}
+
+var output_html_bar = "";
+var output_html_legend = "";
+for (var html in html_array_bar) {
+    output_html_bar += html_array_bar[html];
+}
+for (var html in html_array_legend) {
+    output_html_legend += html_array_legend[html];
+}
+
+var titel = When(totaal_aantal == 1, \`Dit pand heeft de volgende gebruiksfunctie:\`,
+totaal_aantal == 0, \`Dit pand heeft geen/onbekende gebruiksfuncties\`,
+\`Verdeling gebruiksfuncties in pand:\`)
+
+var html_gebruiksfuncties = \`<div style="background-color:#ffffff;border-radius:8px;border:2px solid #E0B0A2;box-shadow:4px 4px 8px rgba(0, 0, 0, 0.2);padding:10px; margin-top:10px; color:black;">
+  <div style="margin-bottom:5px; text-align:center"><strong>\${titel}</strong></div>
+  <div style="background-color:#D2D8CA;border-radius:5px;overflow:hidden;width:100%;margin-bottom:5px;">
+        \${output_html_bar}
+    </div>  
+    <div style="padding: 5px;">
+        <div style="display: inline;">
+            \${output_html_legend}
+        </div></div>            
+</div>\`
+
+return { 
+  type : 'text', 
+  text : 
+\`
+\${html_alg_info_en_opp}
+\${html_gebruiksfuncties}
+\`
+}
+`
+              }
+            }
+          ]
+        });
+
+        // Assign the popupTemplate to the layer
+        layer.popupTemplate = popupTemplate;
+
+        // Helper functie voor 3D symbolen
+        function create3DSymbol(color, height = 10) {
+          return new PolygonSymbol3D({
+            symbolLayers: [new ExtrudeSymbol3DLayer({
+              material: { color: color },
+              size: height, // Hoogte van de gebouwen in meters
+              edges: {
+                type: "solid",
+                color: [50, 50, 50, 0.5] // Donkere randen voor definitie
+              }
+            })]
+          });
+        }
+
+        // Renderer met 3D symbolen voor bouwjaar
+        const renderer = new ClassBreaksRenderer({
+          field: "bouwjaar",
+          defaultSymbol: create3DSymbol("#ffffff", 5), // Witte 3D blokken voor 'Anders'
+          defaultLabel: "Anders",
+          classBreakInfos: [
+            {
+              minValue: 0,
+              maxValue: 2000,
+              symbol: create3DSymbol("#ffaa00", 8), // Oranje voor oudere bebouwing
+              label: "≤ 2000"
+            },
+            {
+              minValue: 2001,
+              maxValue: 2010,
+              symbol: create3DSymbol("#33ccff", 12), // Lichtblauw
+              label: "2001–2010"
+            },
+            {
+              minValue: 2011,
+              maxValue: 2020,
+              symbol: create3DSymbol("#66ff33", 16), // Groen
+              label: "2011–2020"
+            },
+            {
+              minValue: 2021,
+              maxValue: 2023,
+              symbol: create3DSymbol("#ff3333", 20), // Rood
+              label: "2021–2023"
+            },
+            {
+              minValue: 2024,
+              maxValue: 2024,
+              symbol: create3DSymbol("#cc00ff", 24), // Paars
+              label: "2024"
+            },
+            {
+              minValue: 2025,
+              maxValue: 2025,
+              symbol: create3DSymbol("#ff1493", 28), // Diep roze
+              label: "2025"
+            },
+            {
+              minValue: 2026,
+              maxValue: 2026,
+              symbol: create3DSymbol("#ff4500", 32), // Oranjerood
+              label: "2026"
+            }
+          ]
+        });
+
+        // Apply the renderer to the layer
+        layer.renderer = renderer;
+
+        const map = new Map({
+          basemap: "dark-gray-vector", 
+          layers: [layer],
+          ground: "world-elevation" // 3D terrein toevoegen
+        });
+
+        // 3D SceneView in plaats van MapView
+        const view = new SceneView({
+          map: map,
+          container: "viewDiv",
+          camera: {
+            position: {
+              x: 4.7583,
+              y: 52.9592,
+              z: 800 // Start hoogte in meters
+            },
+            tilt: 65, // Kanteling voor 3D effect
+            heading: 0 // Richting
+          },
+          environment: {
+            lighting: {
+              date: new Date(),
+              directShadowsEnabled: true,
+              ambientOcclusionEnabled: true
+            },
+            atmosphere: {
+              quality: "high"
+            }
+          },
+          constraints: {
+            snapToZoom: false,
+            minScale: 72223.819286
+          },
+          qualityProfile: "high"
+        });
+
+        //-------------------------------------------------------------------------- 
+        //
+        //  UI instellen
+        //
+        //--------------------------------------------------------------------------
+
+        const slider = new Slider({
+          container: "slider",
+          min: 1800, 
+          max: 2026,
+          values: [1990],
+          step: 1,
+          visibleElements: {
+            rangeLabels: true
+          }
+        });
+
+        const sliderValueNode = document.createElement("div");
+        sliderValueNode.classList.add("slider-value");
+        sliderValueNode.innerHTML = "Bouwjaar: " + Math.round(slider.values[0]);
+
+        const sliderContainer = document.getElementById("sliderContainer");
+        sliderContainer.appendChild(sliderValueNode);
+
+        // Update de kaart op basis van de slider waarde.
+        slider.on("thumb-drag", (event) => {
+          setYear(event.value);
+          sliderValueNode.innerHTML = "Bouwjaar: " + Math.round(event.value);
+        });
+
+        slider.on("end", (event) => {
+          setYear(event.value);
+          sliderValueNode.innerHTML = "Bouwjaar: " + Math.round(event.value);
+        });
+
+        // Stel het initiële bouwjaar in.
+        setYear(1990);
+
+        //-------------------------------------------------------------------------- 
+        //
+        //  Methoden
+        //
+        //--------------------------------------------------------------------------
+
+        function setYear(year) {
+          const filterExpression = "bouwjaar <= " + year + " AND Identificatie LIKE '0400%'";
+          layer.definitionExpression = filterExpression;
+          view.whenLayerView(layer).then((layerView) => {
+            layerView.filter = {
+              where: filterExpression
+            };
+          });
+        }
+
+        // Voeg de widgets toe (Legend, Home button, Fullscreen)
+        const legend = new Legend({
+          view: view,
+          layerInfos: [{
+            layer: layer,
+            title: "Bouwjaar"
+          }] 
+        });
+        
+        view.ui.add(new Home({
+          view: view,
+          viewpoint: {
+            position: {
+              x: 4.7583,
+              y: 52.9592,
+              z: 800
+            },
+            tilt: 65,
+            heading: 0
+          }
+        }), "top-left");
+        
+        view.ui.add(legend, "bottom-left");
+        view.ui.add(new Fullscreen({ view: view, element: document.getElementById("applicationDiv") }), "top-right");
+
+        // Extra 3D navigatie widget toevoegen
+        view.ui.add("compass", "top-right");
+
+      });
+    </script>
+
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        font-family: 'Avenir Next', 'Helvetica Neue', sans-serif;
+      }
+
+      #applicationDiv {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        margin: 0;
+      }
+
+      #viewDiv {
+        width: 100%;
+        height: 100%;
+        flex: 1 1 auto;
+        order: 1;
+        position: relative;
+        margin-top: 0;
+        padding-top: 0;
+      }
+
+      #titleDiv {
+        font-weight: 600;
+        font-size: 1.4rem;
+        padding: 12px 20px;
+        text-align: center;
+        color: white;
+        background: linear-gradient(135deg, #2c3e50, #4a6491);
+        border-radius: 8px;
+        margin: 10px;
+        display: inline-block;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      #titleDiv:before {
+        content: " Bouwjaar Overzicht 3D - Gemeente Den Helder";
+      }
+
+      #sliderContainer {
+        flex: 0 0 100px;
+        order: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      #slider {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 20px;
+      }
+
+      .slider-value {
+        margin-top: 12px;
+        font-size: 1.6em;
+        font-weight: bold;
+        color: #fff;
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.5);
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      /* Aanpassingen voor de 3D view */
+      .esri-view-surface::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.3) 100%);
+      }
+
+      /* Verbeterde legenda styling voor 3D */
+      .esri-legend__service {
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.85) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      
+      .esri-legend__layer-caption {
+        font-size: 1.2em;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: white;
+        text-align: center;
+      }
+      
+      .esri-legend__layer-table {
+        width: 100%;
+      }
+
+      /* Compass styling */
+      .esri-compass {
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      /* Home button styling */
+      .esri-home {
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      /* Fullscreen button styling */
+      .esri-fullscreen {
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="applicationDiv">
+      <div id="titleDiv" class="esri-widget"></div>
+      <div id="viewDiv"></div>
+      <div id="sliderContainer" class="esri-widget">
+        <div id="slider"></div>
+      </div>
+    </div>
+  </body>
+</html>
