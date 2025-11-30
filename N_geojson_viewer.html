@@ -1,0 +1,1002 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON Viewer - Nederlandse Kaart</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        /* General Map and Layout Styles */
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        
+        .control-panel {
+            width: 280px;
+            overflow-y: auto;
+            height: 100vh;
+        }
+        
+        /* File Drop Zone Styles */
+        .file-drop-area {
+            border: 2px dashed #3b82f6;
+            background-color: rgba(59, 130, 246, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .file-drop-area.active {
+            border-color: #10b981;
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+        
+        /* Loading Indicator Styles */
+        .map-loading-indicator {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+        
+        /* Legend Styles (Control Panel) */
+        .map-legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* To space out color picker and text */
+            margin-bottom: 5px;
+        }
+        
+        .map-legend-color-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .map-legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 1px solid #333;
+        }
+
+        /* Point Label Styles (Updated to remove white background) */
+        .point-label {
+            background: transparent; /* Remove white background */
+            border: none; /* Remove border */
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            pointer-events: none;
+            white-space: nowrap; /* Prevent labels from wrapping */
+            color: #333; /* Default text color */
+            /* White outline for visibility on dark basemaps */
+            text-shadow: 0 0 2px #fff, 0 0 2px #fff, 0 0 2px #fff; 
+        }
+
+        /* On-Map Legend Styles */
+        .leaflet-control-legend {
+            background: white;
+            padding: 6px 10px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+            border-radius: 5px;
+            line-height: 18px;
+            color: #555;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .leaflet-control-legend h4 {
+            margin: 0 0 5px;
+            padding: 0;
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 1px solid #ccc;
+        }
+        .leaflet-control-legend .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+        .leaflet-control-legend .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            border: 1px solid #333;
+        }
+        
+        /* Dark Mode Styles */
+        .dark-mode .control-panel {
+            background-color: #1f2937; /* Dark gray */
+            color: #f3f4f6; /* Light text */
+        }
+        .dark-mode h1, .dark-mode h2 {
+            color: #93c5fd; /* Light blue for headings */
+        }
+        .dark-mode .text-gray-600 {
+            color: #d1d5db;
+        }
+        .dark-mode .text-gray-500 {
+            color: #9ca3af;
+        }
+        .dark-mode #map-legend {
+            background-color: #374151;
+            border-color: #4b5563;
+        }
+        .dark-mode select, .dark-mode input[type="text"] {
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #f3f4f6;
+        }
+        .dark-mode .bg-gray-200 {
+            background-color: #4b5563;
+        }
+        .dark-mode .bg-white {
+            background-color: #374151;
+        }
+        .dark-mode .shadow-lg {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
+        }
+        .dark-mode .leaflet-control-legend {
+            background: #374151;
+            color: #f3f4f6;
+        }
+        .dark-mode .leaflet-control-legend h4 {
+            border-bottom-color: #4b5563;
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- Leaflet JS must be loaded here before the script block -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Loading Spinner -->
+    <div id="map-loading-indicator" class="map-loading-indicator">
+        <div class="bg-white p-4 rounded-lg shadow-lg flex items-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+            <span>Bestand wordt geladen...</span>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel bg-gray-50 p-4 shadow-md relative">
+        <!-- Dark mode toggle -->
+        <div class="absolute top-4 right-4">
+            <button id="theme-toggle-btn" class="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
+                <i data-feather="moon" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <h1 class="text-xl font-bold mb-6 text-blue-800">GeoJSON Viewer</h1>
+        
+        <!-- File Upload Section -->
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold mb-2">GeoJSON Uploaden</h2>
+            
+            <!-- Drag & Drop Zone -->
+            <div id="file-drop-area" class="file-drop-area p-4 rounded-lg text-center cursor-pointer mb-2">
+                <i data-feather="upload-cloud" class="w-8 h-8 mx-auto mb-2 text-blue-500"></i>
+                <p class="text-sm">Sleep bestand hierheen of klik om te uploaden</p>
+                <p class="text-xs text-gray-500 mt-1">Ondersteund: .geojson, .json</p>
+            </div>
+            
+            <input type="file" id="geojson-input" accept=".geojson,.json" class="hidden">
+            <button id="file-upload-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg flex items-center justify-center transition-colors">
+                <i data-feather="upload" class="mr-2"></i>
+                GeoJSON Uploaden
+            </button>
+            <p id="selected-filename" class="text-sm text-gray-600 mt-2"></p>
+            <p id="feature-counter" class="text-sm text-gray-600 mt-1"></p>
+        </div>
+        
+        <!-- Attribute Selection -->
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold mb-2">Kies attribuut voor kleuren</h2>
+            <select id="attribute-selector" class="w-full p-2 border border-gray-300 rounded-lg" disabled>
+                <option value="">Selecteer een attribuut</option>
+            </select>
+        </div>
+        
+        <!-- Label Options -->
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold mb-2">Label Instellingen</h2>
+            <div class="space-y-3">
+                <div>
+                    <label class="flex items-center">
+                        <input type="checkbox" id="label-toggle" class="mr-2">
+                        <span class="text-sm">Labels tonen</span>
+                    </label>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Label veld</label>
+                    <select id="label-field-selector" class="w-full p-2 border border-gray-300 rounded-lg text-sm" disabled>
+                        <option value="">Selecteer label veld</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Label grootte: <span id="label-size-value">12</span> px</label>
+                    <input type="range" id="label-size-slider" min="8" max="24" value="12" step="1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Point Style Settings -->
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold mb-2">Punt Stijl</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Punt grootte: <span id="point-size-value">12</span> px</label>
+                    <input type="range" id="point-size-slider" min="4" max="50" value="12" step="1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Vulling transparantie: <span id="fill-opacity-value">80</span>%</label>
+                    <input type="range" id="fill-opacity-slider" min="10" max="100" value="80" step="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Vulkleur</label>
+                    <input type="color" id="fill-color-picker" value="#3388ff" class="w-full h-10 rounded cursor-pointer">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Randkleur</label>
+                    <input type="color" id="border-color-picker" value="#ffffff" class="w-full h-10 rounded cursor-pointer">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Rand dikte: <span id="border-width-value">2</span> px</label>
+                    <input type="range" id="border-width-slider" min="1" max="8" value="2" step="1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Base Map Selection -->
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold mb-2">Basiskaart</h2>
+            <select id="basemap-selector" class="w-full p-2 border border-gray-300 rounded-lg">
+                <option value="osm">OpenStreetMap (standaard)</option>
+                <option value="brk">BRK Nederland - PDOK</option>
+                <option value="google">Google Maps</option>
+                <option value="google-satellite">Google Satellite</option>
+                <option value="esri">ESRI World Imagery</option>
+            </select>
+        </div>
+        
+        <!-- Legend -->
+        <div class="mb-6">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold">Legenda</h2>
+                <div class="relative">
+                    <input type="text" id="legend-search-input" placeholder="Zoeken..." class="text-sm p-1 border border-gray-300 rounded w-32 hidden">
+                    <button id="legend-search-btn" class="text-gray-500 hover:text-gray-700">
+                        <i data-feather="search" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="map-legend" class="bg-white p-3 rounded-lg border border-gray-200 max-h-60 overflow-y-auto">
+                <p class="text-gray-500 text-sm">Upload een GeoJSON-bestand om de legenda te zien</p>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="space-y-2">
+            <button id="clear-map-btn" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded transition-colors">
+                <i data-feather="trash-2" class="w-4 h-4 inline mr-2"></i>
+                Kaart leegmaken
+            </button>
+            
+            <button id="screenshot-btn" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded transition-colors">
+                <i data-feather="camera" class="w-4 h-4 inline mr-2"></i>
+                Screenshot nemen
+            </button>
+        </div>
+        
+        <!-- Status Information -->
+        <div id="status-message" class="text-sm text-gray-600 mt-4"></div>
+    </div>
+    
+    <!-- Map -->
+    <div id="map" class="flex-1"></div>
+    
+    <script>
+        // Color palette for attributes
+        const COLOR_PALETTE = [
+            '#4E79A7', '#F28E2B', '#E15759', '#76B7B2', 
+            '#59A14F', '#EDC949', '#B07AA1', '#FF9DA7',
+            '#9C755F', '#BAB0AC', '#D4A6C8', '#A0D6DB'
+        ];
+        
+        // Global variables
+        let map;
+        let geoJsonLayer = null;
+        let selectedAttribute = null;
+        let colorMapping = {};
+        let originalStyles = new Map();
+        let labelLayer = null;
+        let currentBaseLayer = null; // To track the currently active base layer
+        let mapLegendControl = null; // To track the on-map legend control
+
+        // Point style settings (default for all geometries)
+        const pointStyleConfig = {
+            radius: 12,
+            fillOpacity: 0.8,
+            fillColor: '#3388ff',
+            color: '#ffffff', // Use 'color' for stroke/border color
+            weight: 2 // Use 'weight' for stroke/border width
+        };
+        
+        // Label settings
+        const labelConfig = {
+            enabled: false,
+            field: '',
+            fontSize: 12
+        };
+
+        // Hover style settings
+        const hoverStyle = {
+            weight: 4,
+            color: '#ff0000', // Solid red edge
+            fillOpacity: 0.9,
+            fillColor: '#ff0000' // Solid red fill for points
+        };
+        
+        // Custom Leaflet Control for On-Map Legend
+        const MapLegendControl = L.Control.extend({
+            onAdd: function(map) {
+                this._div = L.DomUtil.create('div', 'leaflet-control-legend');
+                this.update();
+                return this._div;
+            },
+            update: function(props) {
+                if (!selectedAttribute || Object.keys(colorMapping).length === 0) {
+                    this._div.innerHTML = '';
+                    return;
+                }
+
+                let html = `<h4>${selectedAttribute}</h4>`;
+                
+                Object.entries(colorMapping).forEach(([value, color]) => {
+                    html += `
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: ${color};"></div>
+                            <span>${value}</span>
+                        </div>
+                    `;
+                });
+                
+                this._div.innerHTML = html;
+            }
+        });
+
+        // Initialize map
+        function initializeMap() {
+            // Map initialization with Den Helder as center and increased maxZoom
+            map = L.map('map', {
+                center: [52.9566, 4.7609],
+                zoom: 13,
+                maxZoom: 20, // Increased max zoom
+                preferCanvas: true
+            });
+            
+            // Base maps
+            const baseMaps = {
+                "osm": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap', maxZoom: 20
+                }),
+                "brk": L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0?service=WMTS&request=GetTile&version=1.0.0&layer=standaard&style=default&tilematrixset=EPSG:3857&tilematrix={z}&tilerow={y}&tilecol={x}&format=image/png', {
+                    attribution: '&copy; PDOK', maxZoom: 20
+                }),
+                "google": L.tileLayer('https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
+                    attribution: '&copy; Google', maxZoom: 20
+                }),
+                "google-satellite": L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                    attribution: '&copy; Google', maxZoom: 20
+                }),
+                "esri": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '&copy; Esri', maxZoom: 20
+                })
+            };
+            
+            // Add default base map
+            currentBaseLayer = baseMaps.osm;
+            currentBaseLayer.addTo(map);
+
+            // Add Scale Control
+            L.control.scale({ imperial: false }).addTo(map);
+
+            // Add On-Map Legend Control
+            mapLegendControl = new MapLegendControl({ position: 'bottomright' }).addTo(map);
+            
+            // Setup event listeners
+            setupEventListeners(baseMaps);
+            
+            // Initialize icons
+            feather.replace();
+            
+            updateStatusMessage('Klaar - Upload een GeoJSON-bestand om te beginnen');
+        }
+        
+        // Function to handle color change from the legend color picker
+        function handleLegendColorChange(value, newColor) {
+            colorMapping[value] = newColor;
+            
+            // Update the style of each layer
+            if (geoJsonLayer) {
+                geoJsonLayer.eachLayer(layer => {
+                    if (layer.feature.properties?.[selectedAttribute] === value) {
+                        let newStyle = originalStyles.get(layer.feature) || getStyle(layer.feature);
+                        newStyle = { ...newStyle, fillColor: newColor };
+                        layer.setStyle(newStyle);
+                        originalStyles.set(layer.feature, newStyle); // Update original style
+                    }
+                });
+            }
+
+            // Update both legends
+            updateMapLegend();
+        }
+
+        // Setup event listeners
+        function setupEventListeners(baseMaps) {
+            // ... (existing event listeners) ...
+            // Base map selection
+            document.getElementById('basemap-selector').addEventListener('change', function(e) {
+                // Remove current base layer
+                if (currentBaseLayer) {
+                    map.removeLayer(currentBaseLayer);
+                }
+                
+                // Add new base layer
+                currentBaseLayer = baseMaps[e.target.value];
+                currentBaseLayer.addTo(map);
+            });
+            
+            // File upload
+            document.getElementById('file-upload-btn').addEventListener('click', () => {
+                document.getElementById('geojson-input').click();
+            });
+            
+            document.getElementById('geojson-input').addEventListener('change', handleFileSelection);
+            
+            // Drag & drop
+            const dropArea = document.getElementById('file-drop-area');
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => dropArea.classList.add('active'), false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => dropArea.classList.remove('active'), false);
+            });
+            
+            dropArea.addEventListener('drop', handleFileDrop, false);
+            dropArea.addEventListener('click', () => document.getElementById('geojson-input').click());
+            
+            // Attribute selection
+            document.getElementById('attribute-selector').addEventListener('change', function(e) {
+                selectedAttribute = e.target.value;
+                if (selectedAttribute) {
+                    applyAttributeStyling();
+                } else {
+                    resetPointStyles();
+                }
+            });
+            
+            // Point style controls
+            document.getElementById('point-size-slider').addEventListener('input', function(e) {
+                pointStyleConfig.radius = parseInt(e.target.value);
+                document.getElementById('point-size-value').textContent = e.target.value;
+                updateAllPointStyles();
+            });
+            
+            document.getElementById('fill-opacity-slider').addEventListener('input', function(e) {
+                pointStyleConfig.fillOpacity = e.target.value / 100;
+                document.getElementById('fill-opacity-value').textContent = e.target.value;
+                updateAllPointStyles();
+            });
+            
+            document.getElementById('fill-color-picker').addEventListener('input', function(e) {
+                pointStyleConfig.fillColor = e.target.value;
+                updateAllPointStyles();
+            });
+            
+            document.getElementById('border-color-picker').addEventListener('input', function(e) {
+                pointStyleConfig.color = e.target.value; // Corrected to 'color'
+                updateAllPointStyles();
+            });
+            
+            document.getElementById('border-width-slider').addEventListener('input', function(e) {
+                pointStyleConfig.weight = parseInt(e.target.value); // Corrected to 'weight'
+                document.getElementById('border-width-value').textContent = e.target.value;
+                updateAllPointStyles();
+            });
+            
+            // Label controls
+            document.getElementById('label-toggle').addEventListener('change', function(e) {
+                labelConfig.enabled = e.target.checked;
+                updateLabels();
+            });
+            
+            document.getElementById('label-field-selector').addEventListener('change', function(e) {
+                labelConfig.field = e.target.value;
+                updateLabels();
+            });
+            
+            document.getElementById('label-size-slider').addEventListener('input', function(e) {
+                labelConfig.fontSize = parseInt(e.target.value);
+                document.getElementById('label-size-value').textContent = e.target.value;
+                updateLabels();
+            });
+            
+            // Action buttons
+            document.getElementById('clear-map-btn').addEventListener('click', clearMapData);
+            document.getElementById('screenshot-btn').addEventListener('click', captureScreenshot);
+            
+            // Theme toggle
+            document.getElementById('theme-toggle-btn').addEventListener('click', toggleTheme);
+
+            // Legend search (currently hidden, but event listener is here)
+            document.getElementById('legend-search-btn').addEventListener('click', function() {
+                const searchInput = document.getElementById('legend-search-input');
+                searchInput.classList.toggle('hidden');
+                if (!searchInput.classList.contains('hidden')) {
+                    searchInput.focus();
+                }
+            });
+            document.getElementById('legend-search-input').addEventListener('input', filterLegend);
+        }
+        
+        // Handle file selection
+        function handleFileSelection(e) {
+            const file = e.target.files[0];
+            if (file) processSelectedFile(file);
+        }
+        
+        // Handle file drop
+        function handleFileDrop(e) {
+            const dt = e.dataTransfer;
+            const file = dt.files[0];
+            if (file && (file.name.endsWith('.geojson') || file.name.endsWith('.json'))) {
+                processSelectedFile(file);
+            } else {
+                updateStatusMessage('Alleen .geojson en .json bestanden zijn toegestaan', 'error');
+            }
+        }
+        
+        // Process selected file
+        function processSelectedFile(file) {
+            document.getElementById('selected-filename').textContent = `Geselecteerd: ${file.name}`;
+            updateStatusMessage('Bestand wordt verwerkt...');
+            showLoadingIndicator(true);
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                try {
+                    const geoJsonData = JSON.parse(event.target.result);
+                    
+                    if (!geoJsonData.type || !geoJsonData.features) {
+                        throw new Error('Ongeldig GeoJSON-bestand');
+                    }
+                    
+                    loadGeoJsonData(geoJsonData);
+                    updateStatusMessage('GeoJSON succesvol geladen');
+                    
+                } catch (error) {
+                    console.error('Fout bij het verwerken van GeoJSON:', error);
+                    updateStatusMessage(`Fout: ${error.message}`, 'error');
+                } finally {
+                    showLoadingIndicator(false);
+                }
+            };
+            
+            reader.onerror = function() {
+                updateStatusMessage('Fout bij het lezen van het bestand', 'error');
+                showLoadingIndicator(false);
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // Load GeoJSON data
+        function loadGeoJsonData(geoJsonData) {
+            // Remove existing layer
+            if (geoJsonLayer) {
+                map.removeLayer(geoJsonLayer);
+                originalStyles.clear();
+            }
+            
+            // Remove existing labels
+            if (labelLayer) {
+                map.removeLayer(labelLayer);
+                labelLayer = null;
+            }
+            
+            // Collect attribute fields
+            const attributes = new Set();
+            const labelFields = new Set();
+            
+            geoJsonData.features.forEach(feature => {
+                if (feature.properties) {
+                    Object.keys(feature.properties).forEach(attr => {
+                        attributes.add(attr);
+                        labelFields.add(attr);
+                    });
+                }
+            });
+            
+            // Populate attribute dropdown (sorted)
+            const attributeSelector = document.getElementById('attribute-selector');
+            attributeSelector.innerHTML = '<option value="">Selecteer een attribuut</option>';
+            
+            Array.from(attributes).sort().forEach(attr => {
+                const option = document.createElement('option');
+                option.value = attr;
+                option.textContent = attr;
+                attributeSelector.appendChild(option);
+            });
+            
+            attributeSelector.disabled = false;
+            
+            // Populate label field dropdown
+            const labelFieldSelector = document.getElementById('label-field-selector');
+            labelFieldSelector.innerHTML = '<option value="">Selecteer label veld</option>';
+            
+            Array.from(labelFields).sort().forEach(field => {
+                const option = document.createElement('option');
+                option.value = field;
+                option.textContent = field;
+                labelFieldSelector.appendChild(option);
+            });
+            
+            labelFieldSelector.disabled = false;
+            
+            // Create the GeoJSON layer
+            geoJsonLayer = L.geoJSON(geoJsonData, {
+                pointToLayer: function (feature, latlng) {
+                    return L.circleMarker(latlng, getStyle(feature));
+                },
+                style: getStyle,
+                onEachFeature: onEachFeature
+            }).addTo(map);
+            
+            // Fit map bounds to the new layer
+            map.fitBounds(geoJsonLayer.getBounds());
+            
+            // Update feature counter
+            document.getElementById('feature-counter').textContent = `Aantal objecten: ${geoJsonData.features.length}`;
+
+            // Invalidate map size after sidebar loads (Fix for map rendering issues)
+            map.invalidateSize();
+        }
+        
+        // Get style for a feature
+        function getStyle(feature) {
+            // Default style
+            let style = {
+                fillColor: pointStyleConfig.fillColor,
+                color: pointStyleConfig.color,
+                weight: pointStyleConfig.weight,
+                opacity: 1,
+                fillOpacity: pointStyleConfig.fillOpacity,
+                radius: pointStyleConfig.radius
+            };
+            
+            // Apply attribute-based color if selected
+            if (selectedAttribute && feature.properties && feature.properties[selectedAttribute] !== undefined) {
+                const value = feature.properties[selectedAttribute];
+                const color = colorMapping[value];
+                if (color) {
+                    style.fillColor = color;
+                }
+            }
+            
+            // Store the original style
+            originalStyles.set(feature, style);
+            
+            return style;
+        }
+        
+        // Function to apply attribute-based styling
+        function applyAttributeStyling() {
+            if (!geoJsonLayer || !selectedAttribute) return;
+            
+            // 1. Collect unique values for the selected attribute
+            const uniqueValues = new Set();
+            geoJsonLayer.eachLayer(layer => {
+                const value = layer.feature.properties?.[selectedAttribute];
+                if (value !== undefined) {
+                    uniqueValues.add(value);
+                }
+            });
+            
+            // 2. Create a new color mapping (or reuse existing if value is present)
+            const newColorMapping = {};
+            Array.from(uniqueValues).sort().forEach((value, index) => {
+                // Use existing color if available, otherwise use next from palette
+                newColorMapping[value] = colorMapping[value] || COLOR_PALETTE[index % COLOR_PALETTE.length];
+            });
+            colorMapping = newColorMapping;
+            
+            // 3. Update the style of each layer
+            geoJsonLayer.eachLayer(layer => {
+                const value = layer.feature.properties?.[selectedAttribute];
+                let newStyle = originalStyles.get(layer.feature) || getStyle(layer.feature);
+                
+                if (value !== undefined && colorMapping[value]) {
+                    newStyle = { ...newStyle, fillColor: colorMapping[value] };
+                } else {
+                    // Reset to default fill color if attribute is missing or not mapped
+                    newStyle = { ...newStyle, fillColor: pointStyleConfig.fillColor };
+                }
+                
+                layer.setStyle(newStyle);
+                originalStyles.set(layer.feature, newStyle); // Update original style
+            });
+            
+            // 4. Update the legend
+            updateMapLegend();
+        }
+        
+        // Function to reset point styles to default
+        function resetPointStyles() {
+            selectedAttribute = null;
+            colorMapping = {};
+            
+            if (geoJsonLayer) {
+                geoJsonLayer.eachLayer(layer => {
+                    const defaultStyle = getStyle(layer.feature);
+                    layer.setStyle(defaultStyle);
+                    originalStyles.set(layer.feature, defaultStyle);
+                });
+            }
+            
+            updateMapLegend();
+        }
+        
+        // Function to update all point styles (used by style sliders)
+        function updateAllPointStyles() {
+            if (!geoJsonLayer) return;
+            
+            geoJsonLayer.eachLayer(layer => {
+                // Get the current style, but override the point style properties
+                let currentStyle = originalStyles.get(layer.feature) || getStyle(layer.feature);
+                
+                // If an attribute is selected, keep the attribute-based fillColor
+                const attributeColor = selectedAttribute && layer.feature.properties?.[selectedAttribute] !== undefined 
+                    ? colorMapping[layer.feature.properties[selectedAttribute]] 
+                    : pointStyleConfig.fillColor;
+
+                const newStyle = {
+                    ...currentStyle,
+                    radius: pointStyleConfig.radius,
+                    fillOpacity: pointStyleConfig.fillOpacity,
+                    color: pointStyleConfig.color,
+                    weight: pointStyleConfig.weight,
+                    fillColor: selectedAttribute ? attributeColor : pointStyleConfig.fillColor
+                };
+                
+                layer.setStyle(newStyle);
+                originalStyles.set(layer.feature, newStyle);
+            });
+        }
+        
+        // On each feature handler
+        function onEachFeature(feature, layer) {
+            // Bind a popup with all properties
+            if (feature.properties) {
+                let popupContent = '<table>';
+                for (let key in feature.properties) {
+                    popupContent += `<tr><th>${key}:</th><td>${feature.properties[key]}</td></tr>`;
+                }
+                popupContent += '</table>';
+                layer.bindPopup(popupContent);
+            }
+            
+            // Hover events (Mouseover and Mouseout)
+            layer.on({
+                mouseover: function(e) {
+                    const layer = e.target;
+                    // Store the original style before applying hover style
+                    originalStyles.set(layer, layer.options); 
+                    
+                    // Apply the new hover style
+                    layer.setStyle(hoverStyle);
+                    
+                    // Bring to front for better visibility
+                    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                        layer.bringToFront();
+                    }
+                },
+                mouseout: function(e) {
+                    const layer = e.target;
+                    // Get the original style (which includes attribute-based color if applied)
+                    const originalStyle = originalStyles.get(layer.feature) || getStyle(layer.feature);
+                    
+                    // Apply the original style back
+                    layer.setStyle(originalStyle);
+                }
+            });
+        }
+        
+        // Update labels
+        function updateLabels() {
+            // Remove existing labels
+            if (labelLayer) {
+                map.removeLayer(labelLayer);
+                labelLayer = null;
+            }
+            
+            if (!labelConfig.enabled || !labelConfig.field || !geoJsonLayer) {
+                return;
+            }
+            
+            labelLayer = L.layerGroup().addTo(map);
+            
+            geoJsonLayer.eachLayer(layer => {
+                if (layer.feature?.properties?.[labelConfig.field] !== undefined) {
+                    const labelText = layer.feature.properties[labelConfig.field].toString();
+                    
+                    // Determine the center point for the label
+                    let latlng;
+                    if (layer.getLatLng) {
+                        // For markers/circleMarkers
+                        latlng = layer.getLatLng();
+                    } else if (layer.getBounds) {
+                        // For polygons/lines
+                        latlng = layer.getBounds().getCenter();
+                    } else {
+                        return; // Skip features without a center point
+                    }
+                    
+                    const label = L.marker(latlng, {
+                        icon: L.divIcon({
+                            className: 'point-label',
+                            html: `<div style="font-size: ${labelConfig.fontSize}px">${labelText}</div>`,
+                            iconSize: [100, 20], // Fixed size for divIcon
+                            iconAnchor: [50, 10] // Center the icon
+                        })
+                    });
+                    
+                    labelLayer.addLayer(label);
+                }
+            });
+        }
+        
+        // Update map legend (Control Panel and On-Map)
+        function updateMapLegend() {
+            const legend = document.getElementById('map-legend');
+            
+            if (!selectedAttribute || Object.keys(colorMapping).length === 0) {
+                legend.innerHTML = '<p class="text-gray-500 text-sm">Kies een attribuut om de legenda te tonen</p>';
+                if (mapLegendControl) mapLegendControl.update();
+                return;
+            }
+            
+            let html = `<p class="font-semibold mb-2 text-sm border-b pb-1">${selectedAttribute}</p>`;
+            
+            Object.entries(colorMapping).forEach(([value, color]) => {
+                html += `
+                    <div class="map-legend-item" data-value="${value}">
+                        <div class="map-legend-color-container">
+                            <div class="map-legend-color" style="background-color: ${color};"></div>
+                            <span class="text-sm">${value}</span>
+                        </div>
+                        <input type="color" value="${color}" class="w-8 h-8 rounded cursor-pointer" 
+                               onchange="handleLegendColorChange('${value}', this.value)">
+                    </div>
+                `;
+            });
+            
+            legend.innerHTML = html;
+
+            // Update on-map legend
+            if (mapLegendControl) mapLegendControl.update();
+        }
+
+        // Filter legend items
+        function filterLegend() {
+            const searchInput = document.getElementById('legend-search-input');
+            const filter = searchInput.value.toLowerCase();
+            const items = document.querySelectorAll('#map-legend .map-legend-item');
+
+            items.forEach(item => {
+                const value = item.getAttribute('data-value').toLowerCase();
+                if (value.includes(filter)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        // Clear map data
+        function clearMapData() {
+            if (geoJsonLayer) {
+                map.removeLayer(geoJsonLayer);
+                geoJsonLayer = null;
+            }
+            
+            if (labelLayer) {
+                map.removeLayer(labelLayer);
+                labelLayer = null;
+            }
+            
+            // Reset UI elements
+            document.getElementById('attribute-selector').innerHTML = '<option value="">Selecteer een attribuut</option>';
+            document.getElementById('attribute-selector').disabled = true;
+            document.getElementById('label-field-selector').innerHTML = '<option value="">Selecteer label veld</option>';
+            document.getElementById('label-field-selector').disabled = true;
+            document.getElementById('selected-filename').textContent = '';
+            document.getElementById('feature-counter').textContent = '';
+            
+            // Reset state variables
+            selectedAttribute = null;
+            colorMapping = {};
+            originalStyles.clear();
+            
+            updateMapLegend();
+            updateStatusMessage('Kaart is geleegd');
+        }
+        
+        // Capture screenshot
+        function captureScreenshot() {
+            // Simple screenshot using browser's built-in method
+            updateStatusMessage('Gebruik browser screenshot (Ctrl+Shift+S) of print scherm');
+        }
+        
+        // Toggle theme
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const themeBtn = document.getElementById('theme-toggle-btn');
+            themeBtn.innerHTML = document.body.classList.contains('dark-mode') ? 
+                '<i data-feather="sun" class="w-4 h-4"></i>' : 
+                '<i data-feather="moon" class="w-4 h-4"></i>';
+            feather.replace();
+        }
+        
+        // Show loading indicator
+        function showLoadingIndicator(show) {
+            document.getElementById('map-loading-indicator').style.display = show ? 'block' : 'none';
+        }
+        
+        // Update status message
+        function updateStatusMessage(message, type = 'info') {
+            const statusElement = document.getElementById('status-message');
+            statusElement.textContent = message;
+            
+            if (type === 'error') {
+                statusElement.classList.add('text-red-600');
+                statusElement.classList.remove('text-gray-600');
+            } else {
+                statusElement.classList.remove('text-red-600');
+                statusElement.classList.add('text-gray-600');
+            }
+        }
+        
+        // Initialize the map when page loads
+        document.addEventListener('DOMContentLoaded', initializeMap);
+    </script>
+</body>
+</html>
