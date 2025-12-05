@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Hoe Groot is Gemeente Den Helder?</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactieve kaart van gemeente Den Helder - Ontdek hoe groot Den Helder werkelijk is">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Leaflet PM (voor slepen & reset) -->
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.2/dist/leaflet-geoman.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background-color: #f5f7fa;
+        }
+        
+        #container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+        
+        header {
+            background: #014b6b;
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        #map-container {
+            flex-grow: 1;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .controls-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            background-color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            font-weight: 600;
+            color: #014b6b;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .control-btn:hover {
+            background-color: #f0f7ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .control-btn:active {
+            transform: translateY(0);
+        }
+        
+        .control-btn.active {
+            background-color: #ff9900;
+            color: white;
+        }
+        
+        .info-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-width: 400px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .info-panel h3 {
+            color: #014b6b;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .info-panel p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #333;
+        }
+        
+        .info-panel.hidden {
+            display: none;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            font-size: 0.8rem;
+            max-width: 200px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 15px;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+        
+        /* Responsive aanpassingen */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .controls-panel {
+                top: 10px;
+                right: 10px;
+            }
+            
+            .control-btn {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+            
+            .info-panel {
+                left: 10px;
+                bottom: 10px;
+                max-height: 150px;
+                max-width: 300px;
+            }
+            
+            .legend {
+                bottom: 170px;
+                right: 10px;
+                max-width: 180px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .controls-panel {
+                flex-direction: row;
+                top: auto;
+                bottom: 170px;
+                right: 10px;
+                left: 10px;
+                justify-content: space-between;
+            }
+            
+            .control-btn {
+                flex-grow: 1;
+                padding: 8px;
+                font-size: 0.75rem;
+            }
+            
+            .info-panel {
+                bottom: 60px;
+                max-width: calc(100% - 20px);
+            }
+            
+            .legend {
+                bottom: 230px;
+                right: 10px;
+                max-width: 160px;
+            }
+            
+            header p {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <header>
+            <h1>Hoe Groot is Gemeente Den Helder?</h1>
+            <p>Sleep de gemeentegrens om Den Helder te vergelijken met andere locaties</p>
+        </header>
+        
+        <div id="map-container">
+            <div id="map"></div>
+            
+            <div class="controls-panel">
+                <button id="reset-btn" class="control-btn" title="Reset de kaart naar de oorspronkelijke weergave">
+                    <span>🗺️</span> Reset kaart
+                </button>
+                <button id="toggle-drag" class="control-btn" title="Sta toe om het gebied te verslepen vanuit het midden">
+                    <span>↔️</span> Sleep Den Helder
+                </button>
+            </div>
+            
+            <div id="info-panel" class="info-panel hidden">
+                <h3 id="info-title">Gemeente Den Helder</h3>
+                <p id="info-content">Klik op het gebied om de details te zien.</p>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #3399ff;"></div>
+                    <span>Den Helder</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ff9900;"></div>
+                    <span>Geselecteerd</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet PM (voor slepen & reset) -->
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.2/dist/leaflet-geoman.min.js"></script>
+    
+    <script>
+        // ================================
+        // 1. INITIALISATIE & CONFIGURATIE
+        // ================================
+        
+        // Maak kaartobject met focus op Den Helder
+        const map = L.map('map', {
+            zoomControl: true,
+            attributionControl: true
+        }).setView([52.96, 4.76], 12);
+        
+        // Nederlandse vertaling voor Leaflet controls
+        L.Control.Zoom.prototype.options.zoomInTitle = 'Zoom in';
+        L.Control.Zoom.prototype.options.zoomOutTitle = 'Zoom uit';
+        
+        // Nederlandse attributie tekst
+        const attributionText = 'Kaartgegevens © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+        
+        // ================================
+        // 2. ACHTERGRONDKAART
+        // ================================
+        
+        // Gebruik alleen OpenStreetMap (geen keuzemenu)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: attributionText
+        }).addTo(map);
+        
+        // ================================
+        // 3. DEN HELDER GEOJSON
+        // ================================
+        
+        const denHelderGeoJSON = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "name": "Gemeente Den Helder",
+                        "inwoners": 56500,
+                        "description": "Den Helder is de noordelijkste gemeente van Noord-Holland. Het is een belangrijke marinehaven."
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [4.791460587569714, 52.93624153285343], [4.791383904972333, 52.93757870896805],
+                            [4.791884310742826, 52.93809847869114], [4.791858857782347, 52.94145594288071],
+                            [4.792168280530126, 52.94277348807147], [4.793111568828003, 52.94455416848742],
+                            [4.799227787037839, 52.950751610843625], [4.801667605816303, 52.95303258204711],
+                            [4.801729117330108, 52.95360956944867], [4.803286080583735, 52.95850467885694],
+                            [4.803395012911211, 52.95945357093998], [4.80177322627479, 52.96355003521853],
+                            [4.801087966888467, 52.96458091963499], [4.795494480482636, 52.96441024556541],
+                            [4.789811023500402, 52.96258602407461], [4.791699172933376, 52.962333735912985],
+                            [4.792226224923932, 52.961914864470685], [4.793282500233354, 52.95997718841187],
+                            [4.794816301533897, 52.96027091980797], [4.794453299900941, 52.96151809581267],
+                            [4.796339295445602, 52.9618924813613], [4.797903723446788, 52.9603932274515],
+                            [4.798150667835575, 52.95962101963369], [4.793227408187904, 52.95862515113551],
+                            [4.795495227805468, 52.95883582683302], [4.796478141078692, 52.95709368157527],
+                            [4.794107981467888, 52.95661396705437], [4.793323127095183, 52.95724346143743],
+                            [4.794388296397267, 52.955495468498924], [4.792759271780167, 52.95516267806778],
+                            [4.791470433458375, 52.957646869599344], [4.790871637719479, 52.957542673435064],
+                            [4.792100147079909, 52.95502125784857], [4.787952136964779, 52.95447359211763],
+                            [4.787273176853765, 52.95705062027448], [4.786673763032345, 52.956997995797494],
+                            [4.787295389285217, 52.95440946798362], [4.785557061308961, 52.95430570705937],
+                            [4.785158223357468, 52.95690916087595], [4.782759076161462, 52.95632844132144],
+                            [4.781189717473075, 52.958557707972254], [4.783295860573894, 52.959121907971884],
+                            [4.77903421017403, 52.95827092975292], [4.778795751814241, 52.957927114432856],
+                            [4.780859625942671, 52.95532720603014], [4.779195910376488, 52.95453680334791],
+                            [4.776448265533914, 52.95809968903015], [4.775287527567286, 52.96008085370134],
+                            [4.774375933248352, 52.96035955440413], [4.775229218089252, 52.96086527303462],
+                            [4.777745903312611, 52.960916449535596], [4.779509673923203, 52.96193703730464],
+                            [4.781103520851003, 52.963355457841416], [4.783595780691132, 52.962303128258554],
+                            [4.784725804724095, 52.963008594848304], [4.78333355793331, 52.963938130806625],
+                            [4.783883727033582, 52.965042011737246], [4.784912648770237, 52.965731683954345],
+                            [4.784485612486919, 52.96615372602346], [4.783360689133511, 52.96556232929165],
+                            [4.782546926481087, 52.9645054063768], [4.781422266266864, 52.964756581635775],
+                            [4.77934347852781, 52.96319828001332], [4.777711289172287, 52.96291071072972],
+                            [4.777720045396267, 52.963977651308184], [4.779163286316845, 52.964703334716525],
+                            [4.779084785451882, 52.96506649205786], [4.775532291128724, 52.965296133497915],
+                            [4.76712126166118, 52.9654637846519], [4.762668354039124, 52.96535123323978],
+                            [4.756616475445671, 52.96399158300109], [4.754764661293414, 52.963851846347154],
+                            [4.749310762975148, 52.964359935923206], [4.741444584147459, 52.964056984493354],
+                            [4.730839732439184, 52.962573778257465], [4.726185416692477, 52.9582021105232],
+                            [4.722520439579976, 52.95414021633342], [4.720025028956371, 52.95210483341432],
+                            [4.718757279561746, 52.9501041994333], [4.71789511735424, 52.94818944708644],
+                            [4.717272576829107, 52.94770893229307], [4.716802221621112, 52.94511131185629],
+                            [4.716046499106183, 52.94364562023919], [4.715750716588079, 52.94182664523086],
+                            [4.713800161666348, 52.9357743818724], [4.713975003280508, 52.93527010379928],
+                            [4.713131249653374, 52.930419175835766], [4.713272814123473, 52.92955644908967],
+                            [4.713009092545467, 52.92706339458002], [4.713060137163265, 52.9250913085648],
+                            [4.713558982358924, 52.922890844178596], [4.713356324234534, 52.921835507210496],
+                            [4.713750308782336, 52.920358859667125], [4.713126071541133, 52.91424441363089],
+                            [4.713205735057223, 52.91152723452395], [4.71294480857977, 52.910913496952006],
+                            [4.712913623841295, 52.907840109553035], [4.7125496735202, 52.905305772323516],
+                            [4.712602870003272, 52.90313322330403], [4.712211177588554, 52.90017390506642],
+                            [4.71207451371111, 52.897281113054014], [4.71175470145535, 52.89481117275835],
+                            [4.711081338007506, 52.8934652708336], [4.711097922749655, 52.892381754612664],
+                            [4.710359309213355, 52.88939582644149], [4.710431426482384, 52.88837353852121],
+                            [4.709794391854541, 52.88713069253754], [4.709577378272988, 52.88523867791025],
+                            [4.709042337532622, 52.883621769208446], [4.715597545199357, 52.88306007099362],
+                            [4.737509598517462, 52.88141003546568], [4.755442112764391, 52.88001482473499],
+                            [4.758953692962677, 52.87990354453057], [4.762620911249439, 52.87945395218453],
+                            [4.769135610385694, 52.87930544524351], [4.770756675192279, 52.87936894372393],
+                            [4.772068635476864, 52.8802090810515], [4.778195331527855, 52.88876739158142],
+                            [4.787625152868061, 52.90230569692552], [4.794909263597807, 52.912578277576685],
+                            [4.801093523826363, 52.911218460232035], [4.801719053549905, 52.911512693820235],
+                            [4.804531848485615, 52.9104870508459], [4.806725112772221, 52.91271435434052],
+                            [4.806308888224463, 52.91404263547787], [4.807608963215412, 52.91361143308427],
+                            [4.808329882400812, 52.914343105536375], [4.809067895364553, 52.914077958753495],
+                            [4.809811016923904, 52.91468019698191], [4.808170556408744, 52.915585293027966],
+                            [4.806311046969318, 52.91609698169025], [4.804879345422431, 52.9159402159277],
+                            [4.803270243146849, 52.917389307568804], [4.794476811151982, 52.929820043838866],
+                            [4.794292878035796, 52.93248985208954], [4.79325851699584, 52.93310012211351],
+                            [4.792087648705079, 52.93301071204554], [4.792079934149302, 52.934956251744055],
+                            [4.791460587569714, 52.93624153285343]
+                        ]]
+                    }
+                }
+            ]
+        };
+        
+        // ================================
+        // 4. GLOBALE VARIABELEN
+        // ================================
+        
+        let selectedLayer = null;  // Huidig geselecteerde laag
+        let dragModeEnabled = false;
+        let grensLayer; // Bewaar referentie naar de hoofdlaag
+        
+        // ================================
+        // 5. STYLING FUNCTIES
+        // ================================
+        
+        // Basis stijl voor originele lagen
+        const originalStyle = {
+            fillColor: '#3399ff',
+            weight: 3,
+            opacity: 1,
+            color: '#014b6b',
+            fillOpacity: 0.5
+        };
+        
+        // Stijl voor geselecteerde lagen
+        const selectedStyle = {
+            fillColor: '#ff9900',
+            weight: 4,
+            color: '#ff9900',
+            fillOpacity: 0.7
+        };
+        
+        // Functie om een laag te highlighten
+        function highlightLayer(layer) {
+            // Verwijder highlight van vorige selectie
+            if (selectedLayer && selectedLayer !== layer) {
+                selectedLayer.setStyle(originalStyle);
+            }
+            
+            // Voeg highlight toe aan huidige selectie
+            layer.setStyle(selectedStyle);
+            selectedLayer = layer;
+            
+            // Toon informatie in het info-panel
+            showFeatureInfo(layer.feature);
+        }
+        
+        // Functie om informatie over een feature te tonen
+        function showFeatureInfo(feature) {
+            const infoPanel = document.getElementById('info-panel');
+            const infoTitle = document.getElementById('info-title');
+            const infoContent = document.getElementById('info-content');
+            
+            infoTitle.textContent = feature.properties.name || 'Onbekend gebied';
+            
+            let infoHTML = '';
+            if (feature.properties.description) {
+                infoHTML += `<p><strong>Beschrijving:</strong> ${feature.properties.description}</p>`;
+            }
+            if (feature.properties.type) {
+                infoHTML += `<p><strong>Type:</strong> ${feature.properties.type}</p>`;
+            }
+            if (feature.properties.inwoners) {
+                infoHTML += `<p><strong>Aantal inwoners:</strong> ${feature.properties.inwoners.toLocaleString('nl-NL')}</p>`;
+            }
+            if (feature.properties.oppervlakte) {
+                infoHTML += `<p><strong>Oppervlakte:</strong> ${feature.properties.oppervlakte}</p>`;
+            }
+            
+            infoContent.innerHTML = infoHTML;
+            infoPanel.classList.remove('hidden');
+        }
+        
+        // Functie om de kaart te resetten
+        function resetMap() {
+            // Reset de geselecteerde laag
+            if (selectedLayer) {
+                selectedLayer.setStyle(originalStyle);
+                selectedLayer = null;
+            }
+            
+            // Verberg het info-panel
+            document.getElementById('info-panel').classList.add('hidden');
+            
+            // Reset de kaartweergave
+            map.fitBounds(grensLayer.getBounds());
+            
+            // Schakel drag mode uit
+            if (dragModeEnabled) {
+                toggleDragMode();
+            }
+        }
+        
+        // Functie om drag op alle lagen uit te schakelen
+        function disableDragMode() {
+            grensLayer.eachLayer(layer => {
+                if (layer.pm && layer.pm.enabled()) {
+                    layer.pm.disable();
+                }
+                if (layer.pm && layer.pm.dragging()) {
+                    layer.pm.disableLayerDrag();
+                }
+            });
+        }
+        
+        // ================================
+        // 6. MIDDEN VERSLEPEN FUNCTIE
+        // ================================
+        
+        function toggleDragMode() {
+            dragModeEnabled = !dragModeEnabled;
+            const btn = document.getElementById('toggle-drag');
+            
+            if (dragModeEnabled) {
+                // Activeer drag voor alle lagen
+                grensLayer.eachLayer(layer => {
+                    if (layer.pm) {
+                        layer.pm.enableLayerDrag();
+                    }
+                });
+                
+                btn.textContent = '🔓 Sleep Den Helder (AAN)';
+                btn.classList.add('active');
+            } else {
+                // Deactiveer drag voor alle lagen
+                disableDragMode();
+                
+                btn.textContent = '↔️ Sleep Den Helder';
+                btn.classList.remove('active');
+            }
+        }
+        
+        // ================================
+        // 7. KAART INITIALISATIE
+        // ================================
+        
+        // Voeg Den Helder toe aan de kaart
+        grensLayer = L.geoJSON(denHelderGeoJSON, {
+            style: originalStyle
+        }).addTo(map);
+        
+        // Voeg interactie toe aan alle lagen
+        grensLayer.eachLayer(layer => {
+            // Voeg click event toe
+            layer.on({
+                click: function(e) {
+                    highlightLayer(e.target);
+                }
+            });
+            
+            // Bind tooltip
+            if (layer.feature.properties && layer.feature.properties.name) {
+                layer.bindTooltip(layer.feature.properties.name, {
+                    permanent: false,
+                    direction: 'auto'
+                });
+            }
+        });
+        
+        // Zoom in op Den Helder
+        map.fitBounds(grensLayer.getBounds());
+        
+        // ================================
+        // 8. CONTROLS EN INTERACTIE
+        // ================================
+        
+        // Voeg een schaalbalk toe (rechtsonder)
+        L.control.scale({
+            imperial: false,
+            position: 'bottomright'
+        }).addTo(map);
+        
+        // Event listeners voor knoppen
+        document.getElementById('toggle-drag').addEventListener('click', toggleDragMode);
+        document.getElementById('reset-btn').addEventListener('click', resetMap);
+        
+        // ================================
+        // 9. RESPONSIVE GEDRAG
+        // ================================
+        
+        // Pas kaartgrootte aan bij resize van venster
+        window.addEventListener('resize', function() {
+            map.invalidateSize();
+        });
+        
+        // Sluit info-panel als er buiten geklikt wordt
+        map.on('click', function(e) {
+            // Alleen verbergen als er niet op een feature geklikt is
+            if (e.originalEvent && !e.originalEvent.target.closest('.leaflet-interactive')) {
+                document.getElementById('info-panel').classList.add('hidden');
+                
+                // Verwijder highlight van geselecteerde feature
+                if (selectedLayer) {
+                    selectedLayer.setStyle(originalStyle);
+                    selectedLayer = null;
+                }
+            }
+        });
+        
+        // ================================
+        // 10. EXTRA FUNCTIE: TOON GROOTTE INFO
+        // ================================
+        
+        // Bereken en toon informatie over de grootte van Den Helder
+        function showSizeComparison() {
+            const infoHTML = `
+                <p>• <em>Sleep de gemeente om te vergelijken met andere plaatsen!</em></p>
+            `;
+            
+            const infoPanel = document.getElementById('info-panel');
+            const infoTitle = document.getElementById('info-title');
+            const infoContent = document.getElementById('info-content');
+            
+            infoTitle.textContent = "Hoe groot is Den Helder?";
+            infoContent.innerHTML = infoHTML;
+            infoPanel.classList.remove('hidden');
+        }
+        
+        // Toon de grootte info na 2 seconden
+        setTimeout(showSizeComparison, 2000);
+        
+        console.log('✅ Kaart succesvol geladen!');
+        console.log('📌 Gebruik:');
+        console.log('1. Klik op Den Helder om informatie te zien');
+        console.log('2. Klik op "Sleep Den Helder" om de gemeente te verslepen');
+        console.log('3. Sleep de gemeente over de kaart om te vergelijken');
+        console.log('4. Gebruik "Reset kaart" om terug te gaan naar de originele positie');
+    </script>
+</body>
+</html>
