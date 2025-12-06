@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wat zegt een straatnaam? – Den Helder</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+        body, html { height:100%; overflow:hidden; background:#fff; }
+
+        .header {
+            position:absolute; top:0; left:0; right:0; height:70px;
+            background:rgba(255,255,255,0.98); backdrop-filter:blur(10px);
+            box-shadow:0 3px 15px rgba(0,0,0,0.1); z-index:1000;
+            display:flex; align-items:center; justify-content:space-between; padding:0 30px;
+            border-bottom:1px solid #eee;
+        }
+        .header h1 {
+            font-size:23px; font-weight:600; color:#2c3e50;
+        }
+        .subtitle { color:#666; font-size:14.5px; margin-top:4px; }
+        .toggle-all-btn {
+            background:#3498db; color:white; border:none; border-radius:12px;
+            padding:10px 18px; font-weight:600; cursor:pointer;
+            box-shadow:0 4px 15px rgba(52,152,219,0.4); transition:all 0.3s;
+            font-size:14px;
+        }
+        .toggle-all-btn:hover { background:#2980b9; transform:translateY(-2px); }
+        .toggle-all-btn.off { background:#95a5a6; box-shadow:0 4px 15px rgba(149,165,166,0.4); }
+
+        .container { display:flex; height:100vh; padding-top:70px; }
+        .control-panel {
+            width:340px; background:#fff; height:100%; overflow-y:auto;
+            padding:25px; border-right:1px solid #eaeaea; box-shadow:2px 0 10px rgba(0,0,0,0.05);
+        }
+        .section-title {
+            font-size:16px; color:#2c3e50; margin:20px 0 12px; font-weight:600;
+            text-transform:uppercase; letter-spacing:0.8px;
+        }
+        .categories-list { display:flex; flex-direction:column; gap:9px; }
+        .category-item {
+            padding:11px 14px; background:#f8f9fa; border-radius:10px;
+            cursor:pointer; transition:all 0.25s; border-left:4px solid transparent;
+            display:flex; align-items:center; gap:12px;
+        }
+        .category-item:hover { background:#edf2f7; transform:translateX(4px); }
+        .category-item.active {
+            background:#e3f2fd; border-left-color:#3498db; font-weight:600;
+        }
+        .color-box {
+            width:18px; height:18px; border-radius:5px; flex-shrink:0;
+            box-shadow:0 1px 3px rgba(0,0,0,0.3);
+        }
+        .cat-name { flex:1; font-size:14.5px; color:#2c3e50; }
+        .cat-count {
+            background:#3498db; color:white; padding:3px 9px; border-radius:12px;
+            font-size:12px; font-weight:600; min-width:28px; text-align:center;
+        }
+        .category-item.active .cat-count { background:#2980b9; }
+        .checkbox-item {
+            display:flex; align-items:center; gap:12px; padding:10px;
+            background:#f8f9fa; border-radius:8px; margin:10px 0; cursor:pointer;
+        }
+        #map { height:100%; width:100%; background:white !important; }
+        .leaflet-popup-content-wrapper {
+            background:white !important; border-radius:12px;
+            box-shadow:0 8px 25px rgba(0,0,0,0.2); padding:0;
+            border:1px solid #ddd;
+        }
+        .leaflet-popup-content {
+            margin:12px 18px !important; font-size:16px; font-weight:600; color:#2c3e50;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div>
+        <h1>Wat zegt een straatnaam? – Den Helder</h1>
+        <div class="subtitle">Beweeg over een straat → naam verschijnt</div>
+    </div>
+    <button class="toggle-all-btn" id="toggleAllStreets">
+        Alle straten verbergen
+    </button>
+</div>
+
+<div class="container">
+    <div class="control-panel">
+        <div class="section-title">Categorieën (Eindigend op
+)</div>
+        <div class="categories-list" id="categoriesList"></div>
+        <div class="section-title">Weergave</div>
+        <div class="checkbox-item">
+            <input type="checkbox" id="showBaseMap">
+            <label for="showBaseMap">Basiskaart (OSM) tonen</label>
+        </div>
+    </div>
+    <div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const categories = {
+        'weg':'#3498db','straat':'#e74c3c','laan':'#2ecc71','plein':'#9b59b6',
+        'kade':'#1abc9c','wal':'#f39c12','gracht':'#16a085','dijk':'#d35400',
+        'park':'#27ae60','zand':'#f4d03f','haven':'#2980b9','werk':'#8e44ad',
+        'diep':'#2c3e50','center':'#c0392b','veld':'#7f8c8d','hof':'#d35400',
+        'plaats':'#95a5a6','steeg':'#f1c40f','singel':'#34495e','baan':'#e67e22',
+        'overig':'#95a5a6'
+    };
+
+    const map = L.map('map').setView([52.956, 4.76], 13);
+    
+    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        opacity: 0.8
+    });
+
+    let currentLayer = null;
+    let hoverPopup = null;
+    let allStreetsVisible = true;
+
+    function getCategory(name) {
+        if (!name) return 'overig';
+        const n = name.toLowerCase();
+        if (n.includes('plein') || n.includes('pleintje')) return 'plein';
+        if (n.includes('steeg')) return 'steeg';
+        if (n.endsWith('zand') || n.includes(' zand')) return 'zand';
+        for (const suf in categories) {
+            if (n.endsWith(suf)) return suf;
+        }
+        return 'overig';
+    }
+
+    let allData = null;
+
+    fetch('https://azahed0.github.io/t2t2astnedth/wegen.geojson')
+        .then(r => r.json())
+        .then(data => {
+            allData = data.features;
+            const counts = {};
+            Object.keys(categories).forEach(c => counts[c] = 0);
+            allData.forEach(f => counts[getCategory(f.properties.name)]++);
+
+            const list = document.getElementById('categoriesList');
+            Object.entries(categories)
+                .filter(([cat]) => counts[cat] > 0)
+                .sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+                .forEach(([cat, color]) => {
+                    const div = document.createElement('div');
+                    div.className = 'category-item';
+                    div.dataset.cat = cat;
+                    div.innerHTML = `
+                        <div class="color-box" style="background:${color}"></div>
+                        <div class="cat-name">${cat.charAt(0).toUpperCase() + cat.slice(1)}</div>
+                        <div class="cat-count">${counts[cat]}</div>
+                    `;
+                    div.onclick = () => filterByCategory(cat);
+                    list.appendChild(div);
+                });
+
+            showAllStreets();
+        });
+
+    function showAllStreets() {
+        if (currentLayer) map.removeLayer(currentLayer);
+        
+        currentLayer = L.geoJSON(allData, {
+            style: function(f) {
+                const originalWeight = 4.5;
+                return {
+                    color: categories[getCategory(f.properties.name || '')] || '#95a5a6',
+                    weight: originalWeight,
+                    opacity: 0.9,
+                    // Sla het originele gewicht op in de stijl
+                    _originalWeight: originalWeight
+                };
+            },
+            onEachFeature: function(feature, layer) {
+                const name = feature.properties.name || 'Onbekende straat';
+                const originalWeight = layer.options.weight || 4.5;
+                
+                // Hover event
+                layer.on('mouseover', function(e) {
+                    if (hoverPopup) hoverPopup.remove();
+                    
+                    hoverPopup = L.popup({
+                        closeButton: false,
+                        autoClose: false,
+                        closeOnEscapeKey: false,
+                        closeOnClick: false
+                    })
+                    .setLatLng(e.latlng)
+                    .setContent(`<strong>${name}</strong>`)
+                    .openOn(map);
+                    
+                    // Maak dikker op hover
+                    layer.setStyle({ weight: originalWeight + 3 });
+                });
+                
+                // Mouseout event
+                layer.on('mouseout', function() {
+                    if (hoverPopup) hoverPopup.remove();
+                    // Terug naar origineel gewicht
+                    layer.setStyle({ weight: originalWeight });
+                });
+            }
+        }).addTo(map);
+        
+        map.fitBounds(currentLayer.getBounds(), { padding: [50,50] });
+        allStreetsVisible = true;
+        document.getElementById('toggleAllStreets').innerHTML = 'Alle straten verbergen';
+        document.getElementById('toggleAllStreets').classList.remove('off');
+    }
+
+    function hideAllStreets() {
+        if (currentLayer) map.removeLayer(currentLayer);
+        currentLayer = null;
+        allStreetsVisible = false;
+        document.getElementById('toggleAllStreets').innerHTML = 'Alle straten tonen';
+        document.getElementById('toggleAllStreets').classList.add('off');
+    }
+
+    function filterByCategory(cat) {
+        document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.category-item[data-cat="${cat}"]`)?.classList.add('active');
+
+        if (currentLayer) map.removeLayer(currentLayer);
+        
+        const filtered = allData.filter(f => getCategory(f.properties.name) === cat);
+        const originalWeight = 6; // Dikkere lijnen voor gefilterde weergave
+        
+        currentLayer = L.geoJSON(filtered, {
+            style: { 
+                color: categories[cat], 
+                weight: originalWeight, 
+                opacity: 0.95 
+            },
+            onEachFeature: function(feature, layer) {
+                const name = feature.properties.name || 'Onbekende straat';
+                
+                // Hover event
+                layer.on('mouseover', function(e) {
+                    if (hoverPopup) hoverPopup.remove();
+                    
+                    hoverPopup = L.popup({
+                        closeButton: false,
+                        autoClose: false,
+                        closeOnEscapeKey: false,
+                        closeOnClick: false
+                    })
+                    .setLatLng(e.latlng)
+                    .setContent(`<strong>${name}</strong>`)
+                    .openOn(map);
+                    
+                    // Maak dikker op hover
+                    layer.setStyle({ weight: originalWeight + 3 });
+                });
+                
+                // Mouseout event
+                layer.on('mouseout', function() {
+                    if (hoverPopup) hoverPopup.remove();
+                    // Terug naar origineel gewicht
+                    layer.setStyle({ weight: originalWeight });
+                });
+            }
+        }).addTo(map);
+        
+        if (filtered.length > 0) {
+            map.fitBounds(currentLayer.getBounds(), { padding: [60,60] });
+        }
+        
+        allStreetsVisible = true;
+        document.getElementById('toggleAllStreets').innerHTML = 'Alle straten verbergen';
+        document.getElementById('toggleAllStreets').classList.remove('off');
+    }
+
+    document.getElementById('toggleAllStreets').addEventListener('click', () => {
+        if (allStreetsVisible) hideAllStreets();
+        else showAllStreets();
+    });
+
+    document.getElementById('showBaseMap').addEventListener('change', function() {
+        if (this.checked) osm.addTo(map);
+        else if (map.hasLayer(osm)) map.removeLayer(osm);
+    });
+</script>
+</body>
+</html>
