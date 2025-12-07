@@ -41,7 +41,14 @@
             display:flex; align-items:center; gap:12px;
         }
         .category-item:hover { background:#edf2f7; transform:translateX(4px); }
-        .category-item.active { background:#e3f2fd; border-left-color:#3498db; font-weight:600; }
+        .category-item.active {
+            background:#e3f2fd; border-left-color:#3498db; font-weight:600;
+        }
+        .all-streets-item {
+            background:#2c3e50 !important; color:white; font-weight:600;
+            border-left-color:#3498db !important;
+        }
+        .all-streets-item:hover { background:#34495e !important; }
         .color-box { width:18px; height:18px; border-radius:5px; flex-shrink:0; box-shadow:0 1px 3px rgba(0,0,0,0.3); }
         .cat-name { flex:1; font-size:14.5px; color:#2c3e50; }
         .cat-count { background:#3498db; color:white; padding:3px 9px; border-radius:12px; font-size:12px; font-weight:600; min-width:28px; text-align:center; }
@@ -58,13 +65,11 @@
         <h1>Wat zegt een straatnaam? – Den Helder</h1>
         <div class="subtitle">Beweeg over een straat → naam verschijnt</div>
     </div>
-    <button class="toggle-all-btn" id="toggleAllStreets">
-        Alle straten verbergen
-    </button>
+    <button class="toggle-all-btn" id="toggleAllStreets">Alle straten verbergen</button>
 </div>
 <div class="container">
     <div class="control-panel">
-        <div class="section-title">Categorieën (Eindigend op)</div>
+        <div class="section-title">Categorieën (achtervoegsel)</div>
         <div class="categories-list" id="categoriesList"></div>
         <div class="section-title">Weergave</div>
         <div class="checkbox-item">
@@ -77,20 +82,23 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    // ALLE CATEGORIEËN + OVERIG = ZWART
     const categories = {
         'weg':'#3498db','straat':'#e74c3c','laan':'#2ecc71','plein':'#9b59b6',
         'kade':'#1abc9c','wal':'#f39c12','gracht':'#16a085','dijk':'#d35400',
         'park':'#27ae60','zand':'#f4d03f','haven':'#2980b9','werk':'#8e44ad',
         'diep':'#2c3e50','center':'#c0392b','veld':'#7f8c8d','hof':'#d35400',
         'plaats':'#95a5a6','steeg':'#f1c40f','singel':'#34495e','baan':'#e67e22',
-        'overig':'#95a5a6'
+        'land':'#8e44ad','tion':'#9b59b6','pad':'#27ae60','vaart':'#1abc9c',
+        'vliet':'#16a085','loop':'#e67e22','dijkje':'#d35400','brug':'#2c3e50',
+        'munt':'#f39c12','slag':'#e74c3c','balg':'#34495e','zwin':'#95a5a6',
+        'hout':'#d35400','haaks':'#7f8c8d','keet':'#2980b9','kroon':'#f1c40f',
+        'wijd':'#3498db','duinen':'#27ae60','dreef':'#2ecc71',
+        'overig':'#000000'  // ZWART
     };
 
     const map = L.map('map').setView([52.956, 4.76], 13);
-    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
-        opacity: 0.8
-    });
+    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', opacity: 0.8 });
 
     let currentLayer = null;
     let hoverPopup = null;
@@ -98,11 +106,15 @@
 
     function getCategory(name) {
         if (!name) return 'overig';
-        const n = name.toLowerCase();
+        const n = name.toLowerCase().trim();
+
         if (n.includes('plein') || n.includes('pleintje')) return 'plein';
         if (n.includes('steeg')) return 'steeg';
         if (n.endsWith('zand') || n.includes(' zand')) return 'zand';
-        for (const suf in categories) if (n.endsWith(suf)) return suf;
+
+        for (const suf in categories) {
+            if (n.endsWith(suf)) return suf;
+        }
         return 'overig';
     }
 
@@ -114,13 +126,34 @@
 
             const counts = {};
             Object.keys(categories).forEach(c => counts[c] = 0);
-            allData.forEach(f => counts[getCategory(f.properties.name)]++);
+            allData.forEach(f => {
+                const cat = getCategory(f.properties.name);
+                counts[cat]++;
+            });
 
             const list = document.getElementById('categoriesList');
+
+            // "Alles tonen" knop bovenaan
+            const allItem = document.createElement('div');
+            allItem.className = 'category-item all-streets-item active';
+            allItem.innerHTML = `
+                <div class="color-box" style="background:linear-gradient(45deg, #3498db,#e74c3c,#2ecc71,#9b59b6,#f1c40f,#000000);"></div>
+                <div class="cat-name">Alles tonen</div>
+                <div class="cat-count">${allData.length}</div>
+            `;
+            allItem.onclick = () => {
+                document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+                allItem.classList.add('active');
+                showAllStreets();
+            };
+            list.appendChild(allItem);
+
+            // Rest van de categorieën (behalve overig als 0)
             Object.entries(categories)
                 .filter(([cat]) => counts[cat] > 0)
                 .sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]))
                 .forEach(([cat, color]) => {
+                    if (cat === 'overig' && counts[cat] === 0) return;
                     const div = document.createElement('div');
                     div.className = 'category-item';
                     div.dataset.cat = cat;
@@ -129,7 +162,11 @@
                         <div class="cat-name">${cat.charAt(0).toUpperCase() + cat.slice(1)}</div>
                         <div class="cat-count">${counts[cat]}</div>
                     `;
-                    div.onclick = () => filterByCategory(cat);
+                    div.onclick = () => {
+                        document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+                        div.classList.add('active');
+                        filterByCategory(cat);
+                    };
                     list.appendChild(div);
                 });
 
@@ -139,11 +176,11 @@
     function showAllStreets() {
         if (currentLayer) map.removeLayer(currentLayer);
 
-        const normalWeight = 1.8;  // ← mooie dunne lijnen
+        const normalWeight = 1.8;
 
         currentLayer = L.geoJSON(allData, {
             style: f => ({
-                color: categories[getCategory(f.properties.name || '')] || '#95a5a6',
+                color: categories[getCategory(f.properties.name || '')] || '#000000',
                 weight: normalWeight,
                 opacity: 0.9
             }),
@@ -182,13 +219,11 @@
     }
 
     function filterByCategory(cat) {
-        document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
-        document.querySelector(`.category-item[data-cat="${cat}"]`)?.classList.add('active');
         if (currentLayer) map.removeLayer(currentLayer);
 
-        const filteredWeight = 3;  // iets dikker bij focus
-
+        const filteredWeight = 3;
         const filtered = allData.filter(f => getCategory(f.properties.name) === cat);
+
         currentLayer = L.geoJSON(filtered, {
             style: { color: categories[cat], weight: filteredWeight, opacity: 0.95 },
             onEachFeature: (feature, layer) => {
