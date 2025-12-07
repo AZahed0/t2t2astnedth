@@ -8,7 +8,6 @@
     <style>
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
         body, html { height:100%; overflow:hidden; background:#fff; }
-
         .header {
             position:absolute; top:0; left:0; right:0; height:70px;
             background:rgba(255,255,255,0.98); backdrop-filter:blur(10px);
@@ -16,9 +15,7 @@
             display:flex; align-items:center; justify-content:space-between; padding:0 30px;
             border-bottom:1px solid #eee;
         }
-        .header h1 {
-            font-size:23px; font-weight:600; color:#2c3e50;
-        }
+        .header h1 { font-size:23px; font-weight:600; color:#2c3e50; }
         .subtitle { color:#666; font-size:14.5px; margin-top:4px; }
         .toggle-all-btn {
             background:#3498db; color:white; border:none; border-radius:12px;
@@ -28,7 +25,6 @@
         }
         .toggle-all-btn:hover { background:#2980b9; transform:translateY(-2px); }
         .toggle-all-btn.off { background:#95a5a6; box-shadow:0 4px 15px rgba(149,165,166,0.4); }
-
         .container { display:flex; height:100vh; padding-top:70px; }
         .control-panel {
             width:340px; background:#fff; height:100%; overflow-y:auto;
@@ -45,32 +41,15 @@
             display:flex; align-items:center; gap:12px;
         }
         .category-item:hover { background:#edf2f7; transform:translateX(4px); }
-        .category-item.active {
-            background:#e3f2fd; border-left-color:#3498db; font-weight:600;
-        }
-        .color-box {
-            width:18px; height:18px; border-radius:5px; flex-shrink:0;
-            box-shadow:0 1px 3px rgba(0,0,0,0.3);
-        }
+        .category-item.active { background:#e3f2fd; border-left-color:#3498db; font-weight:600; }
+        .color-box { width:18px; height:18px; border-radius:5px; flex-shrink:0; box-shadow:0 1px 3px rgba(0,0,0,0.3); }
         .cat-name { flex:1; font-size:14.5px; color:#2c3e50; }
-        .cat-count {
-            background:#3498db; color:white; padding:3px 9px; border-radius:12px;
-            font-size:12px; font-weight:600; min-width:28px; text-align:center;
-        }
+        .cat-count { background:#3498db; color:white; padding:3px 9px; border-radius:12px; font-size:12px; font-weight:600; min-width:28px; text-align:center; }
         .category-item.active .cat-count { background:#2980b9; }
-        .checkbox-item {
-            display:flex; align-items:center; gap:12px; padding:10px;
-            background:#f8f9fa; border-radius:8px; margin:10px 0; cursor:pointer;
-        }
+        .checkbox-item { display:flex; align-items:center; gap:12px; padding:10px; background:#f8f9fa; border-radius:8px; margin:10px 0; cursor:pointer; }
         #map { height:100%; width:100%; background:white !important; }
-        .leaflet-popup-content-wrapper {
-            background:white !important; border-radius:12px;
-            box-shadow:0 8px 25px rgba(0,0,0,0.2); padding:0;
-            border:1px solid #ddd;
-        }
-        .leaflet-popup-content {
-            margin:12px 18px !important; font-size:16px; font-weight:600; color:#2c3e50;
-        }
+        .leaflet-popup-content-wrapper { background:white !important; border-radius:12px; box-shadow:0 8px 25px rgba(0,0,0,0.2); padding:0; border:1px solid #ddd; }
+        .leaflet-popup-content { margin:12px 18px !important; font-size:16px; font-weight:600; color:#2c3e50; }
     </style>
 </head>
 <body>
@@ -83,11 +62,9 @@
         Alle straten verbergen
     </button>
 </div>
-
 <div class="container">
     <div class="control-panel">
-        <div class="section-title">Categorieën (Eindigend op
-)</div>
+        <div class="section-title">Categorieën (Eindigend op)</div>
         <div class="categories-list" id="categoriesList"></div>
         <div class="section-title">Weergave</div>
         <div class="checkbox-item">
@@ -110,7 +87,6 @@
     };
 
     const map = L.map('map').setView([52.956, 4.76], 13);
-    
     const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap',
         opacity: 0.8
@@ -126,18 +102,16 @@
         if (n.includes('plein') || n.includes('pleintje')) return 'plein';
         if (n.includes('steeg')) return 'steeg';
         if (n.endsWith('zand') || n.includes(' zand')) return 'zand';
-        for (const suf in categories) {
-            if (n.endsWith(suf)) return suf;
-        }
+        for (const suf in categories) if (n.endsWith(suf)) return suf;
         return 'overig';
     }
 
     let allData = null;
-
     fetch('https://azahed0.github.io/t2t2astnedth/wegen.geojson')
         .then(r => r.json())
         .then(data => {
             allData = data.features;
+
             const counts = {};
             Object.keys(categories).forEach(c => counts[c] = 0);
             allData.forEach(f => counts[getCategory(f.properties.name)]++);
@@ -164,49 +138,35 @@
 
     function showAllStreets() {
         if (currentLayer) map.removeLayer(currentLayer);
-        
+
+        const normalWeight = 1.8;  // ← mooie dunne lijnen
+
         currentLayer = L.geoJSON(allData, {
-            style: function(f) {
-                const originalWeight = 4.5;
-                return {
-                    color: categories[getCategory(f.properties.name || '')] || '#95a5a6',
-                    weight: originalWeight,
-                    opacity: 0.9,
-                    // Sla het originele gewicht op in de stijl
-                    _originalWeight: originalWeight
-                };
-            },
-            onEachFeature: function(feature, layer) {
+            style: f => ({
+                color: categories[getCategory(f.properties.name || '')] || '#95a5a6',
+                weight: normalWeight,
+                opacity: 0.9
+            }),
+            onEachFeature: (feature, layer) => {
                 const name = feature.properties.name || 'Onbekende straat';
-                const originalWeight = layer.options.weight || 4.5;
-                
-                // Hover event
-                layer.on('mouseover', function(e) {
-                    if (hoverPopup) hoverPopup.remove();
-                    
-                    hoverPopup = L.popup({
-                        closeButton: false,
-                        autoClose: false,
-                        closeOnEscapeKey: false,
-                        closeOnClick: false
-                    })
-                    .setLatLng(e.latlng)
-                    .setContent(`<strong>${name}</strong>`)
-                    .openOn(map);
-                    
-                    // Maak dikker op hover
-                    layer.setStyle({ weight: originalWeight + 3 });
-                });
-                
-                // Mouseout event
-                layer.on('mouseout', function() {
-                    if (hoverPopup) hoverPopup.remove();
-                    // Terug naar origineel gewicht
-                    layer.setStyle({ weight: originalWeight });
+                layer.on({
+                    mouseover: e => {
+                        if (hoverPopup) hoverPopup.remove();
+                        hoverPopup = L.popup({closeButton:false, autoClose:false, closeOnClick:false, closeOnEscapeKey:false})
+                            .setLatLng(e.latlng)
+                            .setContent(`<strong>${name}</strong>`)
+                            .openOn(map);
+                        layer.setStyle({ weight: normalWeight + 3 });
+                        layer.bringToFront();
+                    },
+                    mouseout: () => {
+                        if (hoverPopup) hoverPopup.remove();
+                        layer.setStyle({ weight: normalWeight });
+                    }
                 });
             }
         }).addTo(map);
-        
+
         map.fitBounds(currentLayer.getBounds(), { padding: [50,50] });
         allStreetsVisible = true;
         document.getElementById('toggleAllStreets').innerHTML = 'Alle straten verbergen';
@@ -224,65 +184,46 @@
     function filterByCategory(cat) {
         document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
         document.querySelector(`.category-item[data-cat="${cat}"]`)?.classList.add('active');
-
         if (currentLayer) map.removeLayer(currentLayer);
-        
+
+        const filteredWeight = 3;  // iets dikker bij focus
+
         const filtered = allData.filter(f => getCategory(f.properties.name) === cat);
-        const originalWeight = 6; // Dikkere lijnen voor gefilterde weergave
-        
         currentLayer = L.geoJSON(filtered, {
-            style: { 
-                color: categories[cat], 
-                weight: originalWeight, 
-                opacity: 0.95 
-            },
-            onEachFeature: function(feature, layer) {
+            style: { color: categories[cat], weight: filteredWeight, opacity: 0.95 },
+            onEachFeature: (feature, layer) => {
                 const name = feature.properties.name || 'Onbekende straat';
-                
-                // Hover event
-                layer.on('mouseover', function(e) {
-                    if (hoverPopup) hoverPopup.remove();
-                    
-                    hoverPopup = L.popup({
-                        closeButton: false,
-                        autoClose: false,
-                        closeOnEscapeKey: false,
-                        closeOnClick: false
-                    })
-                    .setLatLng(e.latlng)
-                    .setContent(`<strong>${name}</strong>`)
-                    .openOn(map);
-                    
-                    // Maak dikker op hover
-                    layer.setStyle({ weight: originalWeight + 3 });
-                });
-                
-                // Mouseout event
-                layer.on('mouseout', function() {
-                    if (hoverPopup) hoverPopup.remove();
-                    // Terug naar origineel gewicht
-                    layer.setStyle({ weight: originalWeight });
+                layer.on({
+                    mouseover: e => {
+                        if (hoverPopup) hoverPopup.remove();
+                        hoverPopup = L.popup({closeButton:false, autoClose:false, closeOnClick:false, closeOnEscapeKey:false})
+                            .setLatLng(e.latlng)
+                            .setContent(`<strong>${name}</strong>`)
+                            .openOn(map);
+                        layer.setStyle({ weight: filteredWeight + 3 });
+                        layer.bringToFront();
+                    },
+                    mouseout: () => {
+                        if (hoverPopup) hoverPopup.remove();
+                        layer.setStyle({ weight: filteredWeight });
+                    }
                 });
             }
         }).addTo(map);
-        
-        if (filtered.length > 0) {
-            map.fitBounds(currentLayer.getBounds(), { padding: [60,60] });
-        }
-        
+
+        if (filtered.length > 0) map.fitBounds(currentLayer.getBounds(), { padding: [60,60] });
+
         allStreetsVisible = true;
         document.getElementById('toggleAllStreets').innerHTML = 'Alle straten verbergen';
         document.getElementById('toggleAllStreets').classList.remove('off');
     }
 
     document.getElementById('toggleAllStreets').addEventListener('click', () => {
-        if (allStreetsVisible) hideAllStreets();
-        else showAllStreets();
+        allStreetsVisible ? hideAllStreets() : showAllStreets();
     });
 
     document.getElementById('showBaseMap').addEventListener('change', function() {
-        if (this.checked) osm.addTo(map);
-        else if (map.hasLayer(osm)) map.removeLayer(osm);
+        this.checked ? osm.addTo(map) : map.removeLayer(osm);
     });
 </script>
 </body>
