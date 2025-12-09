@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <title>Den Helder Buurten - Multi Categorie + Export</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.32/"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+    <style>
+      html, body { padding:0; margin:0; height:100%; width:100%; font-family:Arial, sans-serif; overflow:hidden; }
+      #main-container { display:flex; height:100vh; flex-direction:column; }
+      #viewDiv { flex:1; position:relative; }
+
+      /* Sidebar */
+      #sidebar {
+        width:100%; background:white; padding:15px; box-shadow:0 -2px 10px rgba(0,0,0,0.2);
+        z-index:10; overflow-y:auto; border-radius:12px 12px 0 0;
+      }
+      #collapseToggle {
+        width:100%; padding:12px; background:#0079c1; color:white; border:none;
+        border-radius:8px; cursor:pointer; font-weight:bold; margin-bottom:15px;
+      }
+
+      .action-button {
+        width:100%; padding:12px; background:#0079c1; color:white; border:none;
+        border-radius:8px; cursor:pointer; margin:8px 0; font-size:16px;
+      }
+      .action-button:hover { background:#00609a; }
+      .export-btn { background:#28a745 !important; }
+      .export-btn:hover { background:#218838 !important; }
+
+      /* Categorieën */
+      .category-item {
+        display:flex; align-items:center; margin-bottom:10px; padding:8px;
+        background:#f8f9fa; border-radius:6px; border-left:4px solid transparent;
+      }
+      .category-item.active {
+        background:#e3f2fd; border-left-color:#0079c1; font-weight:bold;
+      }
+      .category-item input[type="color"] { width:40px; height:35px; border:none; cursor:pointer; }
+      .category-item input[type="text"] { flex:1; margin:0 8px; padding:6px; border:1px solid #ccc; border-radius:4px; }
+
+      /* Legenda rechtsonder */
+      #legend {
+        position:absolute; bottom:15px; right:15px; background:white; padding:12px;
+        border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); z-index:100;
+        max-width:280px; font-size:14px; border:1px solid #ddd;
+      }
+      #legend h4 { margin:0 0 10px 0; color:#333; font-size:15px; }
+      .legend-item {
+        display:flex; align-items:center; margin:6px 0;
+      }
+      .legend-color {
+        width:20px; height:20px; margin-right:10px; border:1px solid #999; border-radius:3px;
+      }
+
+      @media (min-width:769px) {
+        #main-container { flex-direction:row; }
+        #sidebar { width:380px; border-radius:0 12px 12px 0; box-shadow:2px 0 10px rgba(0,0,0,0.2); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main-container">
+      <div id="sidebar">
+        <button id="collapseToggle">Inklappen</button>
+
+        <h3>Actieve categorie</h3>
+        <div id="categoriesContainer"></div>
+
+        <button id="clear-button" class="action-button" style="background:#dc3545;">Wis alle selecties</button>
+        <button id="export-button" class="action-button export-btn">Exporteer kaart als PNG (met legenda)</button>
+      </div>
+
+      <div id="viewDiv"></div>
+
+      <!-- Legenda rechtsonder -->
+      <div id="legend">
+        <h4>Legenda</h4>
+        <div id="legendItems"></div>
+      </div>
+    </div>
+
+    <script>
+      require([
+        "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer",
+        "esri/layers/GraphicsLayer", "esri/Graphic", "esri/geometry/Extent"
+      ], (Map, MapView, FeatureLayer, GraphicsLayer, Graphic, Extent) => {
+
+        // 10 categorieën met mooie kleuren
+        const categories = Array.from({length:10}, (_,i) => ({
+          id: i,
+          name: `Categorie ${i+1}`,
+          color: ["#e6194B","#f58231","#ffe119","#3cb44b","#4363d8","#911eb4","#42d4f4","#f032e6","#bfef45","#fabed4"][i],
+          features: []
+        }));
+
+        let activeCategoryId = 0;
+        let highlightLayer, hoverLayer;
+
+        // UI maken
+        function createUI() {
+          const container = document.getElementById("categoriesContainer");
+          const legendItems = document.getElementById("legendItems");
+          container.innerHTML = "";
+          legendItems.innerHTML = "";
+
+          categories.forEach(cat => {
+            // Sidebar rij
+            const div = document.createElement("div");
+            div.className = "category-item";
+            if(cat.id===activeCategoryId) div.classList.add("active");
+
+            const colorIn = document.createElement("input");
+            colorIn.type = "color"; colorIn.value = cat.color;
+            const nameIn = document.createElement("input");
+            nameIn.type = "text"; nameIn.value = cat.name;
+
+            div.appendChild(colorIn);
+            div.appendChild(nameIn);
+            div.onclick = () => {
+              document.querySelectorAll(".category-item").forEach(d=>d.classList.remove("active"));
+              div.classList.add("active");
+              activeCategoryId = cat.id;
+            };
+
+            colorIn.onchange = () => { cat.color = colorIn.value; updateAll(); };
+            nameIn.oninput = () => { cat.name = nameIn.value || `Categorie ${cat.id+1}`; updateLegend(); };
+
+            container.appendChild(div);
+
+            // Legenda item
+            const leg = document.createElement("div");
+            leg.className = "legend-item";
+            leg.innerHTML = `<div class="legend-color" style="background:${cat.color}"></div><span>${cat.name} <strong>(${cat.features.length})</strong>span>`;
+            legendItems.appendChild(leg);
+          });
+        }
+
+        function updateLegend() {
+          const items = document.querySelectorAll("#legendItems .legend-item");
+          categories.forEach((cat,i) => {
+            items[i].querySelector("span").innerHTML = `${cat.name} <strong>(${cat.features.length})</strong>`;
+          });
+        }
+
+        function updateAll() {
+          highlightLayer.removeAll();
+          categories.forEach(cat => {
+            cat.features.forEach(f => {
+              highlightLayer.add(new Graphic({
+                geometry: f.geometry,
+                symbol: {
+                  type:"simple-fill",
+                  color: cat.color + "99",
+                  outline: { color: cat.color, width: 3 }
+                }
+              }));
+            });
+          });
+          updateLegend();
+        }
+
+        // Layers
+        const buurtenLayer = new FeatureLayer({
+          url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/CBS_Buurt_actueel/FeatureServer/0",
+          definitionExpression: "Statcode LIKE 'BU0400%'",
+          outFields: ["*"],
+          renderer: {
+            type:"simple",
+            symbol: {
+              type:"simple-fill",
+              color: [220,220,220,0.4],
+              outline: { color: [150,150,150], width:1 }
+            }
+          },
+          labelingInfo: [{
+            labelExpressionInfo: { expression: "$feature.Statnaam" },
+            symbol: { type:"text", color:"black", haloColor:"white", haloSize:1.5, font:{size:9,weight:"bold"} }
+          }],
+          popupEnabled: false
+        });
+
+        highlightLayer = new GraphicsLayer();
+        hoverLayer = new GraphicsLayer();
+
+        const map = new Map({
+          basemap: "gray-vector",
+          layers: [buurtenLayer, highlightLayer, hoverLayer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          extent: new Extent({xmin:4.70, ymin:52.87, xmax:4.82, ymax:52.98, spatialReference:{wkid:4326}})
+        });
+
+        // Klikken = selecteren / deselecteren
+        view.on("click", e => {
+          view.hitTest(e).then(res => {
+            const hit = res.results.find(r => r.graphic.layer === buurtenLayer);
+            if (!hit) return;
+
+            const feat = hit.graphic;
+            const objId = feat.attributes.OBJECTID;
+            const activeCat = categories[activeCategoryId];
+
+            // Zoek of al geselecteerd in een categorie
+            let found = false;
+            categories.forEach(cat => {
+              const idx = cat.features.findIndex(f => f.attributes.OBJECTID === objId);
+              if (idx > -1) {
+                cat.features.splice(idx,1);
+                found = true;
+              }
+            });
+
+            if (!found) activeCat.features.push(feat); // nieuw toevoegen
+
+            updateAll();
+          });
+        });
+
+        // Hover
+        view.on("pointer-move", e => {
+          view.hitTest(e).then(r => {
+            const hit = r.results.find(re => re.graphic.layer === buurtenLayer);
+            hoverLayer.removeAll();
+            if (hit && !categories.some(c=>c.features.some(f=>f.attributes.OBJECTID===hit.graphic.attributes.OBJECTID))) {
+              hoverLayer.add(new Graphic({
+                geometry: hit.graphic.geometry,
+                symbol: { type:"simple-fill", color:[0,200,0,0.2], outline:{color:"#00ff00",width:2} }
+              }));
+            }
+          });
+        });
+
+        // Wis alles
+        document.getElementById("clear-button").onclick = () => {
+          categories.forEach(c => c.features = []);
+          updateAll();
+        };
+
+        // EXPORT MET LEGENDA
+        document.getElementById("export-button").onclick = () => {
+          const legend = document.getElementById("legend");
+          legend.style.display = "block"; // zeker zichtbaar
+
+          view.takeScreenshot({ format: "png", width: view.width, height: view.height }).then(screenshot => {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            canvas.width = screenshot.data.width + 320;
+            canvas.height = screenshot.data.height + 40;
+
+            const img = new Image();
+            img.onload = () => {
+              ctx.drawImage(img, 0, 0);
+
+              // Legenda tekenen
+              ctx.fillStyle = "white";
+              ctx.fillRect(screenshot.data.width + 10, 20, 300, canvas.height - 40);
+              ctx.strokeStyle = "#ccc";
+              ctx.strokeRect(screenshot.data.width + 10, 20, 300, canvas.height - 40);
+
+              ctx.font = "bold 16px Arial";
+              ctx.fillStyle = "black";
+              ctx.fillText("Legenda", screenshot.data.width + 30, 50);
+
+              ctx.font = "14px Arial";
+              let y = 80;
+              categories.forEach(cat => {
+                if (cat.features.length > 0) {
+                  ctx.fillStyle = cat.color;
+                  ctx.fillRect(screenshot.data.width + 30, y - 14, 20, 20);
+                  ctx.strokeStyle = "#000";
+                  ctx.strokeRect(screenshot.data.width + 30, y - 14, 20, 20);
+                  ctx.fillStyle = "black";
+                  ctx.fillText(`${cat.name} (${cat.features.length})`, screenshot.data.width + 60, y);
+                  y += 28;
+                }
+              });
+
+              canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `DenHelder_Buurten_${new Date().toISOString().slice(0,10)}.png`;
+                a.click();
+              });
+            };
+            img.src = screenshot.dataUrl;
+          });
+        };
+
+        view.when(() => {
+          createUI();
+        });
+      });
+    </script>
+  </body>
+</html>
