@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bodemkaart - Den Helder</title> <!-- Title updated -->
+
+    <!-- ArcGIS CSS -->
+    <link rel="stylesheet" href="https://js.arcgis.com/4.30/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.30/"></script>
+
+    <style>
+        html, body, #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Styling for the custom popup content */
+        .popup-card h3 {
+            margin-top: 0;
+            color: #1d4ed8; /* Adjusted color for better contrast */
+            font-size: 1.25rem;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+
+        .popup-section {
+            margin-bottom: 12px;
+            padding: 8px 0;
+        }
+
+        .popup-section hr {
+            border: none;
+            border-top: 1px solid #ddd;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="viewDiv"></div>
+
+    <script>
+        // Use the modern ArcGIS JS API modules
+        require([
+            "esri/views/MapView",
+            "esri/layers/FeatureLayer",
+            "esri/widgets/Search",
+            "esri/widgets/BasemapGallery",
+            "esri/widgets/Legend",
+            "esri/widgets/Home",
+            "esri/widgets/LayerList",
+            "esri/geometry/Point",
+            "esri/Map",
+            "esri/widgets/Expand" // Added Expand widget for collapsible panels
+        ], function (
+            MapView,
+            FeatureLayer,
+            Search,
+            BasemapGallery,
+            Legend,
+            Home,
+            LayerList,
+            Point,
+            Map,
+            Expand // Imported Expand constructor
+        ) {
+
+            /* ============================
+                OBJECTID FILTER (Den Helder Area)
+            ============================ */
+            const objectIds = [
+                19500, 27114, 28452, 43040, 41417, 42338, 43106,
+                26454, 43181, 26453, 42337, 39907, 39917, 39916,
+                43182, 39908, 24243, 25470, 41860, 42621
+            ];
+
+            const whereClause = "OBJECTID IN (" + [...new Set(objectIds)].join(",") + ")";
+
+            /* ============================
+                FEATURE LAYER
+            ============================ */
+            const bodemLayer = new FeatureLayer({
+                url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/Bodemkaart/FeatureServer/0",
+                definitionExpression: whereClause,
+                opacity: 0.75,
+                title: "Bodemkaart Den Helder (gefilterd)", // Layer title updated
+
+                popupTemplate: {
+                    title: "🪨 Bodem: {first_soilname}",
+                    content: `
+                    <div class="popup-card" style="font-family:Arial, sans-serif;padding:10px">
+
+                        <div class="popup-section">
+                            <h3>📋 Algemene gegevens</h3>
+                            <p class="text-sm">
+                                🏷️ <b>Bodemcode:</b> {soilcode} / {code}<br>
+                                📚 <b>Bodemhoofdklasse:</b> {mainsoilclassification}<br>
+                                🧩 <b>Bodemklasse:</b> {soilclassification}
+                            </p>
+                        </div>
+
+                        <hr>
+
+                        <div class="popup-section">
+                            <h3>🌱 Profiel</h3>
+                            <p class="text-sm">
+                                🧬 <b>Profielcode:</b> {normal_soilprofile_code}<br>
+                                🌿 <b>Profielnaam:</b> {normal_soilprofile_name}<br>
+                                🆔 <b>Profiel-ID:</b> {normalsoilprofile_id}
+                            </p>
+                        </div>
+
+                        <hr>
+
+                        <div class="popup-section">
+                            <h3>🧱 Bodemopbouw</h3>
+                            <p class="text-sm">
+                                🔝 <b>Bovenlaag:</b> {toplayer_description} ({top_soilcharacteristics_code})<br>
+                                ⬇️ <b>Onderlaag:</b> {bottomlayer_description} ({bot_soilcharacteristics_code})<br>
+                                ⛰️ <b>Helling:</b> {soilslope}
+                            </p>
+                        </div>
+
+                        <hr>
+
+                        <div class="popup-section">
+                            <h3>⏳ Levensduur</h3>
+                            <p class="text-sm">
+                                🟢 <b>Begin:</b> {beginlifespan}<br>
+                                🔴 <b>Einde:</b> {endlifespan}<br>
+                                🏗️ <b>Afzetting:</b> {depositionalcharacteristic}
+                            </p>
+                        </div>
+
+                        <hr>
+
+                        <div class="popup-section">
+                            <h3>🗺️ Metadata</h3>
+                            <p class="text-sm">
+                                🗺️ <b>Kaartvlak ID:</b> {maparea_id}<br>
+                                📦 <b>Collectie:</b> {maparea_collection}<br>
+                                📐 <b>Oppervlakte:</b> {Shape__Area} m²<br>
+                                📏 <b>Lengte:</b> {Shape__Length} m
+                            </p>
+                        </div>
+
+                        <hr>
+
+                        <div style="text-align:center">
+                            <h3>🖼️ Bodemprofiel</h3>
+                            <img
+                                src="https://apps.arcgisonline.nl/Bodemkaart/{first_soilcode}.png"
+                                onerror="this.onerror=null; this.src='https://placehold.co/200x150/f3f4f6/9ca3af?text=Geen+Afbeelding';"
+                                style="max-width:100%;border-radius:6px;border:1px solid #ccc; max-height: 150px;">
+                        </div>
+
+                        <p style="text-align:center;margin-top:15px; margin-bottom: 0;">
+                            🔗 <a href="{url}" target="_blank" style="color: #1d4ed8; text-decoration: none;"><b>Officiële documentatie</b></a>
+                        </p>
+
+                    </div>`
+                }
+            });
+
+            /* ============================
+                MAP SETUP
+            ============================ */
+            const map = new Map({
+                basemap: "topo-vector", // Changed to topo-vector for better context
+                layers: [bodemLayer]
+            });
+
+            const denHelderCenter = [4.75, 52.95]; // Coordinates for Den Helder
+
+            const view = new MapView({
+                container: "viewDiv",
+                map: map,
+                center: denHelderCenter,
+                zoom: 12,
+                popup: {
+                    dockEnabled: true,
+                    dockOptions: { position: "top-right", buttonEnabled: false }
+                }
+            });
+
+            /* ============================
+                WIDGETS
+            ============================ */
+            // Top-Left Widgets
+            view.ui.add(new Search({ view: view }), "top-left");
+            view.ui.add(new Home({ view: view }), "top-left");
+
+            // Top-Right Widgets (Basemap Gallery - wrapped in Expand)
+            const basemapGallery = new BasemapGallery({
+                view: view
+            });
+            const basemapExpand = new Expand({
+                view: view,
+                content: basemapGallery,
+                expandIconClass: "esri-icon-basemap",
+                title: "Basemaps"
+            });
+            view.ui.add(basemapExpand, "top-right");
+
+            // Bottom-Left Widgets (Legend - wrapped in Expand)
+            const legendWidget = new Legend({
+                view: view
+            });
+            const legendExpand = new Expand({
+                view: view,
+                content: legendWidget,
+                expandIconClass: "esri-icon-legend",
+                title: "Legend"
+            });
+            view.ui.add(legendExpand, "bottom-left");
+
+            // Bottom-Right Widgets (LayerList)
+            // Note: The LayerList widget in 4.x is typically collapsible by default if added to the UI
+            view.ui.add(new LayerList({
+                view: view,
+                container: document.createElement("div")
+            }), "bottom-right");
+
+
+            /* ============================
+                ZOOM TO SELECTION
+            ============================ */
+            bodemLayer.when(() => {
+                bodemLayer.queryExtent({ where: whereClause }).then(result => {
+                    // Zoom to the extent of the filtered features
+                    if (result.extent) {
+                        view.goTo(result.extent.expand(1.3));
+                    } else {
+                        // Fallback to Den Helder center if no features are found
+                        view.goTo({ center: new Point({ longitude: denHelderCenter[0], latitude: denHelderCenter[1] }), zoom: 13 });
+                    }
+                }).catch(error => {
+                    console.error("Error querying extent:", error);
+                    // Fallback in case of query error
+                    view.goTo({ center: new Point({ longitude: denHelderCenter[0], latitude: denHelderCenter[1] }), zoom: 13 });
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
