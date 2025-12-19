@@ -82,18 +82,14 @@
       'wijd':'#3498db','duinen':'#27ae60','dreef':'#2ecc71',
       'overig':'#000000'
     };
-
     const map = L.map('map').setView([52.956, 4.76], 13);
-
     const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap',
       opacity: 0.8
     });
-
     let currentLayer = null;
     let hoverPopup = null;
     let allStreetsVisible = true;
-
     function getCategory(name) {
       if (!name) return 'overig';
       const n = name.toLowerCase().trim();
@@ -105,24 +101,18 @@
       }
       return 'overig';
     }
-
     let allData = null;
-
     fetch('https://azahed0.github.io/t2t2astnedth/wegen.geojson')
       .then(r => r.json())
       .then(data => {
         allData = data.features;
-
         const counts = {};
         Object.keys(categories).forEach(c => counts[c] = 0);
-
         allData.forEach(f => {
           const cat = getCategory(f.properties.name);
           counts[cat]++;
         });
-
         const list = document.getElementById('categoriesList');
-
         // "Alles tonen" bovenaan
         const allItem = document.createElement('div');
         allItem.className = 'category-item all-streets-item active';
@@ -137,11 +127,10 @@
           showAllStreets();
         };
         list.appendChild(allItem);
-
-        // Andere categorieën: alleen tonen als count > 3, gesorteerd van hoog naar laag
+        // Andere categorieën: alleen tonen als count > 3, alfabetisch gesorteerd (A-Z)
         Object.entries(counts)
           .filter(([cat, count]) => count > 3 && cat !== 'overig')
-          .sort((a, b) => b[1] - a[1])
+          .sort((a, b) => a[0].localeCompare(b[0]))
           .forEach(([cat, count]) => {
             const color = categories[cat];
             const div = document.createElement('div');
@@ -159,15 +148,11 @@
             };
             list.appendChild(div);
           });
-
         showAllStreets();
       });
-
     function showAllStreets() {
       if (currentLayer) map.removeLayer(currentLayer);
-
       const normalWeight = 1.8;
-
       currentLayer = L.geoJSON(allData, {
         style: f => ({
           color: categories[getCategory(f.properties.name || '')] || '#000000',
@@ -198,14 +183,11 @@
           });
         }
       }).addTo(map);
-
       map.fitBounds(currentLayer.getBounds(), { padding: [50,50] });
-
       allStreetsVisible = true;
       document.getElementById('toggleAllStreets').innerHTML = 'Alle straten verbergen';
       document.getElementById('toggleAllStreets').classList.remove('off');
     }
-
     function hideAllStreets() {
       if (currentLayer) map.removeLayer(currentLayer);
       currentLayer = null;
@@ -213,13 +195,10 @@
       document.getElementById('toggleAllStreets').innerHTML = 'Alle straten tonen';
       document.getElementById('toggleAllStreets').classList.add('off');
     }
-
     function filterByCategory(cat) {
       if (currentLayer) map.removeLayer(currentLayer);
-
       const filteredWeight = 3;
       const filtered = allData.filter(f => getCategory(f.properties.name) === cat);
-
       currentLayer = L.geoJSON(filtered, {
         style: {
           color: categories[cat],
@@ -250,22 +229,17 @@
           });
         }
       }).addTo(map);
-
       if (filtered.length > 0) map.fitBounds(currentLayer.getBounds(), { padding: [60,60] });
-
       allStreetsVisible = true;
       document.getElementById('toggleAllStreets').innerHTML = 'Alle straten verbergen';
       document.getElementById('toggleAllStreets').classList.remove('off');
     }
-
     document.getElementById('toggleAllStreets').addEventListener('click', () => {
       allStreetsVisible ? hideAllStreets() : showAllStreets();
     });
-
     document.getElementById('showBaseMap').addEventListener('change', function() {
       this.checked ? osm.addTo(map) : map.removeLayer(osm);
     });
-
     // Mobile menu toggle
     document.getElementById('menuToggle').addEventListener('click', () => {
       document.getElementById('controlPanel').classList.toggle('open');
