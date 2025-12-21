@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Afbeelding Resizer - Pas afbeeldingen aan</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        h2 {
+            color: #3498db;
+            margin: 20px 0 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .app-description {
+            background-color: #e8f4fc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        
+        .controls {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .preview {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #3498db;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        
+        .dimensions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .dimension-input {
+            flex: 1;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .button-group button {
+            flex: 1;
+        }
+        
+        #downloadBtn {
+            background-color: #2ecc71;
+        }
+        
+        #downloadBtn:hover {
+            background-color: #27ae60;
+        }
+        
+        #resetBtn {
+            background-color: #e74c3c;
+        }
+        
+        #resetBtn:hover {
+            background-color: #c0392b;
+        }
+        
+        .preview-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            min-height: 300px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            background-color: #f9f9f9;
+        }
+        
+        #previewImage {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+        }
+        
+        .placeholder-text {
+            color: #aaa;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .image-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        
+        .tips {
+            background-color: #fff9e6;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #f1c40f;
+        }
+        
+        .tips ul {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .tips li {
+            margin-bottom: 8px;
+        }
+        
+        .original-size, .new-size {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #ecf0f1;
+            border-radius: 3px;
+            margin: 0 5px;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .dimensions {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Afbeelding Resizer</h1>
+        <p>Pas eenvoudig de grootte van je afbeeldingen aan</p>
+    </header>
+    
+    <div class="app-description">
+        <h2>Over deze app</h2>
+        <p>Met deze webapp kun je eenvoudig de grootte van je afbeeldingen aanpassen. Upload een afbeelding, stel de gewenste breedte en hoogte in (in pixels) en download het resultaat. Handig voor het optimaliseren van afbeeldingen voor websites, social media of e-mail.</p>
+    </div>
+    
+    <div class="container">
+        <section class="controls">
+            <h2>Instellingen</h2>
+            
+            <div class="form-group">
+                <label for="imageUpload">Kies een afbeelding:</label>
+                <input type="file" id="imageUpload" accept="image/*">
+            </div>
+            
+            <div class="form-group">
+                <label>Afmetingen (in pixels):</label>
+                <div class="dimensions">
+                    <div class="dimension-input">
+                        <label for="widthInput">Breedte:</label>
+                        <input type="number" id="widthInput" min="1" max="5000" placeholder="Breedte in px">
+                    </div>
+                    <div class="dimension-input">
+                        <label for="heightInput">Hoogte:</label>
+                        <input type="number" id="heightInput" min="1" max="5000" placeholder="Hoogte in px">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="keepRatio" checked>
+                <label for="keepRatio">Verhoudingen behouden</label>
+            </div>
+            
+            <button id="resizeBtn">Afbeelding aanpassen</button>
+            
+            <div class="button-group">
+                <button id="downloadBtn">Download afbeelding</button>
+                <button id="resetBtn">Alles resetten</button>
+            </div>
+            
+            <div class="image-info">
+                <p><strong>Originele grootte:</strong> <span class="original-size">-</span></p>
+                <p><strong>Nieuwe grootte:</strong> <span class="new-size">-</span></p>
+            </div>
+        </section>
+        
+        <section class="preview">
+            <h2>Voorbeeld</h2>
+            <div class="preview-container">
+                <div class="placeholder-text">
+                    <p>Je voorbeeld zal hier verschijnen</p>
+                    <p>Upload een afbeelding om te beginnen</p>
+                </div>
+                <img id="previewImage" src="#" alt="Voorbeeld afbeelding">
+            </div>
+            <p class="image-info">
+                <strong>Tip:</strong> De voorvertoning wordt automatisch geschaald om in het vak te passen. De gedownloade afbeelding heeft de exacte afmetingen die je hebt ingesteld.
+            </p>
+        </section>
+    </div>
+    
+    <section class="tips">
+        <h2>Tips voor het resizen van afbeeldingen</h2>
+        <ul>
+            <li><strong>Resolutie:</strong> Voor webgebruik is 72 DPI voldoende. Voor print heeft u meestal 300 DPI nodig.</li>
+            <li><strong>Bestandsgrootte:</strong> Kleinere afbeeldingen laden sneller op websites. Streef naar minder dan 500KB voor webafbeeldingen.</li>
+            <li><strong>Verhoudingen:</strong> Het behouden van de verhoudingen zorgt ervoor dat je afbeelding niet vervormd raakt.</li>
+            <li><strong>Veelgebruikte formaten:</strong> 
+                <ul>
+                    <li>Social media: 1200x630 px (Facebook), 1080x1080 px (Instagram)</li>
+                    <li>Website header: 1920x600 px</li>
+                    <li>Thumbnail: 300x300 px</li>
+                </ul>
+            </li>
+            <li><strong>Bestandsformaten:</strong> Gebruik JPEG voor foto's, PNG voor afbeeldingen met transparantie en WebP voor moderne websites.</li>
+        </ul>
+    </section>
+    
+    <script>
+        // Elementen ophalen uit de DOM
+        const imageUpload = document.getElementById('imageUpload');
+        const widthInput = document.getElementById('widthInput');
+        const heightInput = document.getElementById('heightInput');
+        const keepRatioCheckbox = document.getElementById('keepRatio');
+        const resizeBtn = document.getElementById('resizeBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const previewImage = document.getElementById('previewImage');
+        const previewContainer = document.querySelector('.preview-container');
+        const originalSizeElement = document.querySelector('.original-size');
+        const newSizeElement = document.querySelector('.new-size');
+        const placeholderText = document.querySelector('.placeholder-text');
+        
+        // Variabelen voor de afbeelding en canvas
+        let originalImage = null;
+        let originalWidth = 0;
+        let originalHeight = 0;
+        let resizedImageUrl = null;
+        
+        // Wanneer een afbeelding wordt geüpload
+        imageUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                originalImage = new Image();
+                originalImage.onload = function() {
+                    // Originele afmetingen opslaan en tonen
+                    originalWidth = originalImage.width;
+                    originalHeight = originalImage.height;
+                    
+                    // Input velden vullen met originele afmetingen
+                    widthInput.value = originalWidth;
+                    heightInput.value = originalHeight;
+                    
+                    // Originele grootte tonen
+                    originalSizeElement.textContent = `${originalWidth} × ${originalHeight} px`;
+                    
+                    // Voorbeeld tonen
+                    previewImage.src = event.target.result;
+                    previewImage.style.display = 'block';
+                    placeholderText.style.display = 'none';
+                    
+                    // Nieuwe grootte resetten
+                    newSizeElement.textContent = '-';
+                    
+                    // Downloadknop uitschakelen tot er een resize is uitgevoerd
+                    downloadBtn.disabled = true;
+                };
+                originalImage.src = event.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        });
+        
+        // Verhoudingen behouden wanneer breedte of hoogte wordt aangepast
+        function maintainAspectRatio(changedDimension) {
+            if (!originalImage || !keepRatioCheckbox.checked) return;
+            
+            const aspectRatio = originalWidth / originalHeight;
+            
+            if (changedDimension === 'width') {
+                const newWidth = parseInt(widthInput.value) || originalWidth;
+                heightInput.value = Math.round(newWidth / aspectRatio);
+            } else {
+                const newHeight = parseInt(heightInput.value) || originalHeight;
+                widthInput.value = Math.round(newHeight * aspectRatio);
+            }
+        }
+        
+        // Event listeners voor breedte en hoogte inputs
+        widthInput.addEventListener('input', () => maintainAspectRatio('width'));
+        heightInput.addEventListener('input', () => maintainAspectRatio('height'));
+        
+        // Afbeelding resizen
+        resizeBtn.addEventListener('click', function() {
+            if (!originalImage) {
+                alert('Upload eerst een afbeelding!');
+                return;
+            }
+            
+            const newWidth = parseInt(widthInput.value) || originalWidth;
+            const newHeight = parseInt(heightInput.value) || originalHeight;
+            
+            // Controleren of afmetingen geldig zijn
+            if (newWidth <= 0 || newHeight <= 0) {
+                alert('Voer geldige afmetingen in (groter dan 0)');
+                return;
+            }
+            
+            if (newWidth > 5000 || newHeight > 5000) {
+                alert('Afmetingen mogen niet groter zijn dan 5000 pixels');
+                return;
+            }
+            
+            // Canvas maken voor het resizen
+            const canvas = document.createElement('canvas');
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(originalImage, 0, 0, newWidth, newHeight);
+            
+            // Nieuwe afbeelding URL maken
+            resizedImageUrl = canvas.toDataURL('image/jpeg', 0.9);
+            
+            // Voorbeeld bijwerken
+            previewImage.src = resizedImageUrl;
+            
+            // Nieuwe grootte tonen
+            newSizeElement.textContent = `${newWidth} × ${newHeight} px`;
+            
+            // Downloadknop inschakelen
+            downloadBtn.disabled = false;
+            
+            // Feedback geven aan gebruiker
+            resizeBtn.textContent = 'Afbeelding aangepast!';
+            setTimeout(() => {
+                resizeBtn.textContent = 'Afbeelding aanpassen';
+            }, 2000);
+        });
+        
+        // Afbeelding downloaden
+        downloadBtn.addEventListener('click', function() {
+            if (!resizedImageUrl) {
+                alert('Pas eerst de afbeelding aan voordat je downloadt!');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.href = resizedImageUrl;
+            link.download = `aangepaste-afbeelding-${widthInput.value}x${heightInput.value}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Feedback geven aan gebruiker
+            downloadBtn.textContent = 'Gedownload!';
+            setTimeout(() => {
+                downloadBtn.textContent = 'Download afbeelding';
+            }, 2000);
+        });
+        
+        // Alles resetten
+        resetBtn.addEventListener('click', function() {
+            // Inputs resetten
+            imageUpload.value = '';
+            widthInput.value = '';
+            heightInput.value = '';
+            keepRatioCheckbox.checked = true;
+            
+            // Variabelen resetten
+            originalImage = null;
+            originalWidth = 0;
+            originalHeight = 0;
+            resizedImageUrl = null;
+            
+            // Voorbeeld resetten
+            previewImage.src = '#';
+            previewImage.style.display = 'none';
+            placeholderText.style.display = 'block';
+            
+            // Grootte info resetten
+            originalSizeElement.textContent = '-';
+            newSizeElement.textContent = '-';
+            
+            // Downloadknop uitschakelen
+            downloadBtn.disabled = true;
+            
+            // Feedback geven aan gebruiker
+            resetBtn.textContent = 'Reset voltooid!';
+            setTimeout(() => {
+                resetBtn.textContent = 'Alles resetten';
+            }, 2000);
+        });
+        
+        // Validatie voor input velden
+        widthInput.addEventListener('blur', function() {
+            let value = parseInt(this.value);
+            if (value < 1) this.value = 1;
+            if (value > 5000) this.value = 5000;
+        });
+        
+        heightInput.addEventListener('blur', function() {
+            let value = parseInt(this.value);
+            if (value < 1) this.value = 1;
+            if (value > 5000) this.value = 5000;
+        });
+    </script>
+</body>
+</html>
