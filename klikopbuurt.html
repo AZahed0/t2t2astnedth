@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Highlight een buurt | Den Helder | ArcGIS Maps SDK for JavaScript</title>
+    <style>
+      html,
+      body,
+      #viewDiv {
+        height: 100%;
+        margin: 0;
+      }
+      #messageDiv {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.34/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.34/"></script>
+
+    <script type="module">
+      const [Map, MapView, TileLayer, Graphic, FeatureLayer, GraphicsLayer, GroupLayer] =
+        await $arcgis.import([
+          "@arcgis/core/Map.js",
+          "@arcgis/core/views/MapView.js",
+          "@arcgis/core/layers/TileLayer.js",
+          "@arcgis/core/Graphic.js",
+          "@arcgis/core/layers/FeatureLayer.js",
+          "@arcgis/core/layers/GraphicsLayer.js",
+          "@arcgis/core/layers/GroupLayer.js",
+        ]);
+
+      // Achtergrondkaart
+      const worldImagery = new TileLayer({
+        portalItem: { id: "10df2279f9684e4a9f6a7f08febac2a9" }, // world imagery
+      });
+
+      // Layer voor buurten van Den Helder
+      const buurtenDenHelder = new FeatureLayer({
+        url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/CBS_Buurt_actueel/FeatureServer/0",
+        definitionExpression: "STATCODE LIKE 'BU04000%'", // filter voor Den Helder
+        outFields: ["*"],
+      });
+
+      const graphicsLayer = new GraphicsLayer({
+        blendMode: "destination-in",
+        title: "Highlight laag",
+      });
+
+      const tileLayer = new TileLayer({
+        portalItem: { id: "10df2279f9684e4a9f6a7f08febac2a9" },
+      });
+
+      tileLayer.when(() => {
+        tileLayer.sublayers.forEach((layer) => {
+          if (layer.popupEnabled === true) layer.popupEnabled = false;
+        });
+      });
+
+      const groupLayer = new GroupLayer({
+        layers: [tileLayer, graphicsLayer],
+        opacity: 0,
+      });
+
+      const map = new Map({
+        layers: [worldImagery, groupLayer],
+      });
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: map,
+        zoom: 12,
+        center: [4.75, 52.95], // Den Helder
+        popup: null,
+        constraints: { snapToZoom: false },
+      });
+
+      view.ui.add("messageDiv", "top-right");
+
+      view.when(() => {
+        const query = { geometry: view.center, returnGeometry: true, outFields: ["*"] };
+        highlightBuurt(query, view.center);
+      });
+
+      view.on("click", async (event) => {
+        const query = { geometry: view.toMap(event), returnGeometry: true, outFields: ["*"] };
+        highlightBuurt(query, query.geometry);
+      });
+
+      async function highlightBuurt(query, zoomGeometry) {
+        const symbol = {
+          type: "simple-fill",
+          color: "rgba(255, 255, 255, 1)",
+          outline: null,
+        };
+
+        const { features: [feature] } = await buurtenDenHelder.queryFeatures(query);
+
+        if (feature) {
+          graphicsLayer.graphics.removeAll();
+          feature.symbol = symbol;
+          graphicsLayer.graphics.add(feature);
+          view.goTo(
+            { target: zoomGeometry, extent: feature.geometry.clone() },
+            { duration: 1000 }
+          );
+          worldImagery.effect = "blur(8px) brightness(1.2) grayscale(0.8)";
+          groupLayer.effect = "brightness(1.5) drop-shadow(0, 0px, 12px)";
+          groupLayer.opacity = 1;
+        } else {
+          worldImagery.effect = null;
+          groupLayer.effect = null;
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    <div id="messageDiv" class="esri-widget esri-heading">
+      <h4 class="esri-heading">Klik op een buurt in Den Helder</h4>
+    </div>
+  </body>
+</html> add wideget to change the base map , make button to show label of buurten ,(stat gebied naam(
