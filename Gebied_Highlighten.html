@@ -1,0 +1,380 @@
+
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gebied Highlighten | Den Helder</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+      :root {
+        --primary: #0079c1;
+        --primary-hover: #005a87;
+        --bg-panel: rgba(255, 255, 255, 0.85);
+        --text-main: #1a1a1a;
+        --text-muted: #4a4a4a;
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        --radius: 16px;
+      }
+
+      html, body, #viewDiv {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: #f0f0f0;
+      }
+
+      /* Glassmorphism Panel */
+      .glass-panel {
+        background: var(--bg-panel);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 20px;
+        color: var(--text-main);
+      }
+
+      #mainContainer {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        width: 320px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        z-index: 10;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .header i {
+        color: var(--primary);
+      }
+
+      h1 {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+        color: var(--text-main);
+      }
+
+      p {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--text-muted);
+        margin: 0 0 16px 0;
+      }
+
+      .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      button:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 121, 193, 0.3);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      button:disabled {
+        background-color: #cbd5e1;
+        color: #94a3b8;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      button.secondary {
+        background-color: white;
+        color: var(--text-main);
+        border: 1px solid #e2e8f0;
+      }
+
+      button.secondary:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+
+      button.danger {
+        background-color: #fee2e2;
+        color: #ef4444;
+      }
+
+      button.danger:hover {
+        background-color: #fecaca;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+      }
+
+      /* ArcGIS Widget Overrides */
+      .esri-ui-top-left {
+        left: 350px !important; /* Move default widgets away from our panel */
+        top: 20px !important;
+      }
+
+      .esri-sketch {
+        box-shadow: var(--shadow) !important;
+        border-radius: 12px !important;
+        overflow: hidden;
+      }
+
+      /* Custom Toast/Notification */
+      #notification {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: #1e293b;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 30px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      #notification.show {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      @media (max-width: 480px) {
+        #mainContainer {
+          width: calc(100% - 40px);
+        }
+        .esri-ui-top-left {
+          left: 20px !important;
+          top: auto !important;
+          bottom: 20px !important;
+        }
+      }
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.34/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.34/"></script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+
+    <div id="mainContainer">
+      <div class="glass-panel">
+        <div class="header">
+          <i data-lucide="map-pin"></i>
+          <h1>Den Helder</h1>
+        </div>
+        <p>Selecteer een gebied met de tekenhulpmiddelen om het te highlighten. De omgeving wordt vervaagd voor een duidelijke focus.</p>
+        
+        <div class="button-group">
+          <button id="drawToggleBtn">
+            <i data-lucide="pencil"></i>
+            <span>Verberg Tekenhulp</span>
+          </button>
+          <button id="screenshotBtn" class="secondary">
+            <i data-lucide="camera"></i>
+            <span>Screenshot maken</span>
+          </button>
+          <button id="resetBtn" class="danger">
+            <i data-lucide="trash-2"></i>
+            <span>Alles resetten</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="notification">
+      <i data-lucide="check-circle-2" size="18"></i>
+      <span id="notificationText">Screenshot opgeslagen!</span>
+    </div>
+
+    <script type="module">
+      const [Map, MapView, TileLayer, GraphicsLayer, GroupLayer, Sketch] =
+        await $arcgis.import([
+          "@arcgis/core/Map.js",
+          "@arcgis/core/views/MapView.js",
+          "@arcgis/core/layers/TileLayer.js",
+          "@arcgis/core/layers/GraphicsLayer.js",
+          "@arcgis/core/layers/GroupLayer.js",
+          "@arcgis/core/widgets/Sketch.js",
+        ]);
+
+      // Initialize Lucide icons
+      lucide.createIcons();
+
+      const worldImagery = new TileLayer({
+        portalItem: { id: "10df2279f9684e4a9f6a7f08febac2a9" },
+      });
+
+      const graphicsLayer = new GraphicsLayer({
+        blendMode: "destination-in",
+        title: "Highlight masker",
+      });
+
+      const tileLayer = new TileLayer({
+        portalItem: { id: "10df2279f9684e4a9f6a7f08febac2a9" },
+      });
+      
+      tileLayer.when(() => {
+        tileLayer.sublayers.forEach(l => l.popupEnabled = false);
+      });
+
+      const groupLayer = new GroupLayer({
+        layers: [tileLayer, graphicsLayer],
+        opacity: 0,
+      });
+
+      const map = new Map({
+        layers: [worldImagery, groupLayer],
+      });
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: map,
+        zoom: 12,
+        center: [4.75, 52.95],
+        popup: null,
+        ui: {
+          components: ["attribution"] // Clean UI, only attribution
+        }
+      });
+
+      // Sketch widget
+      const sketch = new Sketch({
+        view: view,
+        layer: graphicsLayer,
+        creationMode: "single",
+        availableCreateTools: ["polygon", "rectangle", "circle"],
+        visibleElements: {
+          selectionTools: false,
+          settingsMenu: false,
+        },
+      });
+      view.ui.add(sketch, "top-left");
+
+      // UI Elements
+      const drawToggleBtn = document.getElementById("drawToggleBtn");
+      const screenshotBtn = document.getElementById("screenshotBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const notification = document.getElementById("notification");
+      const notificationText = document.getElementById("notificationText");
+
+      let drawingActive = true;
+
+      function showNotification(message, duration = 3000) {
+        notificationText.textContent = message;
+        notification.classList.add("show");
+        setTimeout(() => {
+          notification.classList.remove("show");
+        }, duration);
+      }
+
+      drawToggleBtn.addEventListener("click", () => {
+        drawingActive = !drawingActive;
+        sketch.visible = drawingActive;
+        const icon = drawingActive ? 'pencil' : 'eye';
+        const text = drawingActive ? 'Verberg Tekenhulp' : 'Toon Tekenhulp';
+        drawToggleBtn.innerHTML = `<i data-lucide="${icon}"></i><span>${text}</span>`;
+        lucide.createIcons();
+      });
+
+      screenshotBtn.addEventListener("click", async () => {
+        screenshotBtn.disabled = true;
+        const originalContent = screenshotBtn.innerHTML;
+        screenshotBtn.innerHTML = `<i data-lucide="loader" class="animate-spin"></i><span>Verwerken...</span>`;
+        lucide.createIcons();
+
+        try {
+          const screenshot = await view.takeScreenshot({ format: "png" });
+          const link = document.createElement("a");
+          link.href = screenshot.dataUrl;
+          link.download = `den-helder-highlight-${new Date().toISOString().slice(0,10)}.png`;
+          link.click();
+          showNotification("Screenshot succesvol opgeslagen!");
+        } catch (err) {
+          showNotification("Fout bij maken screenshot.");
+          console.error(err);
+        }
+
+        screenshotBtn.disabled = false;
+        screenshotBtn.innerHTML = originalContent;
+        lucide.createIcons();
+      });
+
+      resetBtn.addEventListener("click", () => {
+        graphicsLayer.removeAll();
+        worldImagery.effect = null;
+        groupLayer.effect = null;
+        groupLayer.opacity = 0;
+        showNotification("Kaart gereset");
+      });
+
+      function applyHighlightEffect(graphic) {
+        graphic.symbol = {
+          type: "simple-fill",
+          color: "rgba(255, 255, 255, 1)",
+          outline: null,
+        };
+        worldImagery.effect = "blur(8px) brightness(1.2) grayscale(0.8)";
+        groupLayer.effect = "brightness(1.5) drop-shadow(0, 0, 12px, #000)";
+        groupLayer.opacity = 1;
+        view.goTo({ extent: graphic.geometry.extent.clone().expand(1.2) }, { duration: 800 });
+      }
+
+      sketch.on("create", event => {
+        if (event.state === "complete") applyHighlightEffect(event.graphic);
+      });
+
+      sketch.on("delete", () => {
+        worldImagery.effect = null;
+        groupLayer.effect = null;
+        groupLayer.opacity = 0;
+      });
+
+      sketch.on("update", event => {
+        if (event.state === "complete" && event.graphics.length > 0) {
+          applyHighlightEffect(event.graphics[0]);
+        }
+      });
+    </script>
+  </body>
+</html>
