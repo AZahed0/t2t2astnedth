@@ -1,0 +1,454 @@
+
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>3D Scene met modellen en schetsen</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+  <style>
+    html, body, #view-div {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    #sketchPanel {
+      background: white;
+      padding: 16px;
+      min-width: 240px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    #sketchPanel label {
+      display: block;
+      margin: 10px 0 6px;
+      font-weight: 600;
+      color: #333;
+    }
+    #sketchPanel input[type="number"] {
+      width: 100px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #sketchPanel input[type="color"] {
+      width: 50px;
+      height: 40px;
+      border: none;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    #sketchWidget {
+      margin: 16px 0;
+    }
+    .symbol-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .symbol-item {
+      flex: 1 1 90px;
+      padding: 10px;
+      text-align: center;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #f9f9f9;
+      transition: all 0.2s;
+    }
+    .symbol-item:hover {
+      border-color: #0066cc;
+      background: #f0f8ff;
+    }
+    .symbol-item.selected {
+      border-color: #0066cc;
+      background: #e6f3ff;
+      font-weight: bold;
+      color: #0066cc;
+    }
+
+    #drop-zone, #downloads {
+      background: white;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+    }
+    #drop-zone h1 {
+      font-size: 1.2rem;
+      margin-top: 0;
+    }
+    #downloads {
+      display: flex;
+      gap: 12px;
+    }
+    #downloads a {
+      flex: 1;
+      max-width: 180px;
+    }
+    @media (max-width: 600px) {
+      #drop-zone, #downloads {
+        width: 90%;
+        margin: 0 auto;
+      }
+      #downloads {
+        flex-direction: column;
+      }
+    }
+  </style>
+
+<script>
+  require([
+    "esri/WebScene",
+    "esri/views/SceneView",
+    "esri/layers/GraphicsLayer",
+    "esri/widgets/Sketch",
+    "esri/widgets/Expand",
+    "esri/widgets/Search",
+    "esri/widgets/Daylight",
+    "esri/widgets/Weather",
+    "esri/widgets/Fullscreen",
+    "esri/widgets/LayerList",
+    "esri/widgets/BasemapGallery",
+    "esri/layers/SceneLayer",
+    "esri/widgets/Bookmarks",
+    "esri/core/reactiveUtils"
+  ], function (
+    WebScene,
+    SceneView,
+    GraphicsLayer,
+    Sketch,
+    Expand,
+    Search,
+    Daylight,
+    Weather,
+    Fullscreen,
+    LayerList,
+    BasemapGallery,
+    SceneLayer,
+    Bookmarks,
+    reactiveUtils
+  ) {
+    // ── Device ID for filtering ───────────────────────────────
+    let deviceId = localStorage.getItem("deviceId");
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+      localStorage.setItem("deviceId", deviceId);
+    }
+
+    const webscene = new WebScene({
+      portalItem: { id: "48a900de3c124a47993de5fe9090671d" }
+    });
+
+    const view = new SceneView({
+      container: "view-div",
+      map: webscene,
+      camera: {
+        position: {
+          x: 4.7589,
+          y: 52.9551,
+          z: 150,
+          spatialReference: { wkid: 4326 }
+        },
+        heading: 0,
+        tilt: 65
+      },
+      background: {
+        type: "color",
+        color: [100, 149, 237, 1]
+      }
+    });
+
+    // ── Sketch layer & widget ─────────────────────────────────
+    const sketchLayer = new GraphicsLayer({
+      title: "Schetslaag / eigen modellen",
+      elevationInfo: { mode: "absolute-height" }
+    });
+    view.map.add(sketchLayer);
+
+    const sketch = new Sketch({
+      view: view,
+      layer: sketchLayer,
+      container: "sketchWidget",
+      creationMode: "update"
+    });
+    const sketchVM = sketch.viewModel;
+
+    // ── Symbol controls ───────────────────────────────────────
+    const heightInput = document.getElementById("heightInput");
+    const colorInput = document.getElementById("colorInput");
+
+    function updateSymbols() {
+      const h = parseFloat(heightInput.value) || 3;
+      const c = colorInput.value || "#964B00";
+      const selected = document.querySelector(".symbol-item.selected");
+      const type = selected ? selected.dataset.symbol : "cone";
+
+      let width = h;
+      let depth = h;
+      let anchor = "bottom";
+
+      if (type === "sphere" || type === "cube") {
+        width = h;
+        depth = h;
+        anchor = "center";
+      }
+
+      sketchVM.pointSymbol = {
+        type: "point-3d",
+        symbolLayers: [{
+          type: "object",
+          resource: { primitive: type },
+          material: { color: c },
+          height: h,
+          width: width,
+          depth: depth,
+          anchor: anchor
+        }]
+      };
+
+      sketchVM.polylineSymbol = {
+        type: "line-3d",
+        symbolLayers: [{
+          type: "path",
+          profile: "circle",
+          material: { color: c },
+          width: 0.3,
+          height: 0.3,
+          cap: "round"
+        }]
+      };
+
+      sketchVM.polygonSymbol = {
+        type: "polygon-3d",
+        symbolLayers: [{
+          type: "extrude",
+          material: { color: c },
+          size: h
+        }]
+      };
+    }
+
+    heightInput.addEventListener("input", updateSymbols);
+    colorInput.addEventListener("input", updateSymbols);
+
+    document.querySelectorAll(".symbol-item").forEach(item => {
+      item.addEventListener("click", () => {
+        document.querySelectorAll(".symbol-item").forEach(i => i.classList.remove("selected"));
+        item.classList.add("selected");
+        updateSymbols();
+      });
+    });
+
+    // Default to cone
+    document.querySelector('[data-symbol="cone"]').click();
+
+    // ── Model upload ──────────────────────────────────────────
+    let sceneLayer;
+    view.when(() => {
+      sceneLayer = view.map.layers.find(l => l.title === "EditableFeatures3DObject");
+      if (sceneLayer) {
+        sceneLayer.definitionExpression = `deviceId = '${deviceId}' OR deviceId = 'initial-model'`;
+      }
+
+      view.map.addMany([
+        new SceneLayer({
+          url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3DBAG_WGS_EGM_V2/SceneServer",
+          title: "3D BAG",
+          visible: false
+        }),
+        new SceneLayer({
+          url: "https://tiles.arcgis.com/tiles/nSZVuSZjHpEZZbRo/arcgis/rest/services/3D_Bomen_WGS/SceneServer",
+          title: "3D Bomen",
+          visible: false
+        })
+      ]);
+    });
+
+    async function handleModelFile(file) {
+      if (!file) return;
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (!["glb", "gltf"].includes(ext)) {
+        showErrorNotice("Alleen .glb en .gltf bestanden zijn toegestaan.");
+        return;
+      }
+      if (file.size > 50 * 1024 * 1024) {
+        showErrorNotice("Bestand is te groot (max 50 MB).");
+        return;
+      }
+
+      try {
+        const mesh = await sceneLayer.convertMesh([file]);
+        await mesh.load();
+        sketchVM.place(mesh, {
+          graphicProperties: {
+            layer: sketchLayer,
+            attributes: { deviceId }
+          }
+        });
+
+        const notice = document.createElement("calcite-notice");
+        notice.kind = "success";
+        notice.innerHTML = `<div slot="title">Model geplaatst</div><div slot="message">Je 3D-model is toegevoegd.</div>`;
+        document.body.appendChild(notice);
+        notice.open = true;
+        setTimeout(() => notice.remove(), 4500);
+      } catch (err) {
+        showErrorNotice("Kon model niet laden: " + (err.message || "Onbekende fout"));
+      }
+    }
+
+    function showErrorNotice(msg) {
+      const el = document.querySelector("#size-warning");
+      el.innerHTML = `<div slot="title">Fout</div><div slot="message">${msg}</div>`;
+      el.open = true;
+      setTimeout(() => el.open = false, 5000);
+    }
+
+    document.getElementById("model-input").addEventListener("change", e => handleModelFile(e.target.files[0]));
+
+    const dropZone = document.getElementById("drop-zone");
+    dropZone.addEventListener("dragover", e => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+    dropZone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      handleModelFile(e.dataTransfer.files[0]);
+    });
+
+    // ── Widgets ───────────────────────────────────────────────
+    view.ui.add(new Fullscreen({ view }), { position: "top-left", index: 0 });
+    view.ui.add(new Expand({
+      view,
+      content: new Search({ view }),
+      expandIcon: "search",
+      label: "Zoeken"
+    }), { position: "top-left", index: 1 });
+
+    view.ui.add(new Expand({
+      view,
+      content: document.getElementById("drop-zone"),
+      expandIcon: "upload",
+      label: "Model uploaden"
+    }), { position: "top-left", index: 2 });
+
+    view.ui.add(new Expand({
+      view,
+      content: new LayerList({ view }),
+      expandIcon: "layers",
+      label: "Lagen"
+    }), { position: "top-left", index: 3 });
+
+    view.ui.add(new Expand({
+      view,
+      content: new BasemapGallery({ view }),
+      expandIcon: "basemap",
+      label: "Basiskaart"
+    }), { position: "top-left", index: 4 });
+
+    const bookmarksExpand = new Expand({
+      view,
+      content: document.getElementById("bookmarksPanel"),
+      expandIcon: "bookmark",
+      label: "Bladwijzers"
+    });
+    view.ui.add(bookmarksExpand, { position: "top-left", index: 5 });
+
+    let bookmarksWidget = null;
+    bookmarksExpand.watch("expanded", expanded => {
+      if (expanded && !bookmarksWidget) {
+        bookmarksWidget = new Bookmarks({
+          container: "bookmarksContainer",
+          view: view,
+          editingEnabled: true,
+          visibleElements: { addBookmarkButton: true, editBookmarkButton: true }
+        });
+      }
+    });
+
+    view.ui.add(new Expand({
+      view,
+      content: document.getElementById("downloads"),
+      expandIcon: "download",
+      label: "Voorbeelden"
+    }), "bottom-left");
+
+    view.ui.add(new Expand({
+      view,
+      content: new Daylight({ view }),
+      expandIcon: "brightness",
+      label: "Daglicht"
+    }), "bottom-right");
+
+    view.ui.add(new Expand({
+      view,
+      content: new Weather({ view }),
+      expandIcon: "cloud",
+      label: "Weer"
+    }), "bottom-right");
+
+    view.ui.add(new Expand({
+      view,
+      content: document.getElementById("sketchPanel"),
+      expandIcon: "pencil",
+      label: "Schetsen & 3D vormen"
+    }), "bottom-left");
+  });
+</script>
+</head>
+<body>
+  <div id="view-div"></div>
+
+  <!-- Sketch Panel -->
+  <div id="sketchPanel">
+    <label for="heightInput">Hoogte (m):</label>
+    <input type="number" id="heightInput" value="3" min="0.5" max="100" step="0.5" />
+    <label for="colorInput">Kleur:</label>
+    <input type="color" id="colorInput" value="#964B00" />
+    <div id="sketchWidget"></div>
+    <div class="symbol-gallery">
+      <div class="symbol-item selected" data-symbol="cone">Kegel</div>
+      <div class="symbol-item" data-symbol="cube">Kubus</div>
+      <div class="symbol-item" data-symbol="sphere">Bol</div>
+    </div>
+  </div>
+
+  <!-- Drop zone -->
+  <div id="drop-zone">
+    <h1>Eigen 3D-model toevoegen</h1>
+    <input id="model-input" type="file" accept=".glb,.gltf" />
+    <p>Sleep bestand hierheen of klik om te kiezen (max 50 MB).</p>
+  </div>
+
+  <!-- Voorbeeld downloads -->
+  <div id="downloads">
+    <a download href="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/Tower.glb">
+      <calcite-card>
+        <img slot="thumbnail" alt="Torens" src="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/Tower.png" />
+        <div slot="title">Torens</div>
+      </calcite-card>
+    </a>
+    <a download href="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/GreenBuilding.fbx">
+      <calcite-card>
+        <img slot="thumbnail" alt="Gebouw" src="https://developers.arcgis.com/javascript/latest/sample-code/editing-scenelayer-applyedits/live/GreenBuilding.png" />
+        <div slot="title">Gebouw</div>
+      </calcite-card>
+    </a>
+  </div>
+
+  <!-- Bookmarks panel -->
+  <div id="bookmarksPanel">
+    <h3>Bladwijzers</h3>
+    <div id="bookmarksContainer"></div>
+  </div>
+
+  <!-- Notices -->
+  <calcite-notice id="size-warning" kind="danger" icon closable></calcite-notice>
+</body>
+</html>
