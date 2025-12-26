@@ -1,0 +1,1232 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teken Je Eigen Route</title>
+  
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #0f172a;
+        }
+        #map { width:100vw; height:100vh; cursor: crosshair; }
+        
+        /* Instructie balk */
+        .instruction-bar {
+            position: absolute;
+            top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); color: white;
+            padding: 12px 20px; border-radius: 10px;
+            z-index: 1000; backdrop-filter: blur(8px);
+            border: 1px solid rgba(59,130,246,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            text-align: center; max-width: 600px; width: 90%;
+        }
+        .instruction-text { font-size:14px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .dot { width:8px; height:8px; background:#3b82f6; border-radius:50%; animation:pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100% {opacity:1} 50% {opacity:0.5} }
+        
+        /* Controls - strakke rij midden onder */
+        .controls-container {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 18px;
+            background: rgba(0,0,0,0.75);
+            border-radius: 999px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+            z-index: 1000;
+            white-space: nowrap;
+            overflow-x: auto;
+            max-width: 95vw;
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        .controls-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari */
+        }
+        
+        .controls-container > div {
+            border-left: none;
+            padding-left: 0;
+            margin-left: 0;
+        }
+        
+        .control-btn {
+            background:rgba(255,255,255,0.1); border:none; color:white;
+            padding:8px 14px; border-radius:8px; cursor:pointer;
+            font-size:13px; font-weight:500; transition:all 0.2s ease;
+            display:flex; align-items:center; gap:6px; min-width:auto; justify-content:center;
+            flex-shrink: 0;
+        }
+        .control-btn:hover:not(:disabled) { background:rgba(255,255,255,0.2); transform:translateY(-1px); }
+        .control-btn:disabled { opacity:0.5; cursor:not-allowed; }
+        .control-btn.primary { background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); font-weight:600; }
+        .control-btn.warning { background:rgba(239,68,68,0.2); color:#f87171; }
+        
+        /* Control groepen - aangepast voor rij */
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            flex-shrink: 0;
+        }
+        
+        .control-group.compact {
+            padding: 2px 6px;
+        }
+        
+        .control-group-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+        
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        input[type="color"] { 
+            width:24px; height:24px; border:none; border-radius:50%; 
+            cursor:pointer; background:none; padding:0;
+        }
+        
+        input[type="number"] { 
+            width:40px; padding:3px; border-radius:4px; 
+            border:1px solid rgba(255,255,255,0.2); 
+            background:rgba(255,255,255,0.1); color:white; 
+            font-size:12px; text-align:center;
+        }
+        
+        input[type="range"] { 
+            width:60px; height:4px; border-radius:2px;
+            background: rgba(255,255,255,0.1);
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: 2px solid white;
+        }
+        
+        select {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            min-width: 60px;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        select option {
+            background: #0f172a;
+            color: white;
+        }
+        
+        /* Progress & Status Container */
+        .status-container {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        /* Status badge linksboven */
+        #statusBadge {
+            background: rgba(0,0,0,0.7);
+            color: #60a5fa;
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(96,165,250,0.3);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: none;
+        }
+        
+        /* Progress container */
+        .progress-container {
+            background:rgba(0,0,0,0.85); border-radius:8px; padding:10px 14px; 
+            backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.1); 
+            display:none; min-width:220px;
+        }
+        
+        .progress-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+        .progress-title { color:white; font-size:12px; font-weight:600; }
+        .point-count { color:#60a5fa; font-size:11px; font-weight:500; background:rgba(96,165,250,0.1); padding:2px 6px; border-radius:4px; }
+        .progress-bar { width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden; }
+        .progress-fill { height:100%; background:linear-gradient(90deg, #3b82f6, #60a5fa); width:0%; transition:width 0.15s ease; border-radius:3px; }
+        
+        /* Divider voor groepen */
+        .divider {
+            width: 1px;
+            height: 20px;
+            background: rgba(255,255,255,0.1);
+            margin: 0 2px;
+        }
+        
+        /* Expand button voor extra functies */
+        .expand-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .expand-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: rotate(90deg);
+        }
+        
+        /* Toggle knop voor punten zichtbaarheid */
+        .toggle-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .toggle-btn.active {
+            background: rgba(59,130,246,0.3);
+            color: #3b82f6;
+        }
+        
+        .toggle-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* Al punten toggle */
+        .all-points-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .all-points-label {
+            font-size: 11px;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+        
+        /* Speed control aangepast */
+        .speed-control-select {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+  
+    <!-- Status en Progress container linksboven -->
+    <div class="status-container">
+        <!-- Status badge -->
+        <div id="statusBadge"></div>
+        
+        <!-- Progress container -->
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-header">
+                <div class="progress-title">Route voortgang</div>
+                <div class="point-count" id="pointCount">0 punten</div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+    </div>
+  
+    <div class="instruction-bar" id="instructionBar">
+        <div class="instruction-text">
+            <span class="dot"></span>
+            Klik op de kaart om je route te tekenen. Klik op laatste punt om te stoppen.
+            <span class="dot"></span>
+        </div>
+    </div>
+  
+    <!-- Controls - strakke rij -->
+    <div class="controls-container" id="controls">
+        <!-- Basis knoppen -->
+        <button class="control-btn warning" id="clearBtn" title="Route wissen">🗑️</button>
+        <button class="control-btn" id="undoBtn" title="Laatste punt verwijderen">↩️</button>
+        <button class="control-btn primary" id="playBtn" disabled title="Route afspelen">▶️</button>
+        <button class="control-btn" id="pauseBtn" disabled title="Pauzeren">⏸️</button>
+        
+        <!-- Snelheid controle -->
+        <div class="control-group speed-control-select">
+            <select id="speedSelector" title="Snelheid">
+                <option value="0.1">0.1x (Extra traag)</option>
+                <option value="0.25">0.25x (Heel traag)</option>
+                <option value="0.5">0.5x (Traag)</option>
+                <option value="0.8">0.8x (Rustig)</option>
+                <option value="1" selected>1x (Normaal)</option>
+                <option value="1.5">1.5x (Snel)</option>
+                <option value="2">2x (Extra snel)</option>
+                <option value="3">3x (Zeer snel)</option>
+                <option value="4">4x (Ultra snel)</option>
+                <option value="5">5x (Maximaal)</option>
+            </select>
+        </div>
+        
+        <!-- Divider -->
+        <div class="divider"></div>
+        
+        <!-- Route lijn -->
+        <div class="control-group compact">
+            <span class="control-group-title">Route:</span>
+            <div class="control-row">
+                <input type="color" id="lineColorPicker" value="#3b82f6" title="Route lijn kleur">
+                <input type="range" id="lineOpacitySlider" min="0" max="100" value="30" style="width: 50px;" title="Route transparantie">
+            </div>
+        </div>
+        
+        <!-- Trail lijn -->
+        <div class="control-group compact">
+            <span class="control-group-title">Anim:</span>
+            <div class="control-row">
+                <input type="color" id="trailColorPicker" value="#3b82f6" title="Animatie lijn kleur">
+                <input type="range" id="trailOpacitySlider" min="0" max="100" value="90" style="width: 50px;" title="Animatie transparantie">
+            </div>
+        </div>
+        
+        <!-- Divider -->
+        <div class="divider"></div>
+        
+        <!-- Animated point -->
+        <div class="control-group compact">
+            <span class="control-group-title">Bew.punt:</span>
+            <div class="control-row">
+                <input type="color" id="animatedPointColor" value="#3b82f6" title="Bewegend punt kleur">
+                <input type="number" id="animatedPointRadius" min="0" max="40" value="12" style="width: 35px;" title="Bewegend punt grootte">
+                <input type="range" id="animatedPointOpacity" min="0" max="100" value="100" style="width: 50px;" title="Bewegend punt transparantie">
+            </div>
+        </div>
+        
+        <!-- Start punt -->
+        <div class="control-group compact">
+            <span class="control-group-title">Start:</span>
+            <div class="control-row">
+                <input type="color" id="startColorPicker" value="#00ff00" title="Startpunt kleur">
+                <input type="number" id="startRadius" min="0" max="30" value="10" style="width: 35px;" title="Startpunt grootte">
+                <input type="range" id="startOpacitySlider" min="0" max="100" value="100" style="width: 50px;" title="Startpunt transparantie">
+            </div>
+        </div>
+        
+        <!-- Eind punt -->
+        <div class="control-group compact">
+            <span class="control-group-title">Eind:</span>
+            <div class="control-row">
+                <input type="color" id="endColorPicker" value="#ff0000" title="Eindpunt kleur">
+                <input type="number" id="endRadius" min="0" max="30" value="10" style="width: 35px;" title="Eindpunt grootte">
+                <input type="range" id="endOpacitySlider" min="0" max="100" value="100" style="width: 50px;" title="Eindpunt transparantie">
+            </div>
+        </div>
+        
+        <!-- Divider -->
+        <div class="divider"></div>
+        
+        <!-- Tussen punten -->
+        <div class="control-group compact">
+            <span class="control-group-title">Tussen:</span>
+            <div class="control-row">
+                <input type="color" id="vertexColorPicker" value="#3b82f6" title="Tussen punten kleur">
+                <input type="number" id="vertexSize" min="0" max="20" value="8" style="width: 35px;" title="Tussen punten grootte">
+                <input type="range" id="vertexOpacitySlider" min="0" max="100" value="100" style="width: 50px;" title="Tussen punten transparantie">
+            </div>
+        </div>
+        
+        <!-- Lijn dikte -->
+        <div class="control-group compact">
+            <span class="control-group-title">Dikte:</span>
+            <input type="number" id="lineWeight" min="1" max="20" value="5" style="width: 35px;" title="Lijn dikte">
+        </div>
+        
+        <!-- Alle punten toggle -->
+        <div class="control-group compact all-points-toggle">
+            <span class="all-points-label">Alle:</span>
+            <button class="toggle-btn" id="hideAllPointsBtn" title="Verberg alle punten">●</button>
+        </div>
+        
+        <!-- Kaart transparantie -->
+        <div class="control-group compact">
+            <span class="control-group-title">Map:</span>
+            <input type="range" id="mapOpacity" min="0" max="100" value="100" style="width: 50px;" title="Kaart transparantie">
+        </div>
+        
+        <!-- Expand button voor extra functies -->
+        <button class="expand-btn" id="extraBtn" title="Extra functies">⚙️</button>
+    </div>
+
+    <!-- Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // ================= CONFIG =================
+        const START_POSITION = [52.9575, 4.7600];
+        const START_ZOOM = 14;
+        const SPEED_OPTIONS = [
+            { value: 0.1, label: "0.1x (Extra traag)" },
+            { value: 0.25, label: "0.25x (Heel traag)" },
+            { value: 0.5, label: "0.5x (Traag)" },
+            { value: 0.8, label: "0.8x (Rustig)" },
+            { value: 1, label: "1x (Normaal)" },
+            { value: 1.5, label: "1.5x (Snel)" },
+            { value: 2, label: "2x (Extra snel)" },
+            { value: 3, label: "3x (Zeer snel)" },
+            { value: 4, label: "4x (Ultra snel)" },
+            { value: 5, label: "5x (Maximaal)" }
+        ];
+
+        // ================= STATE =================
+        let map;
+        let currentTileLayer;
+        let routePoints = [];
+        let pointMarkers = [];
+        let routeLine, trailLine, trailLineGlow, ghostLine;
+        let movingMarker, startMarker, endMarker;
+        let isDrawing = true;
+        let isPlaying = false;
+        let animationFrameId = null;
+        let lastTimestamp = 0;
+        let currentDistanceCovered = 0;
+        let totalDistance = 0;
+        let distances = [];
+        let currentSpeed = 1.0;
+
+        // Kleuren en instellingen
+        let lineColor = '#3b82f6';
+        let lineOpacity = 0.3;
+        
+        let trailColor = '#3b82f6';
+        let trailOpacity = 0.9;
+        let trailGlowOpacity = 0.3;
+        
+        let pointColor = '#3b82f6';
+        let pointSize = 8;
+        let pointOpacity = 1.0;
+        
+        let startPointColor = '#00ff00';
+        let endPointColor = '#ff0000';
+        
+        let startPointRadius = 10;
+        let endPointRadius = 10;
+        
+        let startPointOpacity = 1.0;
+        let endPointOpacity = 1.0;
+        
+        let animatedPointColor = '#3b82f6';
+        let animatedPointRadius = 12;
+        let animatedPointOpacity = 1.0;
+        
+        let lineWeight = 5;
+        
+        // Houd bij of alle punten verborgen zijn
+        let allPointsHidden = false;
+
+        // ================= INIT =================
+        function initMap() {
+            map = L.map('map', {
+                zoomControl: false,
+                attributionControl: false
+            }).setView(START_POSITION, START_ZOOM);
+
+            // Basemap definities
+            const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap & CARTO'
+            });
+            
+            const light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap & CARTO'
+            });
+            
+            const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            });
+            
+            const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+            });
+            
+            // Hybride kaart (Satelliet + Labels)
+            const hybrid = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+            });
+            
+            // Label overlay voor hybride
+            const labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: 'Tiles © Esri — Source: Esri, DeLorme, NAVTEQ'
+            });
+
+            currentTileLayer = dark;
+            dark.addTo(map);
+
+            // Basemap selectie met hybride optie
+            const basemaps = { 
+                "🌙 Donker": dark, 
+                "☀️ Licht": light, 
+                "🏙️ Straten": streets, 
+                "🛰️ Satelliet": satellite,
+                "🗺️ Hybride": L.layerGroup([hybrid, labels])
+            };
+            
+            L.control.layers(basemaps, null, { position: 'topright' }).addTo(map);
+            L.control.zoom({ position: 'topright' }).addTo(map);
+
+            map.on('baselayerchange', e => {
+                currentTileLayer = e.layer;
+                // Als hybride geselecteerd, stel opacity in op de lagen
+                if (e.name === "🗺️ Hybride") {
+                    hybrid.setOpacity(1);
+                    labels.setOpacity(1);
+                }
+            });
+            
+            map.on('click', handleMapClick);
+            map.on('mousemove', handleMouseMove);
+
+            updateInstruction();
+        }
+
+        // ================= INTERACTIE BEHEER =================
+        function setMapInteraction(enabled) {
+            if (enabled) {
+                map.dragging.enable();
+                map.touchZoom.enable();
+                map.doubleClickZoom.enable();
+                map.scrollWheelZoom.enable();
+                map.boxZoom.enable();
+                map.keyboard.enable();
+                if (map.tap) map.tap.enable();
+            } else {
+                map.dragging.disable();
+                map.touchZoom.disable();
+                map.doubleClickZoom.disable();
+                map.scrollWheelZoom.disable();
+                map.boxZoom.disable();
+                map.keyboard.disable();
+                if (map.tap) map.tap.disable();
+            }
+        }
+
+        // ================= EASING =================
+        function easeInOutQuad(t) {
+            return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        }
+
+        // ================= TEKEN LOGICA =================
+        function handleMouseMove(e) {
+            if (!isDrawing || isPlaying || routePoints.length === 0) return;
+            const latlng = e.latlng;
+            const last = routePoints[routePoints.length-1];
+            if (ghostLine) {
+                ghostLine.setLatLngs([last, [latlng.lat, latlng.lng]]);
+            } else {
+                ghostLine = L.polyline([last, [latlng.lat, latlng.lng]], {
+                    color: lineColor, 
+                    weight: lineWeight/2, 
+                    opacity: 0.5, 
+                    dashArray: '5,5'
+                }).addTo(map);
+            }
+        }
+
+        function handleMapClick(e) {
+            if (!isDrawing || isPlaying) return;
+            const latlng = e.latlng;
+
+            if (routePoints.length > 0) {
+                const last = L.latLng(routePoints[routePoints.length-1]);
+                if (map.distance(latlng, last) < 20) {
+                    finishDrawing();
+                    return;
+                }
+            }
+
+            routePoints.push([latlng.lat, latlng.lng]);
+            addPointMarker(latlng);
+            updateRouteLine();
+            updatePointCount();
+            document.getElementById('playBtn').disabled = routePoints.length < 2;
+            updateInstruction();
+        }
+
+        function addPointMarker(latlng) {
+            // Als maat 0, dan marker volledig onzichtbaar maken
+            const effectiveSize = (allPointsHidden || pointSize === 0) ? 0 : pointSize;
+            const effectiveOpacity = (allPointsHidden || pointSize === 0) ? 0 : pointOpacity;
+            
+            // Alleen toevoegen als het zichtbaar moet zijn
+            if (effectiveSize > 0) {
+                const m = L.circleMarker(latlng, {
+                    radius: effectiveSize, 
+                    color: pointColor, 
+                    fillColor: pointColor,
+                    fillOpacity: effectiveOpacity, 
+                    weight: 1
+                }).addTo(map);
+                pointMarkers.push(m);
+            } else {
+                // Voeg een null marker toe om de array consistent te houden
+                pointMarkers.push(null);
+            }
+        }
+
+        // ================= UPDATE ALL POINT MARKERS =================
+        function updateAllPointMarkers() {
+            // Effectieve waarden berekenen
+            const effectivePointSize = (allPointsHidden || pointSize === 0) ? 0 : pointSize;
+            const effectivePointOpacity = (allPointsHidden || pointSize === 0) ? 0 : pointOpacity;
+            const effectiveStartRadius = (allPointsHidden || startPointRadius === 0) ? 0 : startPointRadius;
+            const effectiveStartOpacity = (allPointsHidden || startPointRadius === 0) ? 0 : startPointOpacity;
+            const effectiveEndRadius = (allPointsHidden || endPointRadius === 0) ? 0 : endPointRadius;
+            const effectiveEndOpacity = (allPointsHidden || endPointRadius === 0) ? 0 : endPointOpacity;
+            
+            // Update tussen punten
+            pointMarkers.forEach((marker, index) => {
+                if (marker) {
+                    if (effectivePointSize > 0) {
+                        marker.setStyle({
+                            radius: effectivePointSize,
+                            color: pointColor,
+                            fillColor: pointColor,
+                            fillOpacity: effectivePointOpacity,
+                            weight: 1
+                        });
+                    } else {
+                        // Verwijder de marker als maat 0
+                        map.removeLayer(marker);
+                        pointMarkers[index] = null;
+                    }
+                }
+            });
+            
+            // Update start marker
+            if (startMarker) {
+                if (effectiveStartRadius > 0) {
+                    startMarker.setStyle({
+                        radius: effectiveStartRadius,
+                        color: startPointColor,
+                        fillColor: startPointColor,
+                        fillOpacity: effectiveStartOpacity,
+                        weight: 2
+                    });
+                } else {
+                    // Verwijder start marker als maat 0
+                    map.removeLayer(startMarker);
+                    startMarker = null;
+                }
+            }
+            
+            // Update end marker
+            if (endMarker) {
+                if (effectiveEndRadius > 0) {
+                    endMarker.setStyle({
+                        radius: effectiveEndRadius,
+                        color: endPointColor,
+                        fillColor: endPointColor,
+                        fillOpacity: effectiveEndOpacity,
+                        weight: 2
+                    });
+                } else {
+                    // Verwijder end marker als maat 0
+                    map.removeLayer(endMarker);
+                    endMarker = null;
+                }
+            }
+        }
+
+        function updateRouteLine() {
+            if (routeLine) map.removeLayer(routeLine);
+            if (routePoints.length < 2) return;
+            routeLine = L.polyline(routePoints, {
+                color: lineColor, 
+                weight: Math.round(lineWeight * 0.6),
+                opacity: lineOpacity,
+                dashArray: '5,10', 
+                lineCap: 'round'
+            }).addTo(map);
+        }
+
+        function finishDrawing() {
+            isDrawing = false;
+            if (ghostLine) { 
+                map.removeLayer(ghostLine); 
+                ghostLine = null; 
+            }
+            document.getElementById('instructionBar').style.display = 'none';
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('statusBadge').style.display = 'block';
+            updateInstruction();
+        }
+
+        // ================= START/END MARKER UPDATE =================
+        function updateStartEndMarkers() {
+            const effectiveStartRadius = (allPointsHidden || startPointRadius === 0) ? 0 : startPointRadius;
+            const effectiveStartOpacity = (allPointsHidden || startPointRadius === 0) ? 0 : startPointOpacity;
+            const effectiveEndRadius = (allPointsHidden || endPointRadius === 0) ? 0 : endPointRadius;
+            const effectiveEndOpacity = (allPointsHidden || endPointRadius === 0) ? 0 : endPointOpacity;
+            
+            if (startMarker) {
+                if (effectiveStartRadius > 0) {
+                    startMarker.setRadius(effectiveStartRadius);
+                    startMarker.setStyle({
+                        color: startPointColor,
+                        fillColor: startPointColor,
+                        fillOpacity: effectiveStartOpacity
+                    });
+                } else {
+                    map.removeLayer(startMarker);
+                    startMarker = null;
+                }
+            }
+            
+            if (endMarker) {
+                if (effectiveEndRadius > 0) {
+                    endMarker.setRadius(effectiveEndRadius);
+                    endMarker.setStyle({
+                        color: endPointColor,
+                        fillColor: endPointColor,
+                        fillOpacity: effectiveEndOpacity
+                    });
+                } else {
+                    map.removeLayer(endMarker);
+                    endMarker = null;
+                }
+            }
+        }
+
+        // ================= TOGGLE ALLE PUNTEN =================
+        function toggleAllPoints() {
+            allPointsHidden = !allPointsHidden;
+            
+            // Update toggle knop
+            const toggleBtn = document.getElementById('hideAllPointsBtn');
+            if (allPointsHidden) {
+                toggleBtn.classList.add('active');
+                toggleBtn.title = "Toon alle punten";
+                toggleBtn.innerHTML = '○'; // Lege cirkel
+            } else {
+                toggleBtn.classList.remove('active');
+                toggleBtn.title = "Verberg alle punten";
+                toggleBtn.innerHTML = '●'; // Volle cirkel
+            }
+            
+            // Update alle punten
+            updateAllPointMarkers();
+            
+            // Update animated point
+            if (movingMarker) {
+                const effectiveAnimatedRadius = allPointsHidden ? 0 : animatedPointRadius;
+                const effectiveAnimatedOpacity = allPointsHidden ? 0 : animatedPointOpacity;
+                
+                if (effectiveAnimatedRadius > 0) {
+                    movingMarker.setRadius(effectiveAnimatedRadius);
+                    movingMarker.setStyle({
+                        fillOpacity: effectiveAnimatedOpacity
+                    });
+                } else {
+                    map.removeLayer(movingMarker);
+                    movingMarker = null;
+                }
+            }
+        }
+
+        // ================= RESET & UNDO =================
+        function clearAllPoints() {
+            stopAnimation();
+            routePoints = [];
+            pointMarkers.forEach(m => m && map.removeLayer(m));
+            pointMarkers = [];
+            [routeLine, trailLine, trailLineGlow, ghostLine, movingMarker, startMarker, endMarker]
+                .forEach(l => l && map.removeLayer(l));
+            
+            routeLine = trailLine = trailLineGlow = ghostLine = movingMarker = startMarker = endMarker = null;
+            currentDistanceCovered = totalDistance = 0;
+            distances = [];
+            isDrawing = true;
+
+            updatePointCount();
+            updateInstruction();
+            document.getElementById('playBtn').disabled = true;
+            document.getElementById('playBtn').innerHTML = '▶️';
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('statusBadge').style.display = 'none';
+            document.getElementById('instructionBar').style.display = 'block';
+            setMapInteraction(true);
+        }
+
+        function undoLastPoint() {
+            if (routePoints.length === 0 || isPlaying) return;
+            routePoints.pop();
+            const m = pointMarkers.pop();
+            if (m) map.removeLayer(m);
+            updateRouteLine();
+            updatePointCount();
+            document.getElementById('playBtn').disabled = routePoints.length < 2;
+            updateInstruction();
+        }
+
+        // ================= ANIMATIE =================
+        function calculateDistances() {
+            distances = [];
+            totalDistance = 0;
+            for (let i = 0; i < routePoints.length - 1; i++) {
+                const d = map.distance(L.latLng(routePoints[i]), L.latLng(routePoints[i+1]));
+                distances.push(d);
+                totalDistance += d;
+            }
+        }
+
+        function getPointAtDistance(d) {
+            if (d <= 0) return routePoints[0];
+            if (d >= totalDistance) return routePoints[routePoints.length-1];
+            let acc = 0;
+            for (let i = 0; i < distances.length; i++) {
+                if (acc + distances[i] >= d) {
+                    const ratio = (d - acc) / distances[i];
+                    const p1 = routePoints[i], p2 = routePoints[i+1];
+                    return [p1[0] + (p2[0] - p1[0]) * ratio, p1[1] + (p2[1] - p1[1]) * ratio];
+                }
+                acc += distances[i];
+            }
+            return routePoints[routePoints.length-1];
+        }
+
+        function startAnimation(restart = false) {
+            if (routePoints.length < 2) return;
+
+            if (restart || currentDistanceCovered >= totalDistance - 1) {
+                currentDistanceCovered = 0;
+                if (trailLine) trailLine.setLatLngs([]);
+                if (trailLineGlow) trailLineGlow.setLatLngs([]);
+                if (movingMarker) movingMarker.setLatLng(routePoints[0]);
+            }
+
+            calculateDistances();
+            isPlaying = true;
+            isDrawing = false;
+            setMapInteraction(false);
+
+            // Trail lijn aanmaken
+            if (!trailLine) {
+                trailLineGlow = L.polyline([], { 
+                    color: trailColor, 
+                    weight: lineWeight * 2, 
+                    opacity: trailGlowOpacity, 
+                    lineCap: 'round' 
+                }).addTo(map);
+                
+                trailLine = L.polyline([], { 
+                    color: trailColor, 
+                    weight: lineWeight, 
+                    opacity: trailOpacity, 
+                    lineCap: 'round' 
+                }).addTo(map);
+            } else {
+                // Trail lijn instellingen updaten
+                trailLine.setStyle({
+                    color: trailColor,
+                    weight: lineWeight,
+                    opacity: trailOpacity
+                });
+                
+                trailLineGlow.setStyle({
+                    color: trailColor,
+                    weight: lineWeight * 2,
+                    opacity: trailGlowOpacity
+                });
+            }
+
+            // Bewegende marker
+            const effectiveAnimatedRadius = (allPointsHidden || animatedPointRadius === 0) ? 0 : animatedPointRadius;
+            const effectiveAnimatedOpacity = (allPointsHidden || animatedPointRadius === 0) ? 0 : animatedPointOpacity;
+            
+            if (!movingMarker) {
+                if (effectiveAnimatedRadius > 0) {
+                    movingMarker = L.circleMarker(routePoints[0], {
+                        radius: effectiveAnimatedRadius,
+                        color: animatedPointColor,
+                        fillColor: animatedPointColor,
+                        fillOpacity: effectiveAnimatedOpacity,
+                        weight: 2
+                    }).addTo(map);
+                }
+            } else {
+                if (effectiveAnimatedRadius > 0) {
+                    movingMarker.setStyle({
+                        color: animatedPointColor,
+                        fillColor: animatedPointColor,
+                        fillOpacity: effectiveAnimatedOpacity
+                    });
+                    movingMarker.setRadius(effectiveAnimatedRadius);
+                } else {
+                    map.removeLayer(movingMarker);
+                    movingMarker = null;
+                }
+            }
+
+            // Start marker
+            const effectiveStartRadius = (allPointsHidden || startPointRadius === 0) ? 0 : startPointRadius;
+            const effectiveStartOpacity = (allPointsHidden || startPointRadius === 0) ? 0 : startPointOpacity;
+            
+            if (!startMarker) {
+                if (effectiveStartRadius > 0) {
+                    startMarker = L.circleMarker(routePoints[0], {
+                        radius: effectiveStartRadius, 
+                        color: startPointColor, 
+                        fillColor: startPointColor, 
+                        fillOpacity: effectiveStartOpacity, 
+                        weight: 2
+                    }).addTo(map);
+                }
+            }
+            
+            // Eind marker
+            const effectiveEndRadius = (allPointsHidden || endPointRadius === 0) ? 0 : endPointRadius;
+            const effectiveEndOpacity = (allPointsHidden || endPointRadius === 0) ? 0 : endPointOpacity;
+            
+            if (!endMarker) {
+                if (effectiveEndRadius > 0) {
+                    endMarker = L.circleMarker(routePoints[routePoints.length-1], {
+                        radius: effectiveEndRadius, 
+                        color: endPointColor, 
+                    fillColor: endPointColor, 
+                        fillOpacity: effectiveEndOpacity, 
+                        weight: 2
+                    }).addTo(map);
+                }
+            }
+
+            // UI knoppen updaten
+            document.getElementById('playBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('clearBtn').disabled = true;
+            document.getElementById('undoBtn').disabled = true;
+
+            lastTimestamp = performance.now();
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function animate(timestamp) {
+            if (!isPlaying) return;
+
+            const delta = timestamp - lastTimestamp;
+            lastTimestamp = timestamp;
+
+            // Gebruik de geselecteerde snelheid
+            const speed = 100 * currentSpeed; // 100 m/s bij 1x
+            currentDistanceCovered += (speed * delta) / 1000;
+
+            if (currentDistanceCovered >= totalDistance) {
+                currentDistanceCovered = totalDistance;
+                stopAnimation();
+                return;
+            }
+
+            const rawProgress = currentDistanceCovered / totalDistance;
+            const easedProgress = easeInOutQuad(rawProgress);
+            const easedDistance = easedProgress * totalDistance;
+
+            const pos = getPointAtDistance(easedDistance);
+            if (movingMarker) {
+                movingMarker.setLatLng(pos);
+            }
+
+            // Trail updaten
+            let trailPoints = [];
+            let acc = 0;
+            for (let i = 0; i < routePoints.length; i++) {
+                if (acc <= easedDistance) trailPoints.push(routePoints[i]);
+                else break;
+                if (i < distances.length) acc += distances[i];
+            }
+            trailPoints.push(pos);
+            trailLine.setLatLngs(trailPoints);
+            trailLineGlow.setLatLngs(trailPoints);
+
+            // Camera volgen (niet elke frame)
+            if (Math.random() < 0.25) {
+                map.panTo(pos, { animate: true, duration: 0.4 });
+            }
+
+            updateProgress();
+
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            document.getElementById('playBtn').disabled = false;
+            document.getElementById('playBtn').innerHTML = '▶️';
+            document.getElementById('pauseBtn').disabled = true;
+            setMapInteraction(true);
+        }
+
+        function stopAnimation() {
+            isPlaying = false;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            document.getElementById('playBtn').innerHTML = '🔄';
+            document.getElementById('playBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('clearBtn').disabled = false;
+            document.getElementById('undoBtn').disabled = false;
+            setMapInteraction(true);
+        }
+
+        function updateProgress() {
+            const pct = (currentDistanceCovered / totalDistance) * 100;
+            document.getElementById('progressFill').style.width = `${pct}%`;
+        }
+
+        // ================= UI UPDATES =================
+        function updateInstruction() {
+            const bar = document.getElementById('instructionBar');
+            const badge = document.getElementById('statusBadge');
+            const progress = document.getElementById('progressContainer');
+            
+            if (isPlaying) {
+                bar.style.display = 'none';
+                badge.style.display = 'none';
+                progress.style.display = 'block';
+            } else if (routePoints.length === 0) {
+                bar.innerHTML = '<div class="instruction-text"><span class="dot"></span> Klik om te beginnen</div>';
+                bar.style.display = 'block';
+                badge.style.display = 'none';
+                progress.style.display = 'none';
+            } else if (isDrawing) {
+                bar.innerHTML = `<div class="instruction-text"><span class="dot"></span> ${routePoints.length} punten – klik laatste punt om te stoppen</div>`;
+                bar.style.display = 'block';
+                badge.style.display = 'none';
+                progress.style.display = 'block';
+            } else {
+                bar.style.display = 'none';
+                badge.textContent = 'Route klaar – klik Afspelen';
+                badge.style.display = 'block';
+                progress.style.display = 'block';
+            }
+        }
+
+        function updatePointCount() {
+            document.getElementById('pointCount').textContent = `${routePoints.length} punten`;
+        }
+
+        // ================= EVENT LISTENERS =================
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+
+            // Basis knoppen
+            document.getElementById('playBtn').addEventListener('click', () => {
+                if (document.getElementById('playBtn').innerHTML.includes('🔄')) {
+                    startAnimation(true);
+                } else {
+                    startAnimation(false);
+                }
+            });
+            document.getElementById('pauseBtn').addEventListener('click', pauseAnimation);
+            document.getElementById('clearBtn').addEventListener('click', clearAllPoints);
+            document.getElementById('undoBtn').addEventListener('click', undoLastPoint);
+
+            // Snelheid selector
+            document.getElementById('speedSelector').addEventListener('change', e => {
+                currentSpeed = parseFloat(e.target.value);
+            });
+
+            // Extra functies knop
+            document.getElementById('extraBtn').addEventListener('click', () => {
+                alert('Extra functies:\n\n• Cinematic camera mode\n• Animated glow pulse\n• Minimal recording mode\n• Auto-hide UI\n\nBinnenkort beschikbaar!');
+            });
+
+            // Route lijn kleur en transparantie
+            document.getElementById('lineColorPicker').addEventListener('input', e => {
+                lineColor = e.target.value;
+                if (routeLine) routeLine.setStyle({color: lineColor});
+            });
+            
+            document.getElementById('lineOpacitySlider').addEventListener('input', e => {
+                lineOpacity = parseInt(e.target.value) / 100;
+                if (routeLine) routeLine.setStyle({opacity: lineOpacity});
+            });
+
+            // Trail lijn kleur en transparantie
+            document.getElementById('trailColorPicker').addEventListener('input', e => {
+                trailColor = e.target.value;
+                if (trailLine) trailLine.setStyle({color: trailColor});
+                if (trailLineGlow) trailLineGlow.setStyle({color: trailColor});
+            });
+            
+            document.getElementById('trailOpacitySlider').addEventListener('input', e => {
+                trailOpacity = parseInt(e.target.value) / 100;
+                trailGlowOpacity = trailOpacity * 0.3;
+                if (trailLine) trailLine.setStyle({opacity: trailOpacity});
+                if (trailLineGlow) trailLineGlow.setStyle({opacity: trailGlowOpacity});
+            });
+
+            // Animated point kleur, grootte en transparantie
+            document.getElementById('animatedPointColor').addEventListener('input', e => {
+                animatedPointColor = e.target.value;
+                if (movingMarker) {
+                    movingMarker.setStyle({
+                        color: animatedPointColor,
+                        fillColor: animatedPointColor
+                    });
+                }
+            });
+            
+            document.getElementById('animatedPointRadius').addEventListener('input', e => {
+                animatedPointRadius = parseInt(e.target.value) || 0;
+                const effectiveRadius = (allPointsHidden || animatedPointRadius === 0) ? 0 : animatedPointRadius;
+                if (movingMarker) {
+                    if (effectiveRadius > 0) {
+                        movingMarker.setRadius(effectiveRadius);
+                    } else {
+                        map.removeLayer(movingMarker);
+                        movingMarker = null;
+                    }
+                }
+            });
+            
+            document.getElementById('animatedPointOpacity').addEventListener('input', e => {
+                animatedPointOpacity = parseInt(e.target.value) / 100;
+                if (movingMarker) {
+                    movingMarker.setStyle({
+                        fillOpacity: (allPointsHidden || animatedPointRadius === 0) ? 0 : animatedPointOpacity
+                    });
+                }
+            });
+
+            // Start punt instellingen
+            document.getElementById('startColorPicker').addEventListener('input', e => {
+                startPointColor = e.target.value;
+                updateStartEndMarkers();
+            });
+            
+            document.getElementById('startRadius').addEventListener('input', e => {
+                startPointRadius = parseInt(e.target.value) || 0;
+                updateStartEndMarkers();
+            });
+            
+            document.getElementById('startOpacitySlider').addEventListener('input', e => {
+                startPointOpacity = parseInt(e.target.value) / 100;
+                updateStartEndMarkers();
+            });
+
+            // Eind punt instellingen
+            document.getElementById('endColorPicker').addEventListener('input', e => {
+                endPointColor = e.target.value;
+                updateStartEndMarkers();
+            });
+            
+            document.getElementById('endRadius').addEventListener('input', e => {
+                endPointRadius = parseInt(e.target.value) || 0;
+                updateStartEndMarkers();
+            });
+            
+            document.getElementById('endOpacitySlider').addEventListener('input', e => {
+                endPointOpacity = parseInt(e.target.value) / 100;
+                updateStartEndMarkers();
+            });
+
+            // Tussen punten instellingen
+            document.getElementById('vertexColorPicker').addEventListener('input', e => {
+                pointColor = e.target.value;
+                updateAllPointMarkers();
+            });
+            
+            document.getElementById('vertexSize').addEventListener('input', e => {
+                pointSize = parseInt(e.target.value) || 0;
+                updateAllPointMarkers();
+            });
+            
+            document.getElementById('vertexOpacitySlider').addEventListener('input', e => {
+                pointOpacity = parseInt(e.target.value) / 100;
+                updateAllPointMarkers();
+            });
+
+            // Lijn dikte
+            document.getElementById('lineWeight').addEventListener('input', e => {
+                lineWeight = parseInt(e.target.value) || 5;
+                if (routeLine) routeLine.setStyle({weight: Math.round(lineWeight * 0.6)});
+                if (trailLine) trailLine.setStyle({weight: lineWeight});
+                if (trailLineGlow) trailLineGlow.setStyle({weight: lineWeight * 2});
+            });
+
+            // Alle punten toggle
+            document.getElementById('hideAllPointsBtn').addEventListener('click', toggleAllPoints);
+
+            // Kaart transparantie
+            document.getElementById('mapOpacity').addEventListener('input', e => {
+                if (currentTileLayer) {
+                    const opacity = parseInt(e.target.value) / 100;
+                    // Als het een layerGroup is (hybride), stel opacity in op alle lagen
+                    if (currentTileLayer.eachLayer) {
+                        currentTileLayer.eachLayer(layer => {
+                            layer.setOpacity(opacity);
+                        });
+                    } else {
+                        currentTileLayer.setOpacity(opacity);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
