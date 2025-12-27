@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title contenteditable="true" spellcheck="true">Mijn winterverhaal ❄️</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet Draw plugin -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+  <!-- html2canvas voor screenshot -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(to bottom, #0f001f, #1e1242, #2c1e66);
+      font-family: system-ui, sans-serif;
+      color: var(--text-color, #f0f0ff);
+      overflow-x: hidden;
+      line-height: 1.6;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      transition: background 0.6s ease;
+    }
+
+    body.custom-bg { background: var(--custom-bg-color, #0f001f); }
+    body.custom-image { background-image: var(--custom-bg-image); }
+
+    .snow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle at 15% 25%, #fff 1.5px, transparent 3px),
+        radial-gradient(circle at 35% 55%, #fff 1.2px, transparent 2.8px),
+        radial-gradient(circle at 65% 35%, #fff 2px, transparent 4px),
+        radial-gradient(circle at 85% 75%, #fff 1px, transparent 2.5px),
+        radial-gradient(circle at 45% 85%, #fff 1.8px, transparent 3.5px);
+      background-size: 140px 140px, 110px 110px, 180px 180px, 90px 90px, 160px 160px;
+      animation: snow-fall 40s linear infinite;
+      opacity: 0.92;
+      transition: opacity 0.6s ease;
+    }
+
+    .snow::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle, #fff 1px, transparent 2.2px),
+        radial-gradient(circle at 50% 30%, #fff 1.6px, transparent 3.2px),
+        radial-gradient(circle at 20% 80%, #fff 1.3px, transparent 3px);
+      background-size: 200px 200px, 130px 130px, 170px 170px;
+      animation: snow-fall 65s linear infinite;
+      opacity: 0.65;
+    }
+
+    @keyframes snow-fall {
+      0%   { background-position: 0 0, 30px 30px, -40px -40px, 50px 50px, -60px -60px; }
+      100% { background-position: 0 800px, 30px 830px, -40px 760px, 50px 850px, -60px 740px; }
+    }
+
+    .snow.hidden { opacity: 0; pointer-events: none; }
+
+    main {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+
+    .content-wrapper {
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin: 1rem 0 2.5rem;
+      align-items: center;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(8px);
+      padding: 1.2rem 1.8rem;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .map-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin: 1rem 0;
+      padding: 0.8rem 1rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    button, .color-picker-wrapper, .file-input-wrapper, .draw-control-btn {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: white;
+      padding: 0.7rem 1.4rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      backdrop-filter: blur(6px);
+      transition: all 0.25s ease;
+    }
+
+    button:hover, .color-picker-wrapper:hover, .file-input-wrapper:hover, .draw-control-btn:hover {
+      background: rgba(255,255,255,0.22);
+      transform: translateY(-1px);
+    }
+
+    .draw-control-btn.active {
+      background: rgba(74, 107, 255, 0.4);
+      border-color: #4a6bff;
+      box-shadow: 0 0 10px rgba(74, 107, 255, 0.5);
+    }
+
+    .color-picker-wrapper, .file-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      position: relative;
+    }
+
+    input[type="color"] {
+      width: 48px;
+      height: 36px;
+      padding: 2px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    input[type="file"] { display: none; }
+
+    .upload-status {
+      position: absolute;
+      top: -25px;
+      left: 0;
+      right: 0;
+      font-size: 0.85rem;
+      color: #4dff9c;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .upload-status.visible {
+      opacity: 1;
+    }
+
+    h1[contenteditable="true"] {
+      font-size: clamp(2.6rem, 9vw, 5.2rem);
+      margin-bottom: 1.5rem;
+      text-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      color: var(--text-color, #f0f0ff);
+    }
+
+    .user-text {
+      font-size: 1.3rem;
+      line-height: 1.8;
+      min-height: 180px;
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin: 1rem 0 2.5rem;
+      color: var(--text-color, #f0f0ff);
+    }
+
+    [contenteditable="true"]:focus {
+      outline: 2px dashed rgba(200, 230, 255, 0.5);
+      border-radius: 12px;
+    }
+
+    #screenshot-area {
+      background: rgba(0,0,0,0.15);
+      backdrop-filter: blur(6px);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    #map {
+      height: 420px;
+      width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: var(--map-shadow, 
+        0 0 35px rgba(255,245,180,0.7),
+        0 0 80px rgba(255,240,150,0.5),
+        inset 0 0 35px rgba(255,250,200,0.3)
+      );
+      transition: box-shadow 0.6s ease;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.85);
+      color: white;
+      padding: 0.8rem 1.2rem;
+      border-radius: 8px;
+      border-left: 4px solid #4dff9c;
+      backdrop-filter: blur(10px);
+      z-index: 9999;
+      opacity: 0;
+      transform: translateX(100px);
+      transition: all 0.3s ease;
+      max-width: 300px;
+    }
+
+    .notification.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .drawing-info {
+      margin-top: 1rem;
+      padding: 0.8rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .drawing-controls {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="snow" id="snowLayer"></div>
+
+  <main>
+    <div class="content-wrapper">
+
+      <div class="controls">
+        <button onclick="toggleSnow()">❄️ Sneeuw uit</button>
+        <button onclick="nextBasemap()">🗺️ Volgende kaart</button>
+
+        <div class="color-picker-wrapper">
+          <label for="bgColor">Achtergrond: </label>
+          <input type="color" id="bgColor" value="#0f001f" oninput="updateBackgroundColor(this.value)">
+        </div>
+
+        <div class="file-input-wrapper">
+          <label for="bgImage">Afbeelding upload</label>
+          <input type="file" id="bgImage" accept="image/*" onchange="handleImageUpload(event)">
+          <div class="upload-status" id="uploadStatus"></div>
+        </div>
+
+        <div class="color-picker-wrapper">
+          <label for="textColor">Tekst kleur: </label>
+          <input type="color" id="textColor" value="#f0f0ff" oninput="updateTextColor(this.value)">
+        </div>
+
+        <div class="color-picker-wrapper">
+          <label for="shadowColor">Kaart gloed: </label>
+          <input type="color" id="shadowColor" value="#fff5b4" oninput="updateShadowColor(this.value)">
+        </div>
+
+        <button onclick="resetAllCustomizations()">Alles resetten</button>
+      </div>
+
+      <!-- Teken controls -->
+      <div class="map-controls">
+        <div class="drawing-info">
+          Teken op kaart: klik op een knop om te beginnen
+          <div class="drawing-controls">
+            <button onclick="clearAllDrawings()" style="background: rgba(255, 107, 107, 0.3);">🗑️ Wis tekeningen</button>
+            <button onclick="toggleDrawingStyle()" style="background: rgba(138, 79, 255, 0.3);">🎨 Kleur wijzigen</button>
+          </div>
+        </div>
+        <button class="draw-control-btn" onclick="enableDrawPolygon()" id="polygonBtn">⬢ Polygoon tekenen</button>
+        <button class="draw-control-btn" onclick="enableDrawLine()" id="lineBtn">➖ Lijn tekenen</button>
+        <button class="draw-control-btn" onclick="enableDrawRectangle()" id="rectangleBtn">⬛ Rechthoek tekenen</button>
+        <button class="draw-control-btn" onclick="enableDrawCircle()" id="circleBtn">⭕ Cirkel tekenen</button>
+        <button class="draw-control-btn" onclick="enableDrawMarker()" id="markerBtn">📍 Marker plaatsen</button>
+        <button class="draw-control-btn" onclick="enableFreehand()" id="freehandBtn">✏️ Vrijhand tekenen</button>
+        <button class="draw-control-btn" onclick="disableDrawing()" id="stopBtn">⏸️ Stop tekenen</button>
+      </div>
+
+      <!-- Dit blok wordt gebruikt voor de screenshot (incl. shadow) -->
+      <div id="screenshot-area">
+        <h1 contenteditable="true" spellcheck="true">Jouw titel hier</h1>
+        <div class="user-text" contenteditable="true" spellcheck="true">
+          <p>Je verhaal begint hier...</p>
+        </div>
+        <div id="map"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // Helper: toon melding
+    function showNotification(message, duration = 3000) {
+      let notif = document.querySelector('.notification');
+      if (!notif) {
+        notif = document.createElement('div');
+        notif.className = 'notification';
+        document.body.appendChild(notif);
+      }
+      notif.textContent = message;
+      notif.classList.add('show');
+      setTimeout(() => {
+        notif.classList.remove('show');
+      }, duration);
+    }
+
+    // Tekst opslaan/laden
+    const editables = document.querySelectorAll('[contenteditable="true"]');
+    editables.forEach((el, i) => {
+      const key = `editable-${i}`;
+      const saved = localStorage.getItem(key);
+      if (saved) el.innerHTML = saved;
+
+      el.addEventListener('input', () => {
+        try {
+          localStorage.setItem(key, el.innerHTML);
+        } catch(e) {
+          console.warn('Opslaan tekst mislukt (storage vol)');
+        }
+        if (el.tagName === 'TITLE') document.title = el.textContent.trim() || 'Mijn winterverhaal ❄️';
+      });
+    });
+
+    // Kaart + basemaps
+    const basemaps = [
+      { name: "OpenStreetMap (standaard)", url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", attribution: '© OpenStreetMap' },
+      { name: "Donkere kaart", url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", attribution: '© CartoDB' },
+      { name: "Lichte kaart", url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", attribution: '© CartoDB' },
+      { name: "Satelliet", url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", attribution: '© Esri' }
+    ];
+
+    let currentBasemapIndex = 0;
+    let tileLayer = null;
+    let drawnItems = null; // Voor tekeningen
+    let drawControl = null; // Draw controller
+    let currentDrawingMode = null; // Huidige tekenmodus
+    let drawingStyle = {
+      color: '#ff4757',
+      fillColor: '#ff6b81',
+      weight: 3,
+      opacity: 0.8,
+      fillOpacity: 0.3
+    };
+
+    // Initialiseer de kaart
+    const map = L.map('map').setView([52.9583, 4.7597], 13);
+
+    // Initialiseer drawnItems layer (hier komen alle tekeningen in)
+    drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    function setBasemap(index) {
+      if (tileLayer) map.removeLayer(tileLayer);
+      const bm = basemaps[index];
+      tileLayer = L.tileLayer(bm.url, { 
+        attribution: bm.attribution, 
+        maxZoom: 19,
+        crossOrigin: true,
+        detectRetina: true
+      }).addTo(map);
+      showNotification(`Kaart gewijzigd: ${bm.name}`, 1500);
+    }
+    setBasemap(currentBasemapIndex);
+
+    // Initialiseer draw control
+    function initDrawControl() {
+      // Verwijder bestaande draw control
+      if (drawControl) {
+        map.removeControl(drawControl);
+      }
+
+      // Maak nieuwe draw control met custom styling
+      drawControl = new L.Control.Draw({
+        position: 'topright',
+        draw: {
+          polygon: {
+            shapeOptions: drawingStyle,
+            allowIntersection: false,
+            drawError: {
+              color: '#ff4757',
+              message: 'Oeps! De polygon mag zichzelf niet kruisen'
+            },
+            showArea: true,
+            metric: true
+          },
+          polyline: {
+            shapeOptions: drawingStyle,
+            metric: true
+          },
+          rectangle: {
+            shapeOptions: drawingStyle,
+            metric: true
+          },
+          circle: {
+            shapeOptions: drawingStyle,
+            metric: true
+          },
+          marker: {
+            icon: L.icon({
+              iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${drawingStyle.color}" width="32" height="32">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+              `),
+              iconSize: [32, 32],
+              iconAnchor: [16, 32],
+              popupAnchor: [0, -32]
+            })
+          },
+          circlemarker: false
+        },
+        edit: {
+          featureGroup: drawnItems,
+          remove: true
+        }
+      });
+
+      map.addControl(drawControl);
+
+      // Event listeners voor draw events
+      map.on(L.Draw.Event.CREATED, function (e) {
+        const type = e.layerType;
+        const layer = e.layer;
+
+        // Voeg stijl toe
+        if (layer instanceof L.Polygon || layer instanceof L.Polyline) {
+          layer.setStyle(drawingStyle);
+        } else if (layer instanceof L.Circle) {
+          layer.setStyle({
+            color: drawingStyle.color,
+            fillColor: drawingStyle.fillColor,
+            fillOpacity: drawingStyle.fillOpacity
+          });
+        } else if (layer instanceof L.Rectangle) {
+          layer.setStyle(drawingStyle);
+        } else if (layer instanceof L.Marker) {
+          // Marker heeft al stijl via icon
+        }
+
+        // Voeg toe aan drawnItems
+        drawnItems.addLayer(layer);
+        
+        // Bewaar tekening in localStorage
+        saveDrawingToStorage(layer, type);
+        
+        showNotification(`${getDrawingTypeName(type)} getekend!`, 2000);
+      });
+
+      map.on(L.Draw.Event.EDITED, function (e) {
+        showNotification('Tekening bewerkt', 1500);
+        saveAllDrawings();
+      });
+
+      map.on(L.Draw.Event.DELETED, function (e) {
+        showNotification('Tekening verwijderd', 1500);
+        saveAllDrawings();
+      });
+    }
+
+    // Functies voor tekenknoppen
+    function enableDrawPolygon() {
+      setActiveButton('polygonBtn');
+      currentDrawingMode = 'polygon';
+      new L.Draw.Polygon(map, drawControl.options.draw.polygon).enable();
+      showNotification('Klik punten voor polygon, dubbelklik om te voltooien', 3000);
+    }
+
+    function enableDrawLine() {
+      setActiveButton('lineBtn');
+      currentDrawingMode = 'polyline';
+      new L.Draw.Polyline(map, drawControl.options.draw.polyline).enable();
+      showNotification('Klik punten voor lijn, dubbelklik om te voltooien', 3000);
+    }
+
+    function enableDrawRectangle() {
+      setActiveButton('rectangleBtn');
+      currentDrawingMode = 'rectangle';
+      new L.Draw.Rectangle(map, drawControl.options.draw.rectangle).enable();
+      showNotification('Sleep voor rechthoek', 3000);
+    }
+
+    function enableDrawCircle() {
+      setActiveButton('circleBtn');
+      currentDrawingMode = 'circle';
+      new L.Draw.Circle(map, drawControl.options.draw.circle).enable();
+      showNotification('Klik centrum en sleep voor cirkel', 3000);
+    }
+
+    function enableDrawMarker() {
+      setActiveButton('markerBtn');
+      currentDrawingMode = 'marker';
+      new L.Draw.Marker(map, drawControl.options.draw.marker).enable();
+      showNotification('Klik om marker te plaatsen', 3000);
+    }
+
+    function enableFreehand() {
+      setActiveButton('freehandBtn');
+      currentDrawingMode = 'freehand';
+      // Polyline met veel punten voor vrijhand effect
+      new L.Draw.Polyline(map, {
+        shapeOptions: {
+          ...drawingStyle,
+          smoothFactor: 0,
+          noClip: true
+        },
+        guideLayers: drawnItems
+      }).enable();
+      showNotification('Sleep voor vrijhand tekening, los om te voltooien', 3000);
+    }
+
+    function disableDrawing() {
+      setActiveButton(null);
+      currentDrawingMode = null;
+      map.fire('draw:drawstop');
+      showNotification('Tekenen gestopt', 1500);
+    }
+
+    function setActiveButton(buttonId) {
+      // Verwijder active class van alle knoppen
+      document.querySelectorAll('.draw-control-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // Voeg active class toe aan geselecteerde knop
+      if (buttonId) {
+        document.getElementById(buttonId).classList.add('active');
+      }
+    }
+
+    function getDrawingTypeName(type) {
+      const types = {
+        polygon: 'Polygoon',
+        polyline: 'Lijn',
+        rectangle: 'Rechthoek',
+        circle: 'Cirkel',
+        marker: 'Marker',
+        freehand: 'Vrijhand tekening'
+      };
+      return types[type] || type;
+    }
+
+    function toggleDrawingStyle() {
+      // Verander tekenkleur
+      const colors = [
+        '#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6b81',
+        '#70a1ff', '#7bed9f', '#ff6348', '#5352ed', '#ff3838'
+      ];
+      
+      const newColor = colors[Math.floor(Math.random() * colors.length)];
+      const newFillColor = newColor + '80'; // 50% opacity
+      
+      drawingStyle = {
+        ...drawingStyle,
+        color: newColor,
+        fillColor: newFillColor
+      };
+      
+      // Update draw control met nieuwe stijl
+      initDrawControl();
+      
+      showNotification(`Tekenkleur gewijzigd: ${newColor}`, 2000);
+    }
+
+    function clearAllDrawings() {
+      if (confirm('Alle tekeningen verwijderen?')) {
+        drawnItems.clearLayers();
+        localStorage.removeItem('mapDrawings');
+        showNotification('Alle tekeningen verwijderd', 2000);
+      }
+    }
+
+    // Opslaan/laden tekeningen
+    function saveDrawingToStorage(layer, type) {
+      try {
+        const drawings = JSON.parse(localStorage.getItem('mapDrawings') || '[]');
+        const geoJSON = layer.toGeoJSON();
+        geoJSON.properties = {
+          type: type,
+          style: drawingStyle,
+          timestamp: new Date().toISOString()
+        };
+        drawings.push(geoJSON);
+        localStorage.setItem('mapDrawings', JSON.stringify(drawings));
+      } catch(e) {
+        console.warn('Opslaan tekening mislukt');
+      }
+    }
+
+    function saveAllDrawings() {
+      try {
+        const drawings = [];
+        drawnItems.eachLayer(function(layer) {
+          const geoJSON = layer.toGeoJSON();
+          // Probeer stijl te extraheren
+          if (layer.options) {
+            geoJSON.properties = {
+              style: {
+                color: layer.options.color || drawingStyle.color,
+                fillColor: layer.options.fillColor || drawingStyle.fillColor,
+                weight: layer.options.weight || drawingStyle.weight
+              }
+            };
+          }
+          drawings.push(geoJSON);
+        });
+        localStorage.setItem('mapDrawings', JSON.stringify(drawings));
+      } catch(e) {
+        console.warn('Opslaan alle tekeningen mislukt');
+      }
+    }
+
+    function loadDrawingsFromStorage() {
+      try {
+        const drawings = JSON.parse(localStorage.getItem('mapDrawings') || '[]');
+        drawings.forEach(geoJSON => {
+          const layer = L.geoJSON(geoJSON, {
+            style: geoJSON.properties?.style || drawingStyle,
+            pointToLayer: function(feature, latlng) {
+              return L.marker(latlng, {
+                icon: L.icon({
+                  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${geoJSON.properties?.style?.color || drawingStyle.color}" width="32" height="32">
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                    </svg>
+                  `),
+                  iconSize: [32, 32],
+                  iconAnchor: [16, 32]
+                })
+              });
+            }
+          });
+          drawnItems.addLayer(layer);
+        });
+        if (drawings.length > 0) {
+          showNotification(`${drawings.length} tekening(en) geladen`, 2000);
+        }
+      } catch(e) {
+        console.warn('Laden tekeningen mislukt');
+      }
+    }
+
+    function nextBasemap() {
+      currentBasemapIndex = (currentBasemapIndex + 1) % basemaps.length;
+      setBasemap(currentBasemapIndex);
+    }
+
+    // Sneeuw aan/uit
+    let snowVisible = true;
+    function toggleSnow() {
+      snowVisible = !snowVisible;
+      const snowEl = document.getElementById('snowLayer');
+      const btn = document.querySelector('button[onclick="toggleSnow()"]');
+      if (snowVisible) {
+        snowEl.classList.remove('hidden');
+        btn.textContent = "❄️ Sneeuw uit";
+        showNotification('Sneeuw aangezet ❄️', 1500);
+      } else {
+        snowEl.classList.add('hidden');
+        btn.textContent = "❄️ Sneeuw aan";
+        showNotification('Sneeuw uitgezet', 1500);
+      }
+    }
+
+    // Achtergrondkleur
+    function updateBackgroundColor(hex) {
+      document.body.style.setProperty('--custom-bg-color', hex);
+      document.body.classList.add('custom-bg');
+      document.body.classList.remove('custom-image');
+      try {
+        localStorage.setItem('bgType', 'color');
+        localStorage.setItem('bgValue', hex);
+      } catch(e) {
+        console.warn('Opslaan kleur mislukt');
+      }
+      showNotification(`Achtergrondkleur ingesteld: ${hex}`, 1500);
+    }
+
+    // Achtergrond afbeelding
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const statusEl = document.getElementById('uploadStatus');
+      statusEl.textContent = 'Bestand laden...';
+      statusEl.classList.add('visible');
+
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        statusEl.textContent = 'Bestand te groot (>10MB)';
+        setTimeout(() => statusEl.classList.remove('visible'), 3000);
+        showNotification('Afbeelding te groot (>10MB). Kies een kleinere afbeelding.', 4000);
+        e.target.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      
+      reader.onloadstart = function() {
+        statusEl.textContent = 'Afbeelding laden...';
+      };
+
+      reader.onprogress = function(evt) {
+        if (evt.lengthComputable) {
+          const percent = Math.round((evt.loaded / evt.total) * 100);
+          statusEl.textContent = `Laden: ${percent}%`;
+        }
+      };
+
+      reader.onload = function(ev) {
+        document.body.style.setProperty('--custom-bg-image', `url(${ev.target.result})`);
+        document.body.classList.add('custom-image');
+        document.body.classList.remove('custom-bg');
+        
+        statusEl.textContent = 'Afbeelding geladen ✓';
+        showNotification('Achtergrond afbeelding ingesteld', 3000);
+        
+        setTimeout(() => {
+          statusEl.classList.remove('visible');
+        }, 2000);
+
+        try {
+          localStorage.setItem('bgType', 'image-uploaded');
+          localStorage.setItem('imageName', file.name);
+          localStorage.setItem('imageSize', Math.round(file.size / 1024) + 'KB');
+        } catch(e) {}
+      };
+
+      reader.onerror = function() {
+        statusEl.textContent = 'Fout bij laden';
+        showNotification('Fout bij laden van afbeelding', 3000);
+        setTimeout(() => statusEl.classList.remove('visible'), 3000);
+        e.target.value = '';
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    // Tekstkleur
+    function updateTextColor(hex) {
+      document.body.style.setProperty('--text-color', hex);
+      try {
+        localStorage.setItem('textColor', hex);
+      } catch(e) {
+        console.warn('Opslaan tekstkleur mislukt');
+      }
+    }
+
+    // Kaart shadow / gloed
+    function updateShadowColor(hex) {
+      const r = parseInt(hex.slice(1,3),16);
+      const g = parseInt(hex.slice(3,5),16);
+      const b = parseInt(hex.slice(5,7),16);
+      document.getElementById('map').style.boxShadow = `
+        0 0 35px rgba(${r},${g},${b},0.7),
+        0 0 80px rgba(${r},${g},${b},0.5),
+        inset 0 0 35px rgba(${r},${g},${b},0.3)
+      `;
+      try {
+        localStorage.setItem('mapShadowColor', hex);
+      } catch(e) {
+        console.warn('Opslaan shadow kleur mislukt');
+      }
+      showNotification(`Kaart gloed kleur: ${hex}`, 1500);
+    }
+
+    // Alles resetten
+    function resetAllCustomizations() {
+      if (!confirm("Alle aanpassingen resetten? (behalve de tekst en tekeningen)")) return;
+
+      // Achtergrond
+      document.body.style.background = 'linear-gradient(to bottom, #0f001f, #1e1242, #2c1e66)';
+      document.body.classList.remove('custom-bg', 'custom-image');
+      document.body.style.removeProperty('--custom-bg-color');
+      document.body.style.removeProperty('--custom-bg-image');
+      
+      try {
+        localStorage.removeItem('bgType');
+        localStorage.removeItem('bgValue');
+        localStorage.removeItem('imageName');
+        localStorage.removeItem('imageSize');
+      } catch(e) {}
+      
+      document.getElementById('bgColor').value = '#0f001f';
+      document.getElementById('bgImage').value = '';
+
+      // Tekstkleur
+      document.body.style.setProperty('--text-color', '#f0f0ff');
+      try {
+        localStorage.removeItem('textColor');
+      } catch(e) {}
+      document.getElementById('textColor').value = '#f0f0ff';
+
+      // Shadow
+      document.getElementById('shadowColor').value = '#fff5b4';
+      updateShadowColor('#fff5b4');
+      try {
+        localStorage.removeItem('mapShadowColor');
+      } catch(e) {}
+
+      // Sneeuw aan
+      if (!snowVisible) toggleSnow();
+
+      showNotification('Alle instellingen zijn gereset', 2000);
+    }
+
+    // Initialisatie bij laden
+    window.addEventListener('load', () => {
+      try {
+        // Tekstkleur
+        const savedText = localStorage.getItem('textColor');
+        if (savedText) {
+          document.getElementById('textColor').value = savedText;
+          updateTextColor(savedText);
+        }
+
+        // Shadow
+        const savedShadow = localStorage.getItem('mapShadowColor');
+        if (savedShadow) {
+          document.getElementById('shadowColor').value = savedShadow;
+          updateShadowColor(savedShadow);
+        }
+
+        // Achtergrondkleur
+        const savedBgType = localStorage.getItem('bgType');
+        const savedBgValue = localStorage.getItem('bgValue');
+        if (savedBgType === 'color' && savedBgValue) {
+          updateBackgroundColor(savedBgValue);
+          document.getElementById('bgColor').value = savedBgValue;
+        }
+        else if (savedBgType === 'image-uploaded') {
+          const imageName = localStorage.getItem('imageName');
+          const imageSize = localStorage.getItem('imageSize');
+          const statusEl = document.getElementById('uploadStatus');
+          if (imageName && statusEl) {
+            statusEl.textContent = `"${imageName}" (${imageSize})`;
+            statusEl.style.opacity = '0.7';
+            statusEl.style.position = 'static';
+            statusEl.style.fontSize = '0.8rem';
+          }
+        }
+      } catch(e) {
+        console.warn('Laden opgeslagen data mislukt');
+      }
+
+      // Initialiseer draw control en laad tekeningen
+      setTimeout(() => {
+        initDrawControl();
+        loadDrawingsFromStorage();
+        map.invalidateSize();
+      }, 500);
+    });
+  </script>
+
+</body>
+</html>
