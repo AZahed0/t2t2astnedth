@@ -1,0 +1,753 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evenementen Planner Pro - Verbeterde Versie</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet Draw CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; }
+        .container { display: flex; min-height: 100vh; flex-direction: column; }
+        .header { background: #2c3e50; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        .header-actions { display: flex; gap: 10px; }
+        .header-btn { background: #3498db; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.9rem; }
+        .header-btn:hover { background: #2980b9; }
+        .main-content { display: flex; flex: 1; flex-direction: row; }
+        @media (max-width: 992px) { .main-content { flex-direction: column; } }
+        .sidebar { width: 400px; background: #34495e; color: white; padding: 0; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        @media (max-width: 992px) { .sidebar { width: 100%; max-height: 50vh; order: 2; } }
+        .sidebar-tabs { display: flex; border-bottom: 1px solid #4a6278; background: #2c3e50; }
+        .sidebar-tab { flex: 1; padding: 12px 8px; text-align: center; cursor: pointer; transition: background 0.3s; font-weight: bold; font-size: 0.9rem; color: #bdc3c7; }
+        .sidebar-tab.active { background: #3498db; color: white; }
+        .sidebar-tab:hover:not(.active) { background: #34495e; }
+        .sidebar-content { padding: 20px; overflow-y: auto; flex: 1; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .map-container { flex: 1; position: relative; min-height: 400px; }
+        #map { height: 100%; width: 100%; z-index: 1; }
+        h2 { font-size: 1.2rem; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #4a6278; display: flex; align-items: center; gap: 8px; }
+        .control-group { margin-bottom: 20px; }
+        .btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px; margin: 8px 0; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background 0.3s; font-size: 1rem; justify-content: center; }
+        .btn:hover { background: #2980b9; }
+        .btn.active { background: #16a085; border: 2px solid white; }
+        .btn-info { background: #17a2b8; }
+        .btn-info:hover { background: #138496; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 0.9rem; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; border: 1px solid #4a6278; border-radius: 4px; background: #2c3e50; color: white; }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #3498db; }
+        .measurement-info { background: #2c3e50; padding: 10px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #f39c12; }
+        .measurement-info p { font-size: 0.9rem; margin-bottom: 5px; }
+        .measurement-info strong { color: #f39c12; }
+        .search-box { display: flex; margin-bottom: 15px; }
+        .search-box input { flex: 1; padding: 10px; border: 1px solid #4a6278; border-radius: 4px 0 0 4px; background: #2c3e50; color: white; }
+        .search-box button { padding: 10px 15px; background: #3498db; color: white; border: none; border-radius: 0 4px 4px 0; cursor: pointer; }
+        .layer-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; margin-bottom: 8px; background: #2c3e50; border-radius: 4px; }
+        .layer-actions { display: flex; gap: 5px; }
+        .layer-btn { background: #3498db; color: white; border: none; border-radius: 3px; padding: 5px 8px; cursor: pointer; }
+        .layer-btn.delete { background: #e74c3c; }
+        .legend { position: absolute; bottom: 20px; right: 20px; background: white; padding: 12px; border-radius: 4px; box-shadow: 0 1px 5px rgba(0,0,0,0.4); z-index: 1000; max-width: 250px; color: #333; }
+        .legend h4 { margin: 0 0 10px; font-size: 0.9rem; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 6px; font-size: 0.85rem; }
+        .legend-color { width: 16px; height: 16px; margin-right: 8px; border-radius: 2px; border: 1px solid #999; }
+        .feedback { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #2ecc71; color: white; padding: 10px 20px; border-radius: 4px; z-index: 2000; display: none; font-weight: bold; }
+        .step-indicator { background: #f39c12; color: white; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; }
+       
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); }
+        .modal-content { background-color: #fff; margin: 10% auto; padding: 20px; border-radius: 8px; width: 80%; max-width: 600px; color: #333; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px; }
+        .close { font-size: 28px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-map-marked-alt"></i> Evenementen Planner Pro</h1>
+            <div class="header-actions">
+                <button class="header-btn" id="undo-btn" title="Ongedaan maken"><i class="fas fa-undo"></i></button>
+                <button class="header-btn" id="redo-btn" title="Opnieuw doen"><i class="fas fa-redo"></i></button>
+                <button class="header-btn" id="info-global-btn"><i class="fas fa-info-circle"></i> Info</button>
+            </div>
+        </header>
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="sidebar-tabs">
+                    <div class="sidebar-tab active" data-tab="add">1. Toevoegen</div>
+                    <div class="sidebar-tab" data-tab="edit">2. Bewerken</div>
+                    <div class="sidebar-tab" data-tab="settings">3. Instellingen</div>
+                </div>
+                <div class="sidebar-content">
+                    <!-- Tab 1: Toevoegen -->
+                    <div class="tab-pane active" id="add-tab">
+                        <div id="step-indicator" class="step-indicator">
+                            <i class="fas fa-info-circle"></i> <span>Kies een tool om te beginnen met tekenen.</span>
+                        </div>
+                       
+                        <div class="control-group">
+                            <button class="btn" id="draw-marker"><i class="fas fa-map-marker-alt"></i> Punt Toevoegen</button>
+                            <button class="btn" id="draw-line"><i class="fas fa-route"></i> Lijn/Route Tekenen</button>
+                            <button class="btn" id="draw-polygon"><i class="fas fa-draw-polygon"></i> Gebied/Vlak Tekenen</button>
+                            <button class="btn" id="explore-mode"><i class="fas fa-mouse-pointer"></i> Verkennen & Info</button>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" id="address-search" placeholder="Zoek adres...">
+                            <button id="search-btn"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                    <!-- Tab 2: Bewerken -->
+                    <div class="tab-pane" id="edit-tab">
+                        <h2><i class="fas fa-edit"></i> Geselecteerd Object</h2>
+                        <div id="no-selection-msg" style="font-style: italic; color: #bdc3c7; margin-bottom: 15px;">
+                            Klik op een object op de kaart om het te bewerken.
+                        </div>
+                       
+                        <div id="properties-form" style="display: none;">
+                            <div id="measurement-display" class="measurement-info">
+                                <!-- Wordt dynamisch gevuld -->
+                            </div>
+                            <div class="form-group">
+                                <label for="item-naam">Naam</label>
+                                <input type="text" id="item-naam">
+                            </div>
+                            <div class="form-group">
+                                <label for="item-beschrijving">Beschrijving</label>
+                                <textarea id="item-beschrijving" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="item-categorie">Categorie</label>
+                                <select id="item-categorie"></select>
+                            </div>
+                           
+                            <button id="view-info-btn" class="btn btn-info"><i class="fas fa-eye"></i> Informatie Bekijken</button>
+                            <button id="save-properties" class="btn"><i class="fas fa-save"></i> Wijzigingen Opslaan</button>
+                            <button id="delete-selected" class="btn btn-danger"><i class="fas fa-trash"></i> Verwijder Object</button>
+                        </div>
+                        <h2 style="margin-top: 25px;"><i class="fas fa-list"></i> Alle Objecten</h2>
+                        <div id="layer-items"></div>
+                    </div>
+                    <!-- Tab 3: Instellingen -->
+                    <div class="tab-pane" id="settings-tab">
+                        <h2><i class="fas fa-cog"></i> Project Instellingen</h2>
+                        <div class="form-group">
+                            <label for="event-naam">Evenement Naam</label>
+                            <input type="text" id="event-naam" value="Mijn Evenement">
+                        </div>
+                        <div class="form-group">
+                            <label for="base-map-selector">Basiskaart</label>
+                            <select id="base-map-selector">
+                                <option value="osm" selected>OpenStreetMap (Standaard)</option>
+                                <option value="pdok_luchtfoto">PDOK Luchtfoto</option>
+                                <option value="esri_satellite">ESRI World Imagery</option>
+                                <option value="esri_street">ESRI World Street Map</option>
+                                <option value="cartodb_dark">CartoDB Dark Matter</option>
+                                <option value="cartodb_light">CartoDB Positron</option>
+                                <option value="google_satellite">Google Satellite</option>
+                                <option value="google_roads">Google Roads</option>
+                            </select>
+                        </div>
+                       
+                        <h2 style="margin-top: 25px;"><i class="fas fa-file-export"></i> Data Beheer</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="export-btn" class="btn" style="background: #2ecc71;"><i class="fas fa-download"></i> Export GeoJSON</button>
+                            <button id="import-btn" class="btn" style="background: #9b59b6;"><i class="fas fa-upload"></i> Import</button>
+                        </div>
+                        <input type="file" id="geojson-file" accept=".geojson,.json" style="display: none;">
+                        <button id="reset-btn" class="btn btn-danger" style="margin-top: 10px;"><i class="fas fa-redo"></i> Alles Wissen</button>
+                    </div>
+                </div>
+            </aside>
+            <main class="map-container">
+                <div id="map"></div>
+                <div id="legend" class="legend">
+                    <h4>Legenda</h4>
+                    <div id="legend-content">Geen objecten</div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <!-- Info Modal -->
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Over Evenementen Planner Pro</h2>
+                <span class="close">×</span>
+            </div>
+            <div id="modal-body">
+                <!-- Dynamische inhoud -->
+            </div>
+        </div>
+    </div>
+    <div id="feedback" class="feedback"></div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script>
+        // --- CONFIGURATIE ---
+        const categoryConfig = {
+            // Punten (Faciliteiten)
+            'podium': { name: 'Podium', emoji: '🎤', type: 'marker', color: '#e74c3c' },
+            'backstage': { name: 'Backstage', emoji: '🎭', type: 'marker', color: '#8e44ad' },
+            'foodtruck': { name: 'Foodtruck/Eetplek', emoji: '🍔', type: 'marker', color: '#f1c40f' },
+            'tent': { name: 'Tenten', emoji: '⛺', type: 'marker', color: '#d35400' },
+            'toiletwagen': { name: 'Toiletwagen', emoji: '🚻', type: 'marker', color: '#3498db' },
+            'aggregaat': { name: 'Aggregaat', emoji: '⚡', type: 'marker', color: '#f39c12' },
+            'muntenhok': { name: 'Muntenhok', emoji: '💰', type: 'marker', color: '#27ae60' },
+            'brandblusser': { name: 'Brandblusser', emoji: '🧯', type: 'marker', color: '#c0392b' },
+            'fietsenstalling': { name: 'Fietsenstalling', emoji: '🚲', type: 'marker', color: '#16a085' },
+            'fietsrekken': { name: 'Fietsrekken', emoji: '🚴', type: 'marker', color: '#1abc9c' },
+            'ehbo': { name: 'EHBO', emoji: '🏥', type: 'marker', color: '#e74c3c' },
+            'informatie': { name: 'Informatiepunt/Servicebalie', emoji: 'ℹ️', type: 'marker', color: '#34495e' },
+            'parking': { name: 'Parkeren', emoji: '🅿️', type: 'marker', color: '#2980b9' },
+            'pagodetent': { name: 'Pagodetent', emoji: '🏕️', type: 'marker', color: '#8e44ad' },
+            'marktkramen': { name: 'Marktkramen', emoji: '🏪', type: 'marker', color: '#f39c12' },
+            'muziek': { name: 'Muziek', emoji: '🎵', type: 'marker', color: '#9b59b6' },
+            'biertafels': { name: 'Biertafels en banken', emoji: '🍺', type: 'marker', color: '#d35400' },
+            'stoelen': { name: 'Stoelen', emoji: '💺', type: 'marker', color: '#95a5a6' },
+            'ponton': { name: 'Ponton', emoji: '🛥️', type: 'marker', color: '#3498db' },
+            'service_desk': { name: 'Service desk (o.a. oordoppen)', emoji: '🎧', type: 'marker', color: '#2c3e50' },
+            'kabelgoot': { name: 'Kabelgoot', emoji: '🔌', type: 'marker', color: '#7f8c8d' },
+            'entree': { name: 'Entree', emoji: '🚪', type: 'marker', color: '#2ecc71' },
+            'parasol': { name: 'Parasol', emoji: '☂️', type: 'marker', color: '#f1c40f' },
+            'statafels': { name: 'Statafels', emoji: '🍽️', type: 'marker', color: '#d35400' },
+            'foh': { name: 'Front of House (FOH)', emoji: '🎪', type: 'marker', color: '#e74c3c' },
+            'afval': { name: 'Afvalverwerking/Containers', emoji: '🗑️', type: 'marker', color: '#2c3e50' },
+            'horeca': { name: 'Horeca', emoji: '🍽️', type: 'marker', color: '#e67e22' },
+            'beeldscherm': { name: 'Beeldscherm', emoji: '📺', type: 'marker', color: '#3498db' },
+            'boot': { name: 'Boot', emoji: '⛵', type: 'marker', color: '#2980b9' },
+            'dj_booth': { name: 'DJ Booth', emoji: '🎧', type: 'marker', color: '#9b59b6' },
+            'aed': { name: 'AED', emoji: '💓', type: 'marker', color: '#c0392b' },
+            'beveiliging': { name: 'Beveiliging', emoji: '👮', type: 'marker', color: '#2c3e50' },
+           
+            // Lijnen (Routes/Hekken)
+            'vluchtroute': { name: 'Vluchtroute', emoji: '🚨', type: 'line', color: '#e67e22' },
+            'fence': { name: 'Hekwerk', emoji: '🚧', type: 'line', color: '#e74c3c' }, // <-- fel rood/oranje, duidelijk zichtbaar
+            'kabelgoot_lijn': { name: 'Kabelgoot (lijn)', emoji: '🔌', type: 'line', color: '#9b59b6' },
+           
+            // Polygonen (Gebieden)
+            'boundary': { name: 'Evenement Grens', emoji: '🔲', type: 'polygon', color: '#2ecc71' },
+            'backstage_gebied': { name: 'Backstage Gebied', emoji: '🔐', type: 'polygon', color: '#8e44ad' },
+            'parking_gebied': { name: 'Parkeerterrein', emoji: '🅿️', type: 'polygon', color: '#3498db' },
+            'podium_gebied': { name: 'Podium Gebied', emoji: '🎤', type: 'polygon', color: '#e74c3c' },
+            'publiek_gebied': { name: 'Publiek Gebied', emoji: '👥', type: 'polygon', color: '#f1c40f' },
+           
+            // Overig
+            'anders': { name: 'Anders', emoji: '❓', type: 'marker', color: '#95a5a6' }
+        };
+
+        // --- INITIALISATIE ---
+        let map, drawnItems, currentDrawHandler, selectedItem;
+        let currentMode = 'explore';
+        let history = [], redoStack = [];
+
+        initMap();
+
+        function initMap() {
+            map = L.map('map', { doubleClickZoom: false }).setView([52.9593, 4.7594], 14);
+            drawnItems = new L.FeatureGroup().addTo(map);
+            setBaseMap('osm');
+            setupEventListeners();
+            saveState();
+        }
+
+        function setBaseMap(type) {
+            map.eachLayer(l => { if (l instanceof L.TileLayer) map.removeLayer(l); });
+            let url, attr, options = { maxZoom: 19 };
+           
+            switch(type) {
+                case 'osm':
+                    url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                    attr = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+                    break;
+                case 'pdok_luchtfoto':
+                    url = 'https://service.pdok.nl/hwh/luchtfotorgb/wmts/v1_0/Actueel_ortho25/EPSG:3857/{z}/{x}/{y}.jpeg';
+                    attr = 'PDOK Luchtfoto';
+                    break;
+                case 'esri_satellite':
+                    url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+                    attr = 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, USDA FSA, USGS, Aerogrid, IGN, and the GIS User Community';
+                    break;
+                case 'esri_street':
+                    url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+                    attr = 'Tiles © Esri — Source: Esri, TomTom, Garmin, FAO, NOAA, USGS';
+                    break;
+                case 'cartodb_dark':
+                    url = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+                    attr = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>';
+                    break;
+                case 'cartodb_light':
+                    url = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+                    attr = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>';
+                    break;
+                case 'google_satellite':
+                    url = 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}';
+                    attr = 'Google Satellite';
+                    break;
+                case 'google_roads':
+                    url = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+                    attr = 'Google Roads';
+                    break;
+                default:
+                    url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                    attr = 'OpenStreetMap';
+            }
+           
+            L.tileLayer(url, { attribution: attr, ...options }).addTo(map);
+        }
+
+        // --- BEREKENINGEN ---
+        function calculateMeasurements(layer) {
+            let results = { length: 0, area: 0, perimeter: 0 };
+           
+            if (layer instanceof L.Polygon) {
+                const latlngs = layer.getLatLngs()[0];
+                for (let i = 0; i < latlngs.length; i++) {
+                    results.perimeter += latlngs[i].distanceTo(latlngs[(i + 1) % latlngs.length]);
+                }
+                if (L.GeometryUtil && L.GeometryUtil.geodesicArea) {
+                    results.area = L.GeometryUtil.geodesicArea(latlngs);
+                } else {
+                    results.area = calculateArea(latlngs);
+                }
+            } else if (layer instanceof L.Polyline) {
+                const latlngs = layer.getLatLngs();
+                for (let i = 0; i < latlngs.length - 1; i++) {
+                    results.length += latlngs[i].distanceTo(latlngs[i+1]);
+                }
+            }
+            return results;
+        }
+
+        function calculateArea(latLngs) {
+            let area = 0;
+            const radius = 6378137;
+            if (latLngs.length > 2) {
+                for (let i = 0; i < latLngs.length; i++) {
+                    let p1 = latLngs[i];
+                    let p2 = latLngs[(i + 1) % latLngs.length];
+                    area += (p2.lng - p1.lng) * (2 + Math.sin(p1.lat * Math.PI / 180) + Math.sin(p2.lat * Math.PI / 180));
+                }
+                area = area * radius * radius / 2;
+            }
+            return Math.abs(area);
+        }
+
+        function formatNumber(num) {
+            return num.toLocaleString('nl-NL', { maximumFractionDigits: 2 });
+        }
+
+        // --- MODUS BEHEER ---
+        function setMode(mode) {
+            if (currentDrawHandler) {
+                currentDrawHandler.disable();
+                currentDrawHandler = null;
+            }
+           
+            drawnItems.eachLayer(layer => {
+                if (layer.editing) layer.editing.disable();
+            });
+            currentMode = mode;
+           
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            const indicator = document.querySelector('#step-indicator span');
+            if (mode === 'marker') {
+                currentDrawHandler = new L.Draw.Marker(map);
+                indicator.textContent = "Klik op de kaart om een punt te plaatsen.";
+                document.getElementById('draw-marker').classList.add('active');
+            } else if (mode === 'line') {
+                currentDrawHandler = new L.Draw.Polyline(map, { shapeOptions: { color: '#3498db', weight: 4 } });
+                indicator.textContent = "Klik om te tekenen, dubbelklik om te stoppen.";
+                document.getElementById('draw-line').classList.add('active');
+            } else if (mode === 'polygon') {
+                currentDrawHandler = new L.Draw.Polygon(map, { shapeOptions: { color: '#2ecc71', fillOpacity: 0.3 } });
+                indicator.textContent = "Teken een gebied. Dubbelklik om te sluiten.";
+                document.getElementById('draw-polygon').classList.add('active');
+            } else if (mode === 'explore') {
+                indicator.textContent = "Klik op een object om details te zien of te bewerken.";
+                document.getElementById('explore-mode').classList.add('active');
+            }
+            if (currentDrawHandler) currentDrawHandler.enable();
+        }
+
+        // --- EVENT LISTENERS ---
+        function setupEventListeners() {
+            document.querySelectorAll('.sidebar-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.sidebar-tab, .tab-pane').forEach(el => el.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+                });
+            });
+
+            document.getElementById('draw-marker').onclick = () => setMode('marker');
+            document.getElementById('draw-line').onclick = () => setMode('line');
+            document.getElementById('draw-polygon').onclick = () => setMode('polygon');
+            document.getElementById('explore-mode').onclick = () => setMode('explore');
+
+            map.on(L.Draw.Event.CREATED, (e) => {
+                const layer = e.layer;
+                const type = e.layerType;
+               
+                layer.feature = layer.feature || { type: 'Feature', properties: {} };
+                layer.feature.properties.naam = "Nieuw " + type;
+               
+                if (type === 'marker') layer.feature.properties.categorie = 'informatie';
+                else if (type === 'polyline') layer.feature.properties.categorie = 'fence';
+                else if (type === 'polygon') layer.feature.properties.categorie = 'boundary';
+                applyStyle(layer);
+                drawnItems.addLayer(layer);
+                selectObject(layer);
+                saveState();
+                setMode('explore');
+                showFeedback("Object toegevoegd!");
+            });
+
+            map.on(L.Draw.Event.EDITED, (e) => {
+                e.layers.eachLayer(layer => {
+                    if (selectedItem === layer) updateMeasurementDisplay(layer);
+                });
+                saveState();
+            });
+
+            drawnItems.on('click', (e) => {
+                L.DomEvent.stopPropagation(e);
+                selectObject(e.layer);
+            });
+
+            document.getElementById('save-properties').onclick = () => {
+                if (!selectedItem) return;
+                selectedItem.feature.properties.naam = document.getElementById('item-naam').value;
+                selectedItem.feature.properties.beschrijving = document.getElementById('item-beschrijving').value;
+                selectedItem.feature.properties.categorie = document.getElementById('item-categorie').value;
+               
+                applyStyle(selectedItem);
+                updateLayerList();
+                updateLegend();
+                saveState();
+                showFeedback("Opgeslagen!");
+            };
+
+            document.getElementById('delete-selected').onclick = () => {
+                if (selectedItem && confirm("Zeker weten?")) {
+                    drawnItems.removeLayer(selectedItem);
+                    selectedItem = null;
+                    document.getElementById('properties-form').style.display = 'none';
+                    document.getElementById('no-selection-msg').style.display = 'block';
+                    updateLayerList();
+                    updateLegend();
+                    saveState();
+                }
+            };
+
+            document.getElementById('view-info-btn').onclick = () => {
+                if (selectedItem) showInfoModal(selectedItem);
+            };
+
+            // Info knop in header
+            document.getElementById('info-global-btn').onclick = () => {
+                document.getElementById('modal-body').innerHTML = `
+                    <p><strong>Versie:</strong> 2025.1 – Verbeterde Editie</p>
+                    <p>Evenementen Planner Pro is een gebruiksvriendelijke webtool om snel en visueel een evenemententerrein in te richten.</p>
+                    <p><strong>Hoofdfuncties:</strong></p>
+                    <ul>
+                        <li>Toevoegen van punten, lijnen en gebieden met handige categorieën</li>
+                        <li>Automatische berekening van lengtes, oppervlaktes en omtrek</li>
+                        <li>Emoji-iconen en duidelijke kleuren per categorie</li>
+                        <li>Meerdere basiskaarten (o.a. luchtfoto PDOK, Google, OSM)</li>
+                        <li>Import & export van GeoJSON</li>
+                        <li>Undo/redo functionaliteit</li>
+                        <li>Adreszoekfunctie voor Nederland</li>
+                    </ul>
+                    <p>Gemaakt voor festival-, markt- en evenementenorganisatoren die snel een overzichtelijke plattegrond willen maken.</p>
+                `;
+                document.getElementById('infoModal').style.display = "block";
+            };
+
+            document.getElementById('base-map-selector').onchange = (e) => setBaseMap(e.target.value);
+
+            document.getElementById('export-btn').onclick = exportData;
+            document.getElementById('import-btn').onclick = () => document.getElementById('geojson-file').click();
+            document.getElementById('geojson-file').onchange = importData;
+            document.getElementById('reset-btn').onclick = () => {
+                if (confirm("Alles wissen?")) {
+                    drawnItems.clearLayers();
+                    saveState();
+                    updateLayerList();
+                    updateLegend();
+                }
+            };
+
+            document.getElementById('undo-btn').onclick = undo;
+            document.getElementById('redo-btn').onclick = redo;
+            document.getElementById('search-btn').onclick = searchAddress;
+           
+            document.querySelector('.close').onclick = () => document.getElementById('infoModal').style.display = "none";
+            window.onclick = (event) => {
+                if (event.target == document.getElementById('infoModal')) {
+                    document.getElementById('infoModal').style.display = "none";
+                }
+            };
+        }
+
+        // --- CORE FUNCTIES ---
+        function selectObject(layer) {
+            selectedItem = layer;
+           
+            document.querySelector('[data-tab="edit"]').click();
+            document.getElementById('no-selection-msg').style.display = 'none';
+            document.getElementById('properties-form').style.display = 'block';
+           
+            const props = layer.feature.properties;
+            document.getElementById('item-naam').value = props.naam || '';
+            document.getElementById('item-beschrijving').value = props.beschrijving || '';
+           
+            const catSelect = document.getElementById('item-categorie');
+            catSelect.innerHTML = '';
+           
+            let type = 'marker';
+            if (layer instanceof L.Polygon) type = 'polygon';
+            else if (layer instanceof L.Polyline) type = 'line';
+            Object.keys(categoryConfig).forEach(key => {
+                if (categoryConfig[key].type === type) {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = `${categoryConfig[key].emoji} ${categoryConfig[key].name}`;
+                    if (props.categorie === key) opt.selected = true;
+                    catSelect.appendChild(opt);
+                }
+            });
+            updateMeasurementDisplay(layer);
+            drawnItems.eachLayer(l => { if (l.editing) l.editing.disable(); });
+            if (layer.editing) layer.editing.enable();
+           
+            updateLayerList();
+        }
+
+        function updateMeasurementDisplay(layer) {
+            const display = document.getElementById('measurement-display');
+            const m = calculateMeasurements(layer);
+            let html = '';
+           
+            if (layer instanceof L.Polygon) {
+                html = `
+                    <p><strong>Oppervlakte:</strong> ${formatNumber(m.area)} m²</p>
+                    <p><strong>Omtrek:</strong> ${formatNumber(m.perimeter)} m</p>
+                `;
+            } else if (layer instanceof L.Polyline) {
+                html = `<p><strong>Lengte:</strong> ${formatNumber(m.length)} m</p>`;
+            } else {
+                html = `<p><strong>Type:</strong> Puntlocatie</p>`;
+            }
+            display.innerHTML = html;
+        }
+
+        function showInfoModal(layer) {
+            const props = layer.feature.properties;
+            const config = categoryConfig[props.categorie] || {};
+            const m = calculateMeasurements(layer);
+           
+            document.getElementById('modal-title').textContent = props.naam;
+            let bodyHtml = `
+                <p><strong>Categorie:</strong> ${config.emoji || ''} ${config.name || 'Onbekend'}</p>
+                <p><strong>Beschrijving:</strong> ${props.beschrijving || 'Geen beschrijving beschikbaar.'}</p>
+                <hr style="margin: 15px 0;">
+                <h4>Afmetingen</h4>
+            `;
+           
+            if (layer instanceof L.Polygon) {
+                bodyHtml += `
+                    <p>Oppervlakte: ${formatNumber(m.area)} m²</p>
+                    <p>Omtrek: ${formatNumber(m.perimeter)} m</p>
+                `;
+            } else if (layer instanceof L.Polyline) {
+                bodyHtml += `<p>Lengte: ${formatNumber(m.length)} m</p>`;
+            } else {
+                const ll = layer.getLatLng();
+                bodyHtml += `<p>Coördinaten: ${ll.lat.toFixed(6)}, ${ll.lng.toFixed(6)}</p>`;
+            }
+           
+            document.getElementById('modal-body').innerHTML = bodyHtml;
+            document.getElementById('infoModal').style.display = "block";
+        }
+
+        function applyStyle(layer) {
+            const cat = layer.feature.properties.categorie;
+            const config = categoryConfig[cat] || { color: '#3388ff', emoji: '📍' };
+           
+            if (layer instanceof L.Marker) {
+                const emoji = config.emoji || '📍';
+                layer.setIcon(L.divIcon({
+                    html: `<div style="font-size: 24px; filter: drop-shadow(0 0 2px white); text-align: center;">${emoji}</div>`,
+                    className: 'custom-div-icon',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                }));
+            } else {
+                layer.setStyle({
+                    color: config.color,
+                    fillColor: config.color,
+                    weight: 4,
+                    opacity: 0.8,
+                    fillOpacity: 0.3
+                });
+            }
+            layer.bindPopup(`<strong>${layer.feature.properties.naam}</strong><br>${config.name}`);
+        }
+
+        function updateLayerList() {
+            const container = document.getElementById('layer-items');
+            container.innerHTML = '';
+           
+            drawnItems.eachLayer(layer => {
+                const props = layer.feature.properties;
+                const config = categoryConfig[props.categorie] || {};
+                const item = document.createElement('div');
+                item.className = 'layer-item';
+                item.innerHTML = `
+                    <span>${config.emoji || ''} ${props.naam}</span>
+                    <div class="layer-actions">
+                        <button class="layer-btn" onclick="zoomTo(${layer._leaflet_id})"><i class="fas fa-search"></i></button>
+                        <button class="layer-btn delete" onclick="deleteById(${layer._leaflet_id})"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function updateLegend() {
+            const content = document.getElementById('legend-content');
+            const usedCats = new Set();
+            drawnItems.eachLayer(l => { if (l.feature.properties.categorie) usedCats.add(l.feature.properties.categorie); });
+           
+            if (usedCats.size === 0) {
+                content.innerHTML = "Geen objecten";
+                return;
+            }
+            let html = '';
+            usedCats.forEach(cat => {
+                const conf = categoryConfig[cat];
+                if (conf) {
+                    html += `
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: ${conf.color}"></div>
+                            <span>${conf.emoji} ${conf.name}</span>
+                        </div>
+                    `;
+                }
+            });
+            content.innerHTML = html;
+        }
+
+        // --- UTILS ---
+        window.zoomTo = (id) => {
+            const layer = drawnItems.getLayer(id);
+            if (layer) {
+                if (layer.getBounds) map.fitBounds(layer.getBounds());
+                else map.setView(layer.getLatLng(), 18);
+                selectObject(layer);
+            }
+        };
+
+        window.deleteById = (id) => {
+            if (confirm("Verwijderen?")) {
+                drawnItems.removeLayer(id);
+                updateLayerList();
+                updateLegend();
+                saveState();
+            }
+        };
+
+        function showFeedback(msg) {
+            const el = document.getElementById('feedback');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 2000);
+        }
+
+        function saveState() {
+            history.push(JSON.stringify(drawnItems.toGeoJSON()));
+            if (history.length > 20) history.shift();
+            redoStack = [];
+        }
+
+        function undo() {
+            if (history.length <= 1) return;
+            redoStack.push(history.pop());
+            loadState(history[history.length - 1]);
+        }
+
+        function redo() {
+            if (redoStack.length === 0) return;
+            const state = redoStack.pop();
+            history.push(state);
+            loadState(state);
+        }
+
+        function loadState(jsonStr) {
+            drawnItems.clearLayers();
+            const data = JSON.parse(jsonStr);
+            L.geoJSON(data, {
+                onEachFeature: (f, l) => {
+                    l.feature = f;
+                    applyStyle(l);
+                    drawnItems.addLayer(l);
+                }
+            });
+            updateLayerList();
+            updateLegend();
+        }
+
+        function exportData() {
+            const data = drawnItems.toGeoJSON();
+            data.properties = { name: document.getElementById('event-naam').value };
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'evenement_plan.geojson';
+            a.click();
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                loadState(ev.target.result);
+                saveState();
+                showFeedback("Import succesvol!");
+            };
+            reader.readAsText(file);
+        }
+
+        async function searchAddress() {
+            const query = document.getElementById('address-search').value;
+            if (!query) return;
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=nl&viewbox=4.5,52.8,5.2,53.0&bounded=1`);
+                const data = await res.json();
+                if (data.length > 0) {
+                    map.setView([data[0].lat, data[0].lon], 16);
+                    L.marker([data[0].lat, data[0].lon]).addTo(map).bindPopup(data[0].display_name).openPopup();
+                } else {
+                    alert("Adres niet gevonden.");
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>
