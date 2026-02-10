@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buizeniveau Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #21468B;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        
+        .holland-header {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #21468B;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #AE1C28;
+        }
+        
+        .calculate-btn {
+            width: 100%;
+            background: linear-gradient(to right, #AE1C28, #21468B);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        
+        .calculate-btn:hover {
+            opacity: 0.9;
+        }
+        
+        .results {
+            display: none;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border-left: 4px solid #21468B;
+        }
+        
+        .result-item {
+            margin-bottom: 15px;
+        }
+        
+        .result-label {
+            font-weight: bold;
+            color: #21468B;
+            margin-bottom: 5px;
+        }
+        
+        .result-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #AE1C28;
+        }
+        
+        .positive {
+            color: #2E7D32;
+        }
+        
+        .negative {
+            color: #AE1C28;
+        }
+        
+        .instructions {
+            background: #FFF3E0;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .flag {
+            display: flex;
+            height: 20px;
+            width: 100px;
+            margin: 0 auto 15px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .red { background: #AE1C28; flex: 1; }
+        .white { background: white; flex: 1; }
+        .blue { background: #21468B; flex: 1; }
+        
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="flag">
+            <div class="red"></div>
+            <div class="white"></div>
+            <div class="blue"></div>
+        </div>
+        
+        <div class="holland-header">
+            🌷 📐 💧
+        </div>
+        
+        <h1>Buizeniveau Calculator</h1>
+        
+        <div class="form-group">
+            <label>Punt 1 niveau (m)</label>
+            <input type="number" id="point1" step="0.01" placeholder="Voer waarde in">
+        </div>
+        
+        <div class="form-group">
+            <label>Punt 2 niveau (m)</label>
+            <input type="number" id="point2" step="0.01" placeholder="Voer waarde in">
+        </div>
+        
+        <div class="form-group">
+            <label>Buisniveau op bord (m)</label>
+            <input type="number" id="boardLevel" step="0.01" placeholder="Positief of negatief">
+        </div>
+        
+        <button class="calculate-btn" id="calculate">
+            Bereken Buisniveau
+        </button>
+        
+        <div class="results" id="results">
+            <div class="result-item">
+                <div class="result-label">Gemiddeld niveau</div>
+                <div class="result-value" id="avgResult">0.00</div>
+            </div>
+            
+            <div class="result-item">
+                <div class="result-label">Buisniveau in profiel</div>
+                <div class="result-value" id="pipeResult">0.00</div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <p><strong>Formule:</strong></p>
+            <p>Gemiddeld = (Punt 1 + Punt 2) ÷ 2</p>
+            <p>Buisniveau = Gemiddeld - Bordwaarde</p>
+        </div>
+        
+        <footer>
+            Nauwkeurigheid: 2 decimalen 🌷
+        </footer>
+    </div>
+
+    <script>
+        document.getElementById('calculate').addEventListener('click', function() {
+            const point1 = parseFloat(document.getElementById('point1').value);
+            const point2 = parseFloat(document.getElementById('point2').value);
+            const boardLevel = parseFloat(document.getElementById('boardLevel').value);
+            
+            if (isNaN(point1) || isNaN(point2) || isNaN(boardLevel)) {
+                alert('Vul alle waarden in');
+                return;
+            }
+            
+            const avg = (point1 + point2) / 2;
+            const pipeLevel = avg - boardLevel;
+            
+            document.getElementById('avgResult').textContent = avg.toFixed(2);
+            
+            const pipeResult = document.getElementById('pipeResult');
+            pipeResult.textContent = pipeLevel.toFixed(2);
+            pipeResult.className = pipeLevel >= 0 ? 'result-value positive' : 'result-value negative';
+            
+            document.getElementById('results').style.display = 'block';
+            
+            this.textContent = 'Berekend!';
+            setTimeout(() => this.textContent = 'Bereken Buisniveau', 1500);
+        });
+        
+        window.addEventListener('load', function() {
+            document.getElementById('point1').value = '15.75';
+            document.getElementById('point2').value = '16.25';
+            document.getElementById('boardLevel').value = '-0.5';
+        });
+    </script>
+</body>
+</html>
