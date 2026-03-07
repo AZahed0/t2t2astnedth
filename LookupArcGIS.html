@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lookup ArcGIS Pro Tool - Kolom Selectie</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        pre { font-family: 'Fira Code', 'Cascadia Code', monospace; }
+        .column-selector {
+            background: linear-gradient(to right, #f8fafc, #f1f5f9);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-12">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white py-12 px-4 shadow-lg mb-8">
+        <div class="max-w-5xl mx-auto text-center">
+            <h1 class="text-4xl font-bold mb-4 flex items-center justify-center gap-3">
+                <i class="fas fa-map-marked-alt text-blue-400"></i>
+                Lookup ArcGIS Pro Tool
+            </h1>
+            <p class="text-slate-400 text-lg">Selecteer zelf welke kolommen als FID en CBS letter dienen.</p>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 space-y-8">
+        
+        <!-- Step 1 & 2: Upload and Settings -->
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Upload -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm">1</span>
+                    Bestand Uploaden
+                </h2>
+                <div id="dropZone" class="border-2 border-dashed border-slate-200 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer group">
+                    <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.csv,.txt">
+                    <label for="fileInput" class="cursor-pointer">
+                        <i class="fas fa-file-upload text-4xl text-slate-300 group-hover:text-blue-500 mb-4 block transition-colors"></i>
+                        <span class="text-slate-600 font-medium">Klik om te uploaden of sleep bestand</span>
+                        <span class="text-slate-400 text-sm block mt-1">Excel (.xlsx) of CSV</span>
+                    </label>
+                </div>
+                <div id="fileStatus" class="mt-4 hidden p-3 bg-blue-50 rounded-lg border border-blue-100 flex items-center gap-3">
+                    <i class="fas fa-check-circle text-blue-600"></i>
+                    <div class="text-sm">
+                        <p id="statusFileName" class="font-semibold text-blue-900"></p>
+                        <p id="statusDetails" class="text-blue-700"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm">2</span>
+                    Instellingen
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Code Stijl</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="styleExpanded" class="px-4 py-2 rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700 font-medium transition-all">Uitgebreid</button>
+                            <button id="styleCompact" class="px-4 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-all">Compact</button>
+                        </div>
+                    </div>
+                    <div id="csvOptions" class="hidden animate-in fade-in duration-300">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">CSV Scheidingsteken</label>
+                        <select id="delimiterSelect" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value=",">Komma (,)</option>
+                            <option value=";">Puntkomma (;)</option>
+                            <option value="\t">Tab</option>
+                            <option value="|">Pipe (|)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2.5: Column Selection -->
+        <div id="columnSelector" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hidden">
+            <div class="p-6 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm">2.5</span>
+                    Kolom Selectie
+                </h2>
+                <p class="text-sm text-slate-600 mt-1">Kies welke kolom de FID-waarden bevat en welke kolom de CBS letters bevat.</p>
+            </div>
+            <div class="p-6">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="column-selector p-4 rounded-lg border border-slate-200">
+                        <label class="block text-sm font-medium text-slate-700 mb-3">
+                            <i class="fas fa-key text-blue-600 mr-2"></i>
+                            FID Kolom (unieke identifier)
+                        </label>
+                        <select id="fidColumnSelect" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white mb-3">
+                            <option value="">-- Selecteer een kolom --</option>
+                        </select>
+                        
+                        <label class="block text-sm font-medium text-slate-700 mb-3">
+                            <i class="fas fa-database text-purple-600 mr-2"></i>
+                            FID Type
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="fidTypeInt" class="px-4 py-2 rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700 font-medium transition-all text-sm">
+                                <i class="fas fa-hashtag mr-1"></i> Integer
+                            </button>
+                            <button id="fidTypeString" class="px-4 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-all text-sm">
+                                <i class="fas fa-font mr-1"></i> String
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="column-selector p-4 rounded-lg border border-slate-200">
+                        <label class="block text-sm font-medium text-slate-700 mb-3">
+                            <i class="fas fa-font text-green-600 mr-2"></i>
+                            CBS Letter Kolom (waarde)
+                        </label>
+                        <select id="valueColumnSelect" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                            <option value="">-- Selecteer een kolom --</option>
+                        </select>
+                        
+                        <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                            <p class="text-xs text-blue-700 flex items-start gap-2">
+                                <i class="fas fa-info-circle mt-0.5"></i>
+                                <span>FID als <strong id="fidTypeDisplay">Integer</strong> wordt gebruikt. Pas aan indien nodig.</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button id="applyColumnSelection" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2">
+                        <i class="fas fa-check-circle"></i>
+                        Toepassen & Data Verwerken
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Data Preview -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm">3</span>
+                    Data Voorbeeld
+                </h2>
+                <div id="dataStats" class="text-sm text-slate-500 hidden">
+                    <span id="rowCounter" class="font-bold text-slate-700">0</span> regels gevonden
+                </div>
+            </div>
+            <div id="previewContainer" class="max-h-64 overflow-auto custom-scrollbar">
+                <div class="p-12 text-center text-slate-400 italic">
+                    Geen data geladen. Upload een bestand om een voorbeeld te zien.
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Python Output -->
+        <div class="bg-slate-900 rounded-xl shadow-2xl border border-slate-800 overflow-hidden">
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
+                <h2 class="text-white font-medium flex items-center gap-2">
+                    <i class="fas fa-code text-blue-400"></i>
+                    Generated Python Code Block
+                </h2>
+                <button id="copyBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
+                    <i class="fas fa-copy"></i> Kopieer Code
+                </button>
+            </div>
+            <div class="p-0 relative">
+                <pre id="codeOutput" class="p-6 text-blue-100 text-sm overflow-x-auto custom-scrollbar min-h-[200px] leading-relaxed select-all"># Wacht op data...</pre>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="bg-blue-50 border border-blue-100 rounded-xl p-6">
+            <h3 class="text-blue-900 font-bold mb-4 flex items-center gap-2">
+                <i class="fas fa-lightbulb"></i>
+                Gebruik in ArcGIS Pro:
+            </h3>
+            <div class="grid md:grid-cols-2 gap-8 text-sm text-blue-800">
+                <div class="space-y-2">
+                    <p><strong>1.</strong> Klik op <strong>Copy Code</strong> hierboven.</p>
+                    <p><strong>2.</strong> In Pro: Rechtsklik op je kolom &gt; <strong>Calculate Field</strong>.</p>
+                    <p><strong>3.</strong> Expressietype: <strong>Python 3</strong>.</p>
+                </div>
+                <div class="space-y-2">
+                    <p><strong>4.</strong> In <strong>Expression</strong>: <code>get_cbs(!FID!)</code> of <code>get_cbs(!OBJECTID!)</code></p>
+                    <p><strong>5.</strong> Plak de code in het vak <strong>Code Block</strong>.</p>
+                    <p><strong>6.</strong> Klik op <strong>Apply</strong>.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 text-center text-slate-400 text-xs">
+        &copy; 2025 Lookup ArcGIS Pro Tool | Geoptimaliseerd voor ArcGIS Pro Desktop
+    </footer>
+
+    <script>
+        let rawData = [];
+        let currentData = [];
+        let codeStyle = 'expanded';
+        let delimiter = ',';
+        let headers = [];
+        let fidType = 'int'; // 'int' or 'string'
+
+        const fileInput = document.getElementById('fileInput');
+        const codeOutput = document.getElementById('codeOutput');
+        const previewContainer = document.getElementById('previewContainer');
+        const csvOptions = document.getElementById('csvOptions');
+        const styleExpanded = document.getElementById('styleExpanded');
+        const styleCompact = document.getElementById('styleCompact');
+        const copyBtn = document.getElementById('copyBtn');
+        const columnSelector = document.getElementById('columnSelector');
+        const fidColumnSelect = document.getElementById('fidColumnSelect');
+        const valueColumnSelect = document.getElementById('valueColumnSelect');
+        const applyColumnSelection = document.getElementById('applyColumnSelection');
+        const fidTypeInt = document.getElementById('fidTypeInt');
+        const fidTypeString = document.getElementById('fidTypeString');
+        const fidTypeDisplay = document.getElementById('fidTypeDisplay');
+
+        // FID Type Toggle
+        fidTypeInt.addEventListener('click', () => {
+            fidType = 'int';
+            updateFidTypeUI();
+        });
+        
+        fidTypeString.addEventListener('click', () => {
+            fidType = 'string';
+            updateFidTypeUI();
+        });
+
+        function updateFidTypeUI() {
+            fidTypeInt.className = fidType === 'int' 
+                ? 'px-4 py-2 rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700 font-medium transition-all text-sm' 
+                : 'px-4 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-all text-sm';
+            
+            fidTypeString.className = fidType === 'string' 
+                ? 'px-4 py-2 rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700 font-medium transition-all text-sm' 
+                : 'px-4 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-all text-sm';
+            
+            fidTypeDisplay.textContent = fidType === 'int' ? 'Integer' : 'String';
+            
+            if (currentData.length > 0) renderOutput();
+        }
+
+        // File Selection
+        fileInput.addEventListener('change', handleFile);
+
+        // Toggle Styles
+        styleExpanded.addEventListener('click', () => {
+            codeStyle = 'expanded';
+            updateStylesUI();
+            if (currentData.length > 0) renderOutput();
+        });
+        
+        styleCompact.addEventListener('click', () => {
+            codeStyle = 'compact';
+            updateStylesUI();
+            if (currentData.length > 0) renderOutput();
+        });
+
+        document.getElementById('delimiterSelect').addEventListener('change', (e) => {
+            delimiter = e.target.value.replace('\\t', '\t');
+            if (fileInput.files.length > 0) handleFile({ target: fileInput });
+        });
+
+        // Apply column selection
+        applyColumnSelection.addEventListener('click', () => {
+            const fidCol = fidColumnSelect.value;
+            const valCol = valueColumnSelect.value;
+            
+            if (!fidCol || !valCol) {
+                alert('Selecteer zowel een FID kolom als een CBS Letter kolom');
+                return;
+            }
+
+            const fidIndex = parseInt(fidCol);
+            const valIndex = parseInt(valCol);
+
+            if (isNaN(fidIndex) || isNaN(valIndex)) return;
+
+            // Process data with selected columns
+            currentData = rawData.slice(1).map(row => {
+                // Handle both array and object rows
+                let fid = Array.isArray(row) ? row[fidIndex] : row[headers[fidIndex]];
+                let val = Array.isArray(row) ? row[valIndex] : row[headers[valIndex]];
+                
+                // Clean up values
+                if (fid !== undefined && fid !== null) {
+                    if (fidType === 'int') {
+                        // Try to convert to integer, filter out invalid
+                        const parsed = parseInt(fid);
+                        if (isNaN(parsed)) return null;
+                        fid = parsed;
+                    } else {
+                        // Use as string, remove quotes and trim
+                        fid = fid.toString().trim().replace(/^["']|["']$/g, '');
+                    }
+                } else {
+                    return null;
+                }
+                
+                val = val ? val.toString().trim().replace(/^["']|["']$/g, '') : '';
+                
+                return { fid, val };
+            }).filter(item => item !== null && (fidType === 'string' || !isNaN(item.fid)));
+
+            document.getElementById('dataStats').classList.remove('hidden');
+            document.getElementById('rowCounter').textContent = currentData.length;
+            document.getElementById('statusDetails').textContent = `${currentData.length} geldige rijen gevonden.`;
+
+            renderPreview();
+            renderOutput();
+        });
+
+        function updateStylesUI() {
+            styleExpanded.className = codeStyle === 'expanded' ? 'px-4 py-2 rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700 font-medium' : 'px-4 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-medium hover:bg-slate-50';
+            styleCompact.className = codeStyle === 'compact' ? 'px-4 py-2 rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700 font-medium' : 'px-4 py-2 rounded-lg border-2 border-slate-200 text-slate-600 font-medium hover:bg-slate-50';
+        }
+
+        async function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('fileStatus').classList.remove('hidden');
+            document.getElementById('statusFileName').textContent = file.name;
+            
+            const ext = file.name.split('.').pop().toLowerCase();
+            
+            if (ext === 'csv' || ext === 'txt') {
+                csvOptions.classList.remove('hidden');
+                readCSV(file);
+            } else {
+                csvOptions.classList.add('hidden');
+                readExcel(file);
+            }
+        }
+
+        function readCSV(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                const rows = text.split(/\r?\n/).filter(line => line.trim() !== '');
+                const data = rows.map(row => row.split(delimiter).map(c => c.trim().replace(/^["']|["']$/g, '')));
+                processRawData(data);
+            };
+            reader.readAsText(file);
+        }
+
+        function readExcel(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                processRawData(json);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processRawData(rows) {
+            if (rows.length < 2) return;
+            
+            // Store raw data
+            rawData = rows;
+            
+            // Get headers
+            headers = rows[0].map((h, idx) => h ? h.toString() : `Kolom ${idx}`);
+            
+            // Show column selector
+            columnSelector.classList.remove('hidden');
+            
+            // Populate column selects
+            fidColumnSelect.innerHTML = '<option value="">-- Selecteer een kolom --</option>';
+            valueColumnSelect.innerHTML = '<option value="">-- Selecteer een kolom --</option>';
+            
+            headers.forEach((header, index) => {
+                const option1 = document.createElement('option');
+                option1.value = index;
+                option1.textContent = `${header} (kolom ${index})`;
+                fidColumnSelect.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = index;
+                option2.textContent = `${header} (kolom ${index})`;
+                valueColumnSelect.appendChild(option2);
+            });
+            
+            // Auto-select first two columns as default
+            if (headers.length >= 2) {
+                fidColumnSelect.value = 0;
+                valueColumnSelect.value = 1;
+            }
+            
+            // Show preview of raw data
+            renderRawPreview();
+        }
+
+        function renderRawPreview() {
+            let html = `<table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50 sticky top-0 border-b border-slate-200">
+                    <tr>`;
+            
+            headers.slice(0, 5).forEach(header => {
+                html += `<th class="p-3 text-xs font-bold text-slate-500 uppercase">${header}</th>`;
+            });
+            
+            html += `</tr></thead>
+                <tbody class="divide-y divide-slate-100">`;
+            
+            rawData.slice(1, 6).forEach(row => {
+                html += '<tr class="hover:bg-blue-50/50">';
+                for (let i = 0; i < Math.min(5, row.length); i++) {
+                    html += `<td class="p-3 text-sm text-slate-600">${row[i] || ''}</td>`;
+                }
+                html += '</tr>';
+            });
+
+            html += `</tbody></table>`;
+            previewContainer.innerHTML = html;
+        }
+
+        function renderPreview() {
+            let html = `<table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50 sticky top-0 border-b border-slate-200">
+                    <tr>
+                        <th class="p-3 text-xs font-bold text-slate-500 uppercase">FID (Key) - Type: ${fidType === 'int' ? 'Integer' : 'String'}</th>
+                        <th class="p-3 text-xs font-bold text-slate-500 uppercase">Waarde (cbs_letter)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">`;
+            
+            currentData.slice(0, 50).forEach(row => {
+                html += `<tr class="hover:bg-blue-50/50">
+                    <td class="p-3 text-sm ${fidType === 'int' ? 'text-slate-600 font-mono' : 'text-purple-600 font-mono'}">${fidType === 'int' ? row.fid : '"' + row.fid + '"'}</td>
+                    <td class="p-3 text-sm text-slate-900 font-medium">${row.val}</td>
+                </tr>`;
+            });
+
+            if (currentData.length > 50) {
+                html += `<tr><td colspan="2" class="p-4 text-center text-slate-400 text-xs italic bg-slate-50">...en nog ${currentData.length - 50} rijen niet getoond in preview</td></tr>`;
+            }
+
+            html += `</tbody></table>`;
+            previewContainer.innerHTML = html;
+        }
+
+        function renderOutput() {
+            if (currentData.length === 0) return;
+
+            let py = `# ArcGIS Pro Lookup Table Calculator\n`;
+            py += `# Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`;
+            py += `# FID Type: ${fidType === 'int' ? 'Integer' : 'String'}\n\n`;
+            py += `def get_cbs(fid):\n`;
+            py += `    # Dictionary mapping unique FIDs to letters\n`;
+            py += `    lookup = {\n`;
+
+            if (codeStyle === 'expanded') {
+                currentData.forEach((row, i) => {
+                    const comma = i === currentData.length - 1 ? "" : ",";
+                    if (fidType === 'int') {
+                        py += `        ${row.fid}: "${row.val}"${comma}\n`;
+                    } else {
+                        py += `        "${row.fid}": "${row.val}"${comma}\n`;
+                    }
+                });
+            } else {
+                // Compact logic (5 per line)
+                for (let i = 0; i < currentData.length; i += 5) {
+                    const chunk = currentData.slice(i, i + 5);
+                    let line;
+                    if (fidType === 'int') {
+                        line = chunk.map(row => `${row.fid}: "${row.val}"`).join(", ");
+                    } else {
+                        line = chunk.map(row => `"${row.fid}": "${row.val}"`).join(", ");
+                    }
+                    const comma = (i + 5 >= currentData.length) ? "" : ",";
+                    py += `        ${line}${comma}\n`;
+                }
+            }
+
+            py += `    }\n\n`;
+            py += `    # .get() avoids errors if FID is missing\n`;
+            py += `    return lookup.get(fid, None)`;
+
+            codeOutput.textContent = py;
+        }
+
+        copyBtn.addEventListener('click', () => {
+            const text = codeOutput.textContent;
+            const tempInput = document.createElement("textarea");
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = `<i class="fas fa-check"></i> Gekopieerd!`;
+            copyBtn.classList.replace('bg-blue-600', 'bg-emerald-600');
+            
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+                copyBtn.classList.replace('bg-emerald-600', 'bg-blue-600');
+            }, 2000);
+        });
+
+        // Drag and Drop
+        const dropZone = document.getElementById('dropZone');
+        dropZone.addEventListener('dragover', (e) => { 
+            e.preventDefault(); 
+            dropZone.classList.add('border-blue-400', 'bg-blue-50'); 
+        });
+        
+        dropZone.addEventListener('dragleave', () => { 
+            dropZone.classList.remove('border-blue-400', 'bg-blue-50'); 
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFile({ target: fileInput });
+            }
+        });
+    </script>
+</body>
+</html>
