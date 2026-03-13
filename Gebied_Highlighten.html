@@ -29,7 +29,7 @@
         width: 100%;
         margin: 0;
         padding: 0;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         background-color: #f0f0f0;
       }
 
@@ -129,7 +129,6 @@
         background-color: #fecaca;
       }
 
-      /* Preview container */
       .preview-container {
         margin-top: 16px;
         padding: 16px;
@@ -271,9 +270,6 @@
           top: auto !important;
           bottom: 20px !important;
         }
-        .action-buttons {
-          flex-direction: column;
-        }
       }
     </style>
 
@@ -289,7 +285,7 @@
           <i data-lucide="map-pin"></i>
           <h1>Den Helder</h1>
         </div>
-        <p>Teken een gebied om het te isoleren. Klik op 'Maak screenshot' voor een voorbeeld en downloadopties.</p>
+        <p>Teken een gebied om het te isoleren. Klik op 'Maak screenshot' voor een voorbeeld en exportopties.</p>
         
         <div class="button-group">
           <button id="drawToggleBtn">
@@ -306,35 +302,24 @@
           </button>
         </div>
 
-        <!-- Preview container met directe downloadopties -->
         <div id="previewContainer" class="preview-container">
           <div class="preview-label">
             <i data-lucide="image" size="16"></i>
             <span>Voorbeeld van screenshot</span>
           </div>
           
-          <div class="preview-image" id="previewImage">
-            <!-- Hier komt de img tag -->
-          </div>
+          <div class="preview-image" id="previewImage"></div>
           
           <div class="action-buttons">
-            <button id="downloadBtn" class="small">
-              <i data-lucide="download" size="14"></i>
-              Download
-            </button>
             <button id="openNewTabBtn" class="small">
               <i data-lucide="external-link" size="14"></i>
               Open in tab
-            </button>
-            <button id="copyImageBtn" class="small">
-              <i data-lucide="copy" size="14"></i>
-              Kopieer
             </button>
           </div>
           
           <div class="link-hint">
             <i data-lucide="info" size="14"></i>
-            <span>Klik op "Open in tab" voor de volledige afbeelding, of "Download" om direct op te slaan.</span>
+            <span>Klik op "Open in tab" om de afbeelding op ware grootte te bekijken of op te slaan.</span>
           </div>
         </div>
       </div>
@@ -414,9 +399,7 @@
       const resetBtn = document.getElementById("resetBtn");
       const previewContainer = document.getElementById("previewContainer");
       const previewImage = document.getElementById("previewImage");
-      const downloadBtn = document.getElementById("downloadBtn");
       const openNewTabBtn = document.getElementById("openNewTabBtn");
-      const copyImageBtn = document.getElementById("copyImageBtn");
       const notification = document.getElementById("notification");
       const notificationText = document.getElementById("notificationText");
 
@@ -440,7 +423,6 @@
         lucide.createIcons();
       });
 
-      // Maak screenshot functie
       screenshotBtn.addEventListener("click", async () => {
         screenshotBtn.disabled = true;
         const originalContent = screenshotBtn.innerHTML;
@@ -449,9 +431,6 @@
 
         try {
           await view.when();
-          await new Promise(resolve => setTimeout(resolve, 100));
-
-          // Neem screenshot met maximale kwaliteit
           const screenshot = await view.takeScreenshot({ 
             format: "png", 
             quality: 100,
@@ -460,15 +439,9 @@
           });
           
           currentScreenshotDataUrl = screenshot.dataUrl;
-          
-          // Toon voorbeeld
           previewImage.innerHTML = `<img src="${screenshot.dataUrl}" alt="Screenshot voorbeeld">`;
           previewContainer.classList.add('show');
-          
-          // Update icons
-          lucide.createIcons();
-          
-          showNotification("✅ Screenshot gemaakt! Kies een optie hieronder.");
+          showNotification("✅ Screenshot gemaakt!");
         } catch (err) {
           showNotification("❌ Fout bij maken screenshot.");
           console.error(err);
@@ -479,31 +452,12 @@
         lucide.createIcons();
       });
 
-      // Download knop - directe download
-      downloadBtn.addEventListener("click", () => {
-        if (!currentScreenshotDataUrl) {
-          showNotification("⚠️ Maak eerst een screenshot");
-          return;
-        }
-        
-        const link = document.createElement("a");
-        link.href = currentScreenshotDataUrl;
-        link.download = `den-helder-${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showNotification("📸 Download gestart!");
-      });
-
-      // Open in nieuw tabblad - dit werkt ALTIJD
       openNewTabBtn.addEventListener("click", () => {
         if (!currentScreenshotDataUrl) {
           showNotification("⚠️ Maak eerst een screenshot");
           return;
         }
 
-        // Maak een complete HTML pagina met de afbeelding
         const htmlContent = `
           <!DOCTYPE html>
           <html>
@@ -563,42 +517,13 @@
           </html>
         `;
 
-        // Open nieuw tabblad met de volledige HTML
         const newTab = window.open();
         if (newTab) {
           newTab.document.write(htmlContent);
           newTab.document.close();
           showNotification("✨ Screenshot geopend in nieuw tabblad!");
         } else {
-          // Fallback als pop-up wordt geblokkeerd
-          showNotification("⚠️ Sta pop-ups toe of gebruik Download");
-        }
-      });
-
-      // Kopieer afbeelding naar klembord
-      copyImageBtn.addEventListener("click", async () => {
-        if (!currentScreenshotDataUrl) {
-          showNotification("⚠️ Maak eerst een screenshot");
-          return;
-        }
-
-        try {
-          // Converteer data URL naar blob
-          const response = await fetch(currentScreenshotDataUrl);
-          const blob = await response.blob();
-          
-          // Kopieer naar klembord
-          await navigator.clipboard.write([
-            new ClipboardItem({
-              [blob.type]: blob
-            })
-          ]);
-          
-          showNotification("📋 Afbeelding gekopieerd naar klembord!");
-        } catch (err) {
-          // Fallback: kopieer de link
-          await navigator.clipboard.writeText(currentScreenshotDataUrl);
-          showNotification("📋 Link gekopieerd (afbeelding kopiëren niet ondersteund)");
+          showNotification("⚠️ Sta pop-ups toe");
         }
       });
 
