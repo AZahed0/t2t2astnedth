@@ -108,13 +108,29 @@
         background: #ff6a00;
       }
 
-      /* Export button styling */
-      #export-pdf-btn {
+      /* Export buttons */
+      .export-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      
+      #export-pdf-btn, #export-png-btn {
+        flex: 1;
         background: #28a745;
+        margin: 0;
+      }
+      
+      #export-png-btn {
+        background: #17a2b8;
       }
       
       #export-pdf-btn:hover {
         background: #218838;
+      }
+      
+      #export-png-btn:hover {
+        background: #138496;
       }
 
       /* Color picker styling */
@@ -307,6 +323,10 @@
           margin-bottom: 12px;
         }
         
+        .export-buttons {
+          flex-direction: column;
+        }
+        
         .color-picker-group label {
           font-size: 16px;
         }
@@ -399,9 +419,14 @@
 
         <div id="exportToolsContent">
           <h3>Exporteren</h3>
-          <button id="export-pdf-btn" class="action-button" aria-label="Exporteer naar PDF">
-            📄 Exporteer naar PDF
-          </button>
+          <div class="export-buttons">
+            <button id="export-pdf-btn" class="action-button" aria-label="Exporteer naar PDF">
+              📄 PDF
+            </button>
+            <button id="export-png-btn" class="action-button" aria-label="Exporteer naar PNG">
+              🖼️ PNG
+            </button>
+          </div>
         </div>
 
         <div id="colorCustomizationContent">
@@ -433,8 +458,6 @@
         "esri/widgets/LayerList",
         "esri/Basemap",
         "esri/geometry/Extent",
-        "esri/geometry/support/webMercatorUtils",
-        "esri/geometry/SpatialReference"
       ], (
         Map,
         MapView,
@@ -444,9 +467,7 @@
         Graphic,
         LayerList,
         Basemap,
-        Extent,
-        webMercatorUtils,
-        SpatialReference
+        Extent
       ) => {
         // --- State Variables ---
         let selectedFeatures = []; // Array of {feature, categoryId}
@@ -642,37 +663,31 @@
           updateLegend();
         }
 
-        // --- PDF Export Function ---
+        // --- Export Functions ---
         async function exportToPDF(view, categories, selectedFeatures) {
           try {
             const exportBtn = document.getElementById("export-pdf-btn");
             const originalText = exportBtn.innerHTML;
-            exportBtn.innerHTML = '<span class="loading"></span> PDF wordt gemaakt...';
+            exportBtn.innerHTML = '<span class="loading"></span> Bezig...';
             exportBtn.disabled = true;
 
-            // Get current view extent
-            const extent = view.extent;
+            // Get default color
+            const defaultColor = document.getElementById("defaultColorPicker").value;
             
-            // Create legend HTML
+            // Create title with date
+            const date = new Date().toLocaleDateString('nl-NL');
+            
+            // Create legend HTML (alleen categorieën, geen wijknamen)
             const legendHtml = categories.map(cat => {
               const count = selectedFeatures.filter(f => f.categoryId === cat.id).length;
               return `
-                <div style="display: flex; align-items: center; margin: 5px 0;">
-                  <div style="width: 20px; height: 20px; background-color: ${cat.color}; margin-right: 10px; border: 1px solid #000;"></div>
-                  <span style="flex: 1;">${cat.name}</span>
-                  <span style="background-color: #0079c1; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px;">${count}</span>
+                <div style="display: flex; align-items: center; margin: 8px 0; padding: 5px; background: #f9f9f9; border-radius: 6px;">
+                  <div style="width: 25px; height: 25px; background-color: ${cat.color}; margin-right: 15px; border: 2px solid #333; border-radius: 4px;"></div>
+                  <div style="flex: 1; font-size: 14px;"><strong>${cat.name}</strong></div>
+                  <div style="background: #0079c1; color: white; padding: 3px 10px; border-radius: 12px; font-size: 12px;">${count}</div>
                 </div>
               `;
             }).join('');
-
-            // Create title with date
-            const date = new Date().toLocaleDateString('nl-NL');
-            const title = `
-              <div style="margin-bottom: 20px;">
-                <h2 style="color: #0079c1; margin: 0;">Den Helder - Wijkenoverzicht</h2>
-                <p style="color: #666; margin: 5px 0 0 0;">Gemaakt op: ${date}</p>
-              </div>
-            `;
 
             // Create complete HTML for PDF
             const pdfContent = `
@@ -680,64 +695,99 @@
               <html>
               <head>
                 <meta charset="UTF-8">
-                <title>Den Helder Wijken Export</title>
+                <title>Den Helder Wijken - Kaartexport</title>
                 <style>
-                  body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: white; }
-                  .container { max-width: 1000px; margin: 0 auto; }
-                  .header { margin-bottom: 20px; }
-                  .map-container { margin: 20px 0; }
-                  .legend-section { 
-                    margin-top: 20px; 
-                    padding: 15px; 
-                    background: #f5f5f5; 
-                    border-radius: 8px;
-                  }
-                  .legend-section h3 { margin-top: 0; color: #333; }
-                  .stats {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 10px;
-                    margin: 20px 0;
-                  }
-                  .stat-card {
+                  body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 0; 
+                    padding: 20px; 
                     background: white;
-                    padding: 10px;
-                    border-radius: 6px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                  }
+                  .container { 
+                    max-width: 1000px; 
+                    margin: 0 auto; 
+                  }
+                  .header { 
+                    text-align: center;
+                    margin-bottom: 20px;
+                    padding-bottom: 10px;
+                    border-bottom: 2px solid #0079c1;
+                  }
+                  .header h1 {
+                    color: #0079c1;
+                    margin: 0;
+                    font-size: 24px;
+                  }
+                  .header p {
+                    color: #666;
+                    margin: 5px 0 0 0;
+                  }
+                  .map-container { 
+                    text-align: center;
+                    margin: 20px 0;
+                    page-break-inside: avoid;
+                  }
+                  .map-container img {
+                    max-width: 100%;
+                    max-height: 500px;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                  }
+                  .legend-container { 
+                    margin: 30px auto;
+                    padding: 20px;
+                    max-width: 400px;
+                    background: #f8f9fa;
+                    border-radius: 12px;
+                    border: 1px solid #dee2e6;
+                    page-break-inside: avoid;
+                  }
+                  .legend-container h2 {
+                    margin-top: 0;
+                    color: #333;
+                    text-align: center;
+                    font-size: 18px;
+                    border-bottom: 1px solid #dee2e6;
+                    padding-bottom: 10px;
+                  }
+                  .default-color {
+                    margin-top: 15px;
+                    padding-top: 10px;
+                    border-top: 1px dashed #aaa;
+                    text-align: center;
+                    color: #666;
+                    font-size: 13px;
                   }
                   .footer { 
-                    margin-top: 20px; 
                     text-align: center; 
                     color: #666; 
-                    font-size: 12px;
-                    border-top: 1px solid #ddd;
+                    font-size: 11px;
+                    margin-top: 30px;
                     padding-top: 10px;
+                    border-top: 1px solid #dee2e6;
                   }
                 </style>
               </head>
               <body>
                 <div class="container">
-                  ${title}
-                  
-                  <div class="stats">
-                    <div class="stat-card">
-                      <strong>Totaal wijken:</strong> ${selectedFeatures.length}
-                    </div>
-                    <div class="stat-card">
-                      <strong>Categorieën:</strong> ${categories.length}
-                    </div>
-                    <div class="stat-card">
-                      <strong>Extent:</strong> ${extent.xmin.toFixed(4)}, ${extent.ymin.toFixed(4)} - ${extent.xmax.toFixed(4)}, ${extent.ymax.toFixed(4)}
-                    </div>
+                  <div class="header">
+                    <h1>Den Helder - Wijkenkaart</h1>
+                    <p>Gemaakt op: ${date} | Totaal geselecteerd: ${selectedFeatures.length} wijken</p>
                   </div>
                   
                   <div class="map-container">
-                    <img src="${await getMapImage(view)}" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;" />
+                    <img src="${await getMapImage(view)}" alt="Kaart van Den Helder met geselecteerde wijken" />
                   </div>
                   
-                  <div class="legend-section">
-                    <h3>Legenda</h3>
+                  <div class="legend-container">
+                    <h2>Legenda</h2>
                     ${legendHtml}
+                    <div class="default-color">
+                      <strong>Standaard kleur:</strong> 
+                      <span style="display: inline-block; width: 20px; height: 20px; background-color: ${defaultColor}; margin: 0 5px; border: 1px solid #333; border-radius: 3px; vertical-align: middle;"></span>
+                      ${defaultColor}
+                    </div>
                   </div>
                   
                   <div class="footer">
@@ -748,7 +798,23 @@
               </html>
             `;
 
-            // Create a blob and download as PDF
+            // Helper function to get map image
+            async function getMapImage(view) {
+              try {
+                const screenshot = await view.takeScreenshot({
+                  format: "png",
+                  quality: 100,
+                  width: 1024,
+                  height: 768
+                });
+                return screenshot.dataUrl;
+              } catch (error) {
+                console.error('Screenshot error:', error);
+                return '';
+              }
+            }
+
+            // Create a blob and download as HTML
             const blob = new Blob([pdfContent], { type: 'text/html' });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -766,7 +832,7 @@
               printWindow.document.close();
               printWindow.focus();
               setTimeout(() => {
-                if (confirm('Wil je deze pagina printen naar PDF? Klik OK om de print dialoog te openen.')) {
+                if (confirm('Wil je deze pagina printen naar PDF?')) {
                   printWindow.print();
                 }
               }, 1000);
@@ -777,26 +843,155 @@
             
           } catch (error) {
             console.error('PDF export error:', error);
-            alert('Er is een fout opgetreden bij het maken van de PDF: ' + error.message);
+            alert('Fout bij maken PDF: ' + error.message);
             const exportBtn = document.getElementById("export-pdf-btn");
-            exportBtn.innerHTML = '📄 Exporteer naar PDF';
+            exportBtn.innerHTML = '📄 PDF';
             exportBtn.disabled = false;
           }
         }
 
-        // Helper function to get map image
-        async function getMapImage(view) {
+        async function exportToPNG(view, categories, selectedFeatures) {
           try {
+            const exportBtn = document.getElementById("export-png-btn");
+            const originalText = exportBtn.innerHTML;
+            exportBtn.innerHTML = '<span class="loading"></span> Bezig...';
+            exportBtn.disabled = true;
+
+            // Take screenshot of the view
             const screenshot = await view.takeScreenshot({
               format: "png",
               quality: 100,
-              width: 800,
-              height: 600
+              width: 1200,
+              height: 900
             });
-            return screenshot.dataUrl;
+
+            // Get default color
+            const defaultColor = document.getElementById("defaultColorPicker").value;
+
+            // Create a new window with the image and legend
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+              const date = new Date().toLocaleDateString('nl-NL');
+              
+              // Create legend HTML for PNG
+              const legendHtml = categories.map(cat => {
+                const count = selectedFeatures.filter(f => f.categoryId === cat.id).length;
+                return `
+                  <div style="display: flex; align-items: center; margin: 5px 0;">
+                    <div style="width: 20px; height: 20px; background-color: ${cat.color}; margin-right: 10px; border: 1px solid #000;"></div>
+                    <span style="flex: 1;">${cat.name}</span>
+                    <span style="background: #0079c1; color: white; padding: 2px 8px; border-radius: 10px;">${count}</span>
+                  </div>
+                `;
+              }).join('');
+
+              printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <title>Den Helder Wijken - PNG Export</title>
+                  <style>
+                    body { 
+                      background: #f0f0f0; 
+                      display: flex; 
+                      flex-direction: column;
+                      align-items: center; 
+                      padding: 20px;
+                      font-family: Arial, sans-serif;
+                    }
+                    .card {
+                      background: white;
+                      padding: 20px;
+                      border-radius: 12px;
+                      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                      max-width: 1200px;
+                    }
+                    img { 
+                      max-width: 100%;
+                      border-radius: 8px;
+                      border: 2px solid #ddd;
+                    }
+                    .legend {
+                      margin-top: 20px;
+                      padding: 15px;
+                      background: #f8f9fa;
+                      border-radius: 8px;
+                      border: 1px solid #dee2e6;
+                    }
+                    .legend h2 {
+                      margin-top: 0;
+                      color: #0079c1;
+                      font-size: 18px;
+                      border-bottom: 1px solid #dee2e6;
+                      padding-bottom: 8px;
+                    }
+                    .default-color {
+                      margin-top: 10px;
+                      padding-top: 8px;
+                      border-top: 1px dashed #aaa;
+                      font-size: 13px;
+                      color: #666;
+                    }
+                    .instructions {
+                      margin-top: 20px;
+                      padding: 15px;
+                      background: #e8f4fd;
+                      border-radius: 8px;
+                      color: #005a87;
+                      font-size: 14px;
+                    }
+                    .button {
+                      background: #0079c1;
+                      color: white;
+                      border: none;
+                      padding: 10px 20px;
+                      border-radius: 6px;
+                      cursor: pointer;
+                      font-size: 14px;
+                      margin: 5px;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <div class="card">
+                    <h2 style="text-align: center; color: #0079c1;">Den Helder - Wijkenkaart (${date})</h2>
+                    <img src="${screenshot.dataUrl}" alt="Den Helder wijken kaart" />
+                    
+                    <div class="legend">
+                      <h2>📊 Legenda</h2>
+                      ${legendHtml}
+                      <div class="default-color">
+                        <strong>Standaard kleur:</strong> 
+                        <span style="display: inline-block; width: 16px; height: 16px; background-color: ${defaultColor}; margin: 0 5px; border: 1px solid #333; border-radius: 3px;"></span>
+                        ${defaultColor}
+                      </div>
+                    </div>
+                    
+                    <div class="instructions">
+                      <strong>💾 Afbeelding opslaan:</strong><br><br>
+                      1. Klik met <strong>rechtermuisknop</strong> op de kaart hierboven<br>
+                      2. Kies <strong>"Afbeelding opslaan als..."</strong><br>
+                      3. Sla op als PNG bestand<br><br>
+                      <button class="button" onclick="window.print()">🖨️ Print / PDF</button>
+                      <button class="button" onclick="window.close()">❌ Sluiten</button>
+                    </div>
+                  </div>
+                </body>
+                </html>
+              `);
+              printWindow.document.close();
+              printWindow.focus();
+            }
+
+            exportBtn.innerHTML = originalText;
+            exportBtn.disabled = false;
+            
           } catch (error) {
-            console.error('Screenshot error:', error);
-            return '';
+            console.error('PNG export error:', error);
+            alert('Fout bij maken PNG: ' + error.message);
+            const exportBtn = document.getElementById("export-png-btn");
+            exportBtn.innerHTML = '🖼️ PNG';
+            exportBtn.disabled = false;
           }
         }
 
@@ -943,6 +1138,7 @@
           const selectButton = document.getElementById("select-button");
           const clearButton = document.getElementById("clear-button");
           const exportPdfBtn = document.getElementById("export-pdf-btn");
+          const exportPngBtn = document.getElementById("export-png-btn");
           const defaultColorPicker = document.getElementById("defaultColorPicker");
           const activeCategorySelect = document.getElementById("activeCategorySelect");
           const addCategoryBtn = document.getElementById("addCategoryBtn");
@@ -967,9 +1163,14 @@
             }
           });
 
-          // PDF Export event listener
+          // PDF Export
           exportPdfBtn.addEventListener("click", () => {
             exportToPDF(view, categories, selectedFeatures);
+          });
+
+          // PNG Export
+          exportPngBtn.addEventListener("click", () => {
+            exportToPNG(view, categories, selectedFeatures);
           });
 
           activeCategorySelect.addEventListener("change", (e) => {
