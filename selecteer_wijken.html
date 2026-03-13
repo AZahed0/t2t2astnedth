@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
-  <head>
+ <head>
     <meta charset="utf-8" />
     <title>Den Helder Wijken</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -107,7 +107,16 @@
       .action-button.active {
         background: #ff6a00;
       }
+
+      /* Export button styling */
+      #export-pdf-btn {
+        background: #28a745;
+      }
       
+      #export-pdf-btn:hover {
+        background: #218838;
+      }
+
       /* Color picker styling */
       .color-picker-group {
         display: flex;
@@ -246,7 +255,8 @@
       #sidebar.collapsed #colorCustomizationContent,
       #sidebar.collapsed #categoryManagementContent,
       #sidebar.collapsed #legendContent,
-      #sidebar.collapsed #layerListContainer {
+      #sidebar.collapsed #layerListContainer,
+      #sidebar.collapsed #exportToolsContent {
         max-height: 0;
         opacity: 0;
         margin-bottom: 0;
@@ -387,6 +397,13 @@
           </div>
         </div>
 
+        <div id="exportToolsContent">
+          <h3>Exporteren</h3>
+          <button id="export-pdf-btn" class="action-button" aria-label="Exporteer naar PDF">
+            📄 Exporteer naar PDF
+          </button>
+        </div>
+
         <div id="colorCustomizationContent">
           <h3>Kleuren aanpassen</h3>
           <div class="color-picker-group">
@@ -416,6 +433,8 @@
         "esri/widgets/LayerList",
         "esri/Basemap",
         "esri/geometry/Extent",
+        "esri/geometry/support/webMercatorUtils",
+        "esri/geometry/SpatialReference"
       ], (
         Map,
         MapView,
@@ -425,7 +444,9 @@
         Graphic,
         LayerList,
         Basemap,
-        Extent
+        Extent,
+        webMercatorUtils,
+        SpatialReference
       ) => {
         // --- State Variables ---
         let selectedFeatures = []; // Array of {feature, categoryId}
@@ -621,6 +642,164 @@
           updateLegend();
         }
 
+        // --- PDF Export Function ---
+        async function exportToPDF(view, categories, selectedFeatures) {
+          try {
+            const exportBtn = document.getElementById("export-pdf-btn");
+            const originalText = exportBtn.innerHTML;
+            exportBtn.innerHTML = '<span class="loading"></span> PDF wordt gemaakt...';
+            exportBtn.disabled = true;
+
+            // Get current view extent
+            const extent = view.extent;
+            
+            // Create legend HTML
+            const legendHtml = categories.map(cat => {
+              const count = selectedFeatures.filter(f => f.categoryId === cat.id).length;
+              return `
+                <div style="display: flex; align-items: center; margin: 5px 0;">
+                  <div style="width: 20px; height: 20px; background-color: ${cat.color}; margin-right: 10px; border: 1px solid #000;"></div>
+                  <span style="flex: 1;">${cat.name}</span>
+                  <span style="background-color: #0079c1; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px;">${count}</span>
+                </div>
+              `;
+            }).join('');
+
+            // Create title with date
+            const date = new Date().toLocaleDateString('nl-NL');
+            const title = `
+              <div style="margin-bottom: 20px;">
+                <h2 style="color: #0079c1; margin: 0;">Den Helder - Wijkenoverzicht</h2>
+                <p style="color: #666; margin: 5px 0 0 0;">Gemaakt op: ${date}</p>
+              </div>
+            `;
+
+            // Create complete HTML for PDF
+            const pdfContent = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="UTF-8">
+                <title>Den Helder Wijken Export</title>
+                <style>
+                  body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: white; }
+                  .container { max-width: 1000px; margin: 0 auto; }
+                  .header { margin-bottom: 20px; }
+                  .map-container { margin: 20px 0; }
+                  .legend-section { 
+                    margin-top: 20px; 
+                    padding: 15px; 
+                    background: #f5f5f5; 
+                    border-radius: 8px;
+                  }
+                  .legend-section h3 { margin-top: 0; color: #333; }
+                  .stats {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 10px;
+                    margin: 20px 0;
+                  }
+                  .stat-card {
+                    background: white;
+                    padding: 10px;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                  }
+                  .footer { 
+                    margin-top: 20px; 
+                    text-align: center; 
+                    color: #666; 
+                    font-size: 12px;
+                    border-top: 1px solid #ddd;
+                    padding-top: 10px;
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  ${title}
+                  
+                  <div class="stats">
+                    <div class="stat-card">
+                      <strong>Totaal wijken:</strong> ${selectedFeatures.length}
+                    </div>
+                    <div class="stat-card">
+                      <strong>Categorieën:</strong> ${categories.length}
+                    </div>
+                    <div class="stat-card">
+                      <strong>Extent:</strong> ${extent.xmin.toFixed(4)}, ${extent.ymin.toFixed(4)} - ${extent.xmax.toFixed(4)}, ${extent.ymax.toFixed(4)}
+                    </div>
+                  </div>
+                  
+                  <div class="map-container">
+                    <img src="${await getMapImage(view)}" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;" />
+                  </div>
+                  
+                  <div class="legend-section">
+                    <h3>Legenda</h3>
+                    ${legendHtml}
+                  </div>
+                  
+                  <div class="footer">
+                    <p>Gegenereerd met ArcGIS API for JavaScript | © Den Helder Wijken Applicatie</p>
+                  </div>
+                </div>
+              </body>
+              </html>
+            `;
+
+            // Create a blob and download as PDF
+            const blob = new Blob([pdfContent], { type: 'text/html' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `den-helder-wijken-${date.replace(/[/]/g, '-')}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            // Also offer PDF print option
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+              printWindow.document.write(pdfContent);
+              printWindow.document.close();
+              printWindow.focus();
+              setTimeout(() => {
+                if (confirm('Wil je deze pagina printen naar PDF? Klik OK om de print dialoog te openen.')) {
+                  printWindow.print();
+                }
+              }, 1000);
+            }
+
+            exportBtn.innerHTML = originalText;
+            exportBtn.disabled = false;
+            
+          } catch (error) {
+            console.error('PDF export error:', error);
+            alert('Er is een fout opgetreden bij het maken van de PDF: ' + error.message);
+            const exportBtn = document.getElementById("export-pdf-btn");
+            exportBtn.innerHTML = '📄 Exporteer naar PDF';
+            exportBtn.disabled = false;
+          }
+        }
+
+        // Helper function to get map image
+        async function getMapImage(view) {
+          try {
+            const screenshot = await view.takeScreenshot({
+              format: "png",
+              quality: 100,
+              width: 800,
+              height: 600
+            });
+            return screenshot.dataUrl;
+          } catch (error) {
+            console.error('Screenshot error:', error);
+            return '';
+          }
+        }
+
         // --- Initialize Layers ---
         function initializeLayers() {
           // Layer for Den Helder districts (wijken) with labels
@@ -763,6 +942,7 @@
         function initializeEvents(view, layers) {
           const selectButton = document.getElementById("select-button");
           const clearButton = document.getElementById("clear-button");
+          const exportPdfBtn = document.getElementById("export-pdf-btn");
           const defaultColorPicker = document.getElementById("defaultColorPicker");
           const activeCategorySelect = document.getElementById("activeCategorySelect");
           const addCategoryBtn = document.getElementById("addCategoryBtn");
@@ -785,6 +965,11 @@
               collapseToggle.textContent = "❮ Inklappen";
               collapseToggle.setAttribute("aria-expanded", "true");
             }
+          });
+
+          // PDF Export event listener
+          exportPdfBtn.addEventListener("click", () => {
+            exportToPDF(view, categories, selectedFeatures);
           });
 
           activeCategorySelect.addEventListener("change", (e) => {
