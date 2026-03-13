@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="nl">
   <head>
@@ -146,7 +145,7 @@
 
       /* ArcGIS Widget Overrides */
       .esri-ui-top-left {
-        left: 350px !important; /* Move default widgets away from our panel */
+        left: 350px !important; 
         top: 20px !important;
       }
 
@@ -156,7 +155,7 @@
         overflow: hidden;
       }
 
-      /* Custom Toast/Notification */
+      /* Notification Toast */
       #notification {
         position: fixed;
         bottom: 30px;
@@ -173,10 +172,20 @@
         display: flex;
         align-items: center;
         gap: 8px;
+        text-align: center;
       }
 
       #notification.show {
         transform: translateX(-50%) translateY(0);
+      }
+
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
       }
 
       @media (max-width: 480px) {
@@ -203,7 +212,7 @@
           <i data-lucide="map-pin"></i>
           <h1>Den Helder</h1>
         </div>
-        <p>Selecteer een gebied met de tekenhulpmiddelen om het te highlighten. De omgeving wordt vervaagd voor een duidelijke focus.</p>
+        <p>Teken een gebied om het te isoleren. Klik daarna op 'Screenshot openen' om de afbeelding in een nieuw venster te bekijken en op te slaan.</p>
         
         <div class="button-group">
           <button id="drawToggleBtn">
@@ -211,8 +220,8 @@
             <span>Verberg Tekenhulp</span>
           </button>
           <button id="screenshotBtn" class="secondary">
-            <i data-lucide="camera"></i>
-            <span>Screenshot maken</span>
+            <i data-lucide="external-link"></i>
+            <span>Screenshot openen</span>
           </button>
           <button id="resetBtn" class="danger">
             <i data-lucide="trash-2"></i>
@@ -223,8 +232,8 @@
     </div>
 
     <div id="notification">
-      <i data-lucide="check-circle-2" size="18"></i>
-      <span id="notificationText">Screenshot opgeslagen!</span>
+      <i id="notifIcon" data-lucide="check-circle-2" size="18"></i>
+      <span id="notificationText">Klaar!</span>
     </div>
 
     <script type="module">
@@ -238,7 +247,6 @@
           "@arcgis/core/widgets/Sketch.js",
         ]);
 
-      // Initialize Lucide icons
       lucide.createIcons();
 
       const worldImagery = new TileLayer({
@@ -274,11 +282,10 @@
         center: [4.75, 52.95],
         popup: null,
         ui: {
-          components: ["attribution"] // Clean UI, only attribution
+          components: ["attribution"]
         }
       });
 
-      // Sketch widget
       const sketch = new Sketch({
         view: view,
         layer: graphicsLayer,
@@ -291,7 +298,6 @@
       });
       view.ui.add(sketch, "top-left");
 
-      // UI Elements
       const drawToggleBtn = document.getElementById("drawToggleBtn");
       const screenshotBtn = document.getElementById("screenshotBtn");
       const resetBtn = document.getElementById("resetBtn");
@@ -300,7 +306,7 @@
 
       let drawingActive = true;
 
-      function showNotification(message, duration = 3000) {
+      function showNotification(message, duration = 4000) {
         notificationText.textContent = message;
         notification.classList.add("show");
         setTimeout(() => {
@@ -317,19 +323,43 @@
         lucide.createIcons();
       });
 
+      // Aangepaste screenshot functie voor Experience Builder
       screenshotBtn.addEventListener("click", async () => {
         screenshotBtn.disabled = true;
         const originalContent = screenshotBtn.innerHTML;
-        screenshotBtn.innerHTML = `<i data-lucide="loader" class="animate-spin"></i><span>Verwerken...</span>`;
+        screenshotBtn.innerHTML = `<i data-lucide="loader" class="animate-spin"></i><span>Laden...</span>`;
         lucide.createIcons();
 
         try {
-          const screenshot = await view.takeScreenshot({ format: "png" });
-          const link = document.createElement("a");
-          link.href = screenshot.dataUrl;
-          link.download = `den-helder-highlight-${new Date().toISOString().slice(0,10)}.png`;
-          link.click();
-          showNotification("Screenshot succesvol opgeslagen!");
+          const screenshot = await view.takeScreenshot({ format: "png", quality: 100 });
+          
+          // Open nieuw tabblad met de data URL
+          const newWindow = window.open();
+          if (newWindow) {
+            newWindow.document.write(`
+              <html>
+                <head>
+                  <title>Den Helder Export</title>
+                  <style>
+                    body { margin: 0; background: #333; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: sans-serif; }
+                    img { max-width: 90%; max-height: 80%; box-shadow: 0 0 20px rgba(0,0,0,0.5); border-radius: 8px; }
+                    .info { margin-bottom: 20px; text-align: center; }
+                    kbd { background: #555; padding: 2px 6px; border-radius: 4px; }
+                  </style>
+                </head>
+                <body>
+                  <div class="info">
+                    <h2>Uw uitsnede is klaar</h2>
+                    <p>Klik met de rechtermuisknop op de foto en kies <b>"Opslaan als..."</b></p>
+                  </div>
+                  <img src="${screenshot.dataUrl}" alt="Den Helder Highlight" />
+                </body>
+              </html>
+            `);
+            showNotification("Uitsnede geopend in nieuw venster.");
+          } else {
+            showNotification("Pop-up geblokkeerd! Sta pop-ups toe voor deze site.");
+          }
         } catch (err) {
           showNotification("Fout bij maken screenshot.");
           console.error(err);
@@ -357,7 +387,7 @@
         worldImagery.effect = "blur(8px) brightness(1.2) grayscale(0.8)";
         groupLayer.effect = "brightness(1.5) drop-shadow(0, 0, 12px, #000)";
         groupLayer.opacity = 1;
-        view.goTo({ extent: graphic.geometry.extent.clone().expand(1.2) }, { duration: 800 });
+        view.goTo({ extent: graphic.geometry.extent.clone().expand(1.5) }, { duration: 800 });
       }
 
       sketch.on("create", event => {
