@@ -33,7 +33,6 @@
         background-color: #f0f0f0;
       }
 
-      /* Glassmorphism Panel */
       .glass-panel {
         background: var(--bg-panel);
         backdrop-filter: blur(12px);
@@ -49,7 +48,7 @@
         position: absolute;
         top: 20px;
         left: 20px;
-        width: 320px;
+        width: 340px;
         display: flex;
         flex-direction: column;
         gap: 16px;
@@ -101,24 +100,13 @@
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
+        width: 100%;
       }
 
       button:hover {
         background-color: var(--primary-hover);
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(0, 121, 193, 0.3);
-      }
-
-      button:active {
-        transform: translateY(0);
-      }
-
-      button:disabled {
-        background-color: #cbd5e1;
-        color: #94a3b8;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
       }
 
       button.secondary {
@@ -130,7 +118,6 @@
       button.secondary:hover {
         background-color: #f8fafc;
         border-color: #cbd5e1;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       }
 
       button.danger {
@@ -140,12 +127,100 @@
 
       button.danger:hover {
         background-color: #fecaca;
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
       }
 
-      /* ArcGIS Widget Overrides */
+      /* Preview container */
+      .preview-container {
+        margin-top: 16px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        display: none;
+      }
+
+      .preview-container.show {
+        display: block;
+      }
+
+      .preview-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .preview-label i {
+        color: var(--primary);
+      }
+
+      .preview-image {
+        width: 100%;
+        height: 150px;
+        background: #f0f0f0;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 12px;
+        border: 1px solid #e2e8f0;
+      }
+
+      .preview-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .action-buttons button.small {
+        flex: 1;
+        padding: 10px;
+        background: white;
+        color: var(--text-main);
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+      }
+
+      .action-buttons button.small:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+
+      .action-buttons button.small i {
+        width: 14px;
+        height: 14px;
+      }
+
+      .link-hint {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(0, 121, 193, 0.1);
+        padding: 8px 12px;
+        border-radius: 6px;
+      }
+
       .esri-ui-top-left {
-        left: 350px !important; 
+        left: 370px !important; 
         top: 20px !important;
       }
 
@@ -155,7 +230,6 @@
         overflow: hidden;
       }
 
-      /* Notification Toast */
       #notification {
         position: fixed;
         bottom: 30px;
@@ -172,7 +246,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        text-align: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
       }
 
       #notification.show {
@@ -197,6 +271,9 @@
           top: auto !important;
           bottom: 20px !important;
         }
+        .action-buttons {
+          flex-direction: column;
+        }
       }
     </style>
 
@@ -212,7 +289,7 @@
           <i data-lucide="map-pin"></i>
           <h1>Den Helder</h1>
         </div>
-        <p>Teken een gebied om het te isoleren. Klik daarna op 'Screenshot openen' om de afbeelding in een nieuw venster te bekijken en op te slaan.</p>
+        <p>Teken een gebied om het te isoleren. Klik op 'Maak screenshot' voor een voorbeeld en downloadopties.</p>
         
         <div class="button-group">
           <button id="drawToggleBtn">
@@ -220,13 +297,45 @@
             <span>Verberg Tekenhulp</span>
           </button>
           <button id="screenshotBtn" class="secondary">
-            <i data-lucide="external-link"></i>
-            <span>Screenshot openen</span>
+            <i data-lucide="camera"></i>
+            <span>Maak screenshot</span>
           </button>
           <button id="resetBtn" class="danger">
             <i data-lucide="trash-2"></i>
             <span>Alles resetten</span>
           </button>
+        </div>
+
+        <!-- Preview container met directe downloadopties -->
+        <div id="previewContainer" class="preview-container">
+          <div class="preview-label">
+            <i data-lucide="image" size="16"></i>
+            <span>Voorbeeld van screenshot</span>
+          </div>
+          
+          <div class="preview-image" id="previewImage">
+            <!-- Hier komt de img tag -->
+          </div>
+          
+          <div class="action-buttons">
+            <button id="downloadBtn" class="small">
+              <i data-lucide="download" size="14"></i>
+              Download
+            </button>
+            <button id="openNewTabBtn" class="small">
+              <i data-lucide="external-link" size="14"></i>
+              Open in tab
+            </button>
+            <button id="copyImageBtn" class="small">
+              <i data-lucide="copy" size="14"></i>
+              Kopieer
+            </button>
+          </div>
+          
+          <div class="link-hint">
+            <i data-lucide="info" size="14"></i>
+            <span>Klik op "Open in tab" voor de volledige afbeelding, of "Download" om direct op te slaan.</span>
+          </div>
         </div>
       </div>
     </div>
@@ -286,6 +395,8 @@
         }
       });
 
+      await view.when();
+
       const sketch = new Sketch({
         view: view,
         layer: graphicsLayer,
@@ -301,10 +412,16 @@
       const drawToggleBtn = document.getElementById("drawToggleBtn");
       const screenshotBtn = document.getElementById("screenshotBtn");
       const resetBtn = document.getElementById("resetBtn");
+      const previewContainer = document.getElementById("previewContainer");
+      const previewImage = document.getElementById("previewImage");
+      const downloadBtn = document.getElementById("downloadBtn");
+      const openNewTabBtn = document.getElementById("openNewTabBtn");
+      const copyImageBtn = document.getElementById("copyImageBtn");
       const notification = document.getElementById("notification");
       const notificationText = document.getElementById("notificationText");
 
       let drawingActive = true;
+      let currentScreenshotDataUrl = null;
 
       function showNotification(message, duration = 4000) {
         notificationText.textContent = message;
@@ -323,45 +440,37 @@
         lucide.createIcons();
       });
 
-      // Aangepaste screenshot functie voor Experience Builder
+      // Maak screenshot functie
       screenshotBtn.addEventListener("click", async () => {
         screenshotBtn.disabled = true;
         const originalContent = screenshotBtn.innerHTML;
-        screenshotBtn.innerHTML = `<i data-lucide="loader" class="animate-spin"></i><span>Laden...</span>`;
+        screenshotBtn.innerHTML = `<i data-lucide="loader" class="animate-spin"></i><span>Bezig...</span>`;
         lucide.createIcons();
 
         try {
-          const screenshot = await view.takeScreenshot({ format: "png", quality: 100 });
+          await view.when();
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // Neem screenshot met maximale kwaliteit
+          const screenshot = await view.takeScreenshot({ 
+            format: "png", 
+            quality: 100,
+            width: view.width,
+            height: view.height
+          });
           
-          // Open nieuw tabblad met de data URL
-          const newWindow = window.open();
-          if (newWindow) {
-            newWindow.document.write(`
-              <html>
-                <head>
-                  <title>Den Helder Export</title>
-                  <style>
-                    body { margin: 0; background: #333; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: sans-serif; }
-                    img { max-width: 90%; max-height: 80%; box-shadow: 0 0 20px rgba(0,0,0,0.5); border-radius: 8px; }
-                    .info { margin-bottom: 20px; text-align: center; }
-                    kbd { background: #555; padding: 2px 6px; border-radius: 4px; }
-                  </style>
-                </head>
-                <body>
-                  <div class="info">
-                    <h2>Uw uitsnede is klaar</h2>
-                    <p>Klik met de rechtermuisknop op de foto en kies <b>"Opslaan als..."</b></p>
-                  </div>
-                  <img src="${screenshot.dataUrl}" alt="Den Helder Highlight" />
-                </body>
-              </html>
-            `);
-            showNotification("Uitsnede geopend in nieuw venster.");
-          } else {
-            showNotification("Pop-up geblokkeerd! Sta pop-ups toe voor deze site.");
-          }
+          currentScreenshotDataUrl = screenshot.dataUrl;
+          
+          // Toon voorbeeld
+          previewImage.innerHTML = `<img src="${screenshot.dataUrl}" alt="Screenshot voorbeeld">`;
+          previewContainer.classList.add('show');
+          
+          // Update icons
+          lucide.createIcons();
+          
+          showNotification("✅ Screenshot gemaakt! Kies een optie hieronder.");
         } catch (err) {
-          showNotification("Fout bij maken screenshot.");
+          showNotification("❌ Fout bij maken screenshot.");
           console.error(err);
         }
 
@@ -370,12 +479,138 @@
         lucide.createIcons();
       });
 
+      // Download knop - directe download
+      downloadBtn.addEventListener("click", () => {
+        if (!currentScreenshotDataUrl) {
+          showNotification("⚠️ Maak eerst een screenshot");
+          return;
+        }
+        
+        const link = document.createElement("a");
+        link.href = currentScreenshotDataUrl;
+        link.download = `den-helder-${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showNotification("📸 Download gestart!");
+      });
+
+      // Open in nieuw tabblad - dit werkt ALTIJD
+      openNewTabBtn.addEventListener("click", () => {
+        if (!currentScreenshotDataUrl) {
+          showNotification("⚠️ Maak eerst een screenshot");
+          return;
+        }
+
+        // Maak een complete HTML pagina met de afbeelding
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Den Helder Screenshot</title>
+            <style>
+              body { 
+                margin: 0; 
+                background: #1a1a1a; 
+                display: flex; 
+                flex-direction: column;
+                align-items: center; 
+                justify-content: center; 
+                min-height: 100vh;
+                font-family: 'Inter', sans-serif;
+              }
+              .container {
+                background: white;
+                padding: 20px;
+                border-radius: 12px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+                max-width: 90%;
+              }
+              img { 
+                max-width: 100%; 
+                max-height: 80vh;
+                display: block;
+                border-radius: 8px;
+              }
+              .instructions {
+                margin-top: 20px;
+                color: #333;
+                font-size: 14px;
+                text-align: center;
+              }
+              .button {
+                background: #0079c1;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 14px;
+                margin-top: 10px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <img src="${currentScreenshotDataUrl}" alt="Den Helder Screenshot">
+              <div class="instructions">
+                <p>Rechtermuisknop op de afbeelding > "Afbeelding opslaan als..."</p>
+                <button class="button" onclick="window.print()">🖨️ Print / PDF opslaan</button>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+
+        // Open nieuw tabblad met de volledige HTML
+        const newTab = window.open();
+        if (newTab) {
+          newTab.document.write(htmlContent);
+          newTab.document.close();
+          showNotification("✨ Screenshot geopend in nieuw tabblad!");
+        } else {
+          // Fallback als pop-up wordt geblokkeerd
+          showNotification("⚠️ Sta pop-ups toe of gebruik Download");
+        }
+      });
+
+      // Kopieer afbeelding naar klembord
+      copyImageBtn.addEventListener("click", async () => {
+        if (!currentScreenshotDataUrl) {
+          showNotification("⚠️ Maak eerst een screenshot");
+          return;
+        }
+
+        try {
+          // Converteer data URL naar blob
+          const response = await fetch(currentScreenshotDataUrl);
+          const blob = await response.blob();
+          
+          // Kopieer naar klembord
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              [blob.type]: blob
+            })
+          ]);
+          
+          showNotification("📋 Afbeelding gekopieerd naar klembord!");
+        } catch (err) {
+          // Fallback: kopieer de link
+          await navigator.clipboard.writeText(currentScreenshotDataUrl);
+          showNotification("📋 Link gekopieerd (afbeelding kopiëren niet ondersteund)");
+        }
+      });
+
       resetBtn.addEventListener("click", () => {
         graphicsLayer.removeAll();
         worldImagery.effect = null;
         groupLayer.effect = null;
         groupLayer.opacity = 0;
-        showNotification("Kaart gereset");
+        previewContainer.classList.remove('show');
+        previewImage.innerHTML = '';
+        currentScreenshotDataUrl = null;
+        showNotification("🔄 Alles gereset");
       });
 
       function applyHighlightEffect(graphic) {
@@ -391,18 +626,23 @@
       }
 
       sketch.on("create", event => {
-        if (event.state === "complete") applyHighlightEffect(event.graphic);
+        if (event.state === "complete") {
+          applyHighlightEffect(event.graphic);
+          previewContainer.classList.remove('show');
+        }
       });
 
       sketch.on("delete", () => {
         worldImagery.effect = null;
         groupLayer.effect = null;
         groupLayer.opacity = 0;
+        previewContainer.classList.remove('show');
       });
 
       sketch.on("update", event => {
         if (event.state === "complete" && event.graphics.length > 0) {
           applyHighlightEffect(event.graphics[0]);
+          previewContainer.classList.remove('show');
         }
       });
     </script>
