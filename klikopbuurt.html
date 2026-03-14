@@ -3,22 +3,130 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title>Highlight een buurt | Den Helder </title>
+    <title>Highlight een buurt | Den Helder</title>
     <style>
       html,
       body,
       #viewDiv {
         height: 100%;
         margin: 0;
+        font-family: Arial, sans-serif;
       }
+      
       #messageDiv {
-        padding-left: 10px;
-        padding-right: 10px;
+        padding: 15px 20px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        margin: 15px;
+        border-left: 4px solid #0079c1;
+      }
+      
+      #messageDiv h4 {
+        margin: 0;
+        color: #0079c1;
+        font-size: 16px;
+      }
+      
+      #exportTools {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 100;
+        background: rgba(255,255,255,0.95);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        border: none;
+        width: 280px;
+        pointer-events: auto;
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        border: 1px solid rgba(255,255,255,0.3);
+      }
+      
+      #exportTools h3 {
+        margin: 0 0 15px 0;
+        color: #0079c1;
+        font-size: 18px;
+        font-weight: 600;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 10px;
+      }
+      
+      #exportBtn {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      }
+      
+      #exportBtn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(23, 162, 184, 0.3);
+      }
+      
+      #exportBtn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      
+      .status-indicator {
+        margin-top: 15px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        font-size: 14px;
+        border-left: 4px solid #6c757d;
+      }
+      
+      .status-indicator.active {
+        border-left-color: #28a745;
+        background: #f0f9f0;
+      }
+      
+      .status-text {
+        color: #333;
+      }
+      
+      .loading {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border: 3px solid rgba(255,255,255,0.3);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
       }
     </style>
 
     <link rel="stylesheet" href="https://js.arcgis.com/4.34/esri/themes/light/main.css" />
     <script src="https://js.arcgis.com/4.34/"></script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    
+    <div id="messageDiv" class="esri-widget esri-heading">
+      <h4 class="esri-heading">📍 Klik op een buurt in Den Helder</h4>
+    </div>
 
     <script type="module">
       const [Map, MapView, TileLayer, Graphic, FeatureLayer, GraphicsLayer, GroupLayer] =
@@ -34,13 +142,13 @@
 
       // Achtergrondkaart
       const worldImagery = new TileLayer({
-        portalItem: { id: "10df2279f9684e4a9f6a7f08febac2a9" }, // world imagery
+        portalItem: { id: "10df2279f9684e4a9f6a7f08febac2a9" },
       });
 
       // Layer voor buurten van Den Helder
       const buurtenDenHelder = new FeatureLayer({
         url: "https://services.arcgis.com/nSZVuSZjHpEZZbRo/arcgis/rest/services/CBS_Buurt_actueel/FeatureServer/0",
-        definitionExpression: "STATCODE LIKE 'BU04000%'", // filter voor Den Helder
+        definitionExpression: "STATCODE LIKE 'BU04000%'",
         outFields: ["*"],
       });
 
@@ -72,22 +180,34 @@
         container: "viewDiv",
         map: map,
         zoom: 12,
-        center: [4.75, 52.95], // Den Helder
+        center: [4.75, 52.95],
         popup: null,
         constraints: { snapToZoom: false },
       });
 
-      view.ui.add("messageDiv", "top-right");
+      // Export tools toevoegen
+      const exportTools = document.createElement("div");
+      exportTools.id = "exportTools";
+      exportTools.innerHTML = `
+        <h3>📸 Exporteer kaart</h3>
+        <button id="exportBtn" disabled>
+          <span class="loading" style="display: none;"></span>
+          <span class="btn-text">🌐 Open in nieuw tabblad</span>
+        </button>
+        <div id="statusIndicator" class="status-indicator">
+          <div class="status-text">⏳ Klik op een buurt om te beginnen</div>
+        </div>
+      `;
+      view.ui.add(exportTools, "top-left");
 
-      view.when(() => {
-        const query = { geometry: view.center, returnGeometry: true, outFields: ["*"] };
-        highlightBuurt(query, view.center);
-      });
+      // UI Elementen
+      const exportBtn = document.getElementById("exportBtn");
+      const statusIndicator = document.getElementById("statusIndicator");
+      const loadingSpan = exportBtn.querySelector(".loading");
+      const btnText = exportBtn.querySelector(".btn-text");
 
-      view.on("click", async (event) => {
-        const query = { geometry: view.toMap(event), returnGeometry: true, outFields: ["*"] };
-        highlightBuurt(query, query.geometry);
-      });
+      let currentFeature = null;
+      let hasSelection = false;
 
       async function highlightBuurt(query, zoomGeometry) {
         const symbol = {
@@ -102,24 +222,280 @@
           graphicsLayer.graphics.removeAll();
           feature.symbol = symbol;
           graphicsLayer.graphics.add(feature);
-          view.goTo(
+          
+          await view.goTo(
             { target: zoomGeometry, extent: feature.geometry.clone() },
             { duration: 1000 }
           );
+          
           worldImagery.effect = "blur(8px) brightness(1.2) grayscale(0.8)";
           groupLayer.effect = "brightness(1.5) drop-shadow(0, 0px, 12px)";
           groupLayer.opacity = 1;
+          
+          // Update status
+          currentFeature = feature;
+          hasSelection = true;
+          exportBtn.disabled = false;
+          statusIndicator.className = "status-indicator active";
+          statusIndicator.innerHTML = `
+            <div class="status-text">
+              ✅ Buurt geselecteerd<br>
+              <small style="color: #666;">Klik op "Open in nieuw tabblad" om te exporteren</small>
+            </div>
+          `;
         } else {
           worldImagery.effect = null;
           groupLayer.effect = null;
+          
+          // Reset status
+          currentFeature = null;
+          hasSelection = false;
+          exportBtn.disabled = true;
+          statusIndicator.className = "status-indicator";
+          statusIndicator.innerHTML = `
+            <div class="status-text">⏳ Klik op een buurt om te beginnen</div>
+          `;
         }
       }
+
+      // Screenshot functie
+      async function getScreenshot() {
+        return await view.takeScreenshot({
+          format: "png",
+          quality: 100,
+          width: 1920,
+          height: 1080
+        });
+      }
+
+      // Open in nieuw tabblad functie
+      async function openInNewTab() {
+        if (!hasSelection) {
+          alert("Selecteer eerst een buurt!");
+          return;
+        }
+
+        // Laad animatie
+        loadingSpan.style.display = "inline-block";
+        btnText.textContent = "Bezig...";
+        exportBtn.disabled = true;
+
+        try {
+          const screenshot = await getScreenshot();
+          const date = new Date().toLocaleDateString("nl-NL");
+          const time = new Date().toLocaleTimeString("nl-NL");
+
+          // Open nieuw tabblad
+          const newTab = window.open('', '_blank');
+          
+          if (newTab) {
+            newTab.document.write(`
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <title>Den Helder - Kaart export</title>
+                <style>
+                  body {
+                    margin: 0;
+                    padding: 20px;
+                    background: #f0f2f5;
+                    font-family: Arial, sans-serif;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                  }
+                  .container {
+                    max-width: 1200px;
+                    width: 100%;
+                  }
+                  .header {
+                    background: white;
+                    padding: 20px;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    margin-bottom: 20px;
+                    text-align: center;
+                  }
+                  .header h1 {
+                    color: #0079c1;
+                    margin: 0;
+                    font-size: 24px;
+                  }
+                  .header p {
+                    color: #666;
+                    margin: 8px 0 0 0;
+                  }
+                  .image-container {
+                    background: white;
+                    padding: 20px;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    margin-bottom: 20px;
+                    text-align: center;
+                  }
+                  .image-container img {
+                    max-width: 100%;
+                    max-height: 70vh;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                  }
+                  .info-panel {
+                    background: white;
+                    padding: 20px;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    margin-bottom: 20px;
+                  }
+                  .info-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 15px;
+                  }
+                  .info-item {
+                    padding: 15px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    border-left: 4px solid #0079c1;
+                  }
+                  .info-item strong {
+                    color: #0079c1;
+                    display: block;
+                    margin-bottom: 5px;
+                  }
+                  .legend {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    margin-top: 15px;
+                    padding: 15px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                  }
+                  .legend-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                  }
+                  .color-box {
+                    width: 30px;
+                    height: 30px;
+                    background: rgba(255,255,255,0.8);
+                    border: 2px solid #fff;
+                    box-shadow: 0 0 0 2px #0079c1;
+                    border-radius: 4px;
+                  }
+                  .actions {
+                    display: flex;
+                    gap: 15px;
+                    justify-content: center;
+                    margin: 20px 0;
+                  }
+                  .btn {
+                    padding: 12px 30px;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                  }
+                  .btn-success {
+                    background: #28a745;
+                    color: white;
+                  }
+                  .btn-success:hover {
+                    background: #218838;
+                    transform: translateY(-2px);
+                  }
+                  .btn-primary {
+                    background: #0079c1;
+                    color: white;
+                  }
+                  .btn-primary:hover {
+                    background: #005a87;
+                    transform: translateY(-2px);
+                  }
+                  @media print {
+                    .no-print { display: none; }
+                    body { background: white; }
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <div class="header">
+                    <h1>📍 Den Helder - Geselecteerde buurt</h1>
+                    <p>Gemaakt op: ${date} om ${time}</p>
+                  </div>
+
+                  <div class="image-container">
+                    <img src="${screenshot.dataUrl}" alt="Kaart van Den Helder met geselecteerde buurt" />
+                  </div>
+
+                  <div class="info-panel">
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <strong>Zoom niveau</strong>
+                        <div style="font-size: 18px;">${view.zoom.toFixed(1)}x</div>
+                      </div>
+                      <div class="info-item">
+                        <strong>Centrum coördinaten</strong>
+                        <div>${view.center.longitude.toFixed(4)}°</div>
+                        <div>${view.center.latitude.toFixed(4)}°</div>
+                      </div>
+                    </div>
+                    
+                    <div class="legend">
+                      <div class="legend-item">
+                        <div class="color-box"></div>
+                        <span>Geselecteerde buurt (wit gehighlight)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="actions no-print">
+                    <button class="btn btn-success" onclick="window.print()">🖨️ Print / PDF</button>
+                    <button class="btn btn-primary" onclick="window.close()">❌ Sluiten</button>
+                  </div>
+
+                  <div style="text-align: center; margin: 20px 0; color: #666; font-size: 12px;">
+                    <p>Gegenereerd met ArcGIS API for JavaScript</p>
+                  </div>
+                </div>
+              </body>
+              </html>
+            `);
+            newTab.document.close();
+          } else {
+            alert("Pop-up blocker gedetecteerd. Sta pop-ups toe voor deze site.");
+          }
+
+        } catch (err) {
+          console.error("Export error:", err);
+          alert("Fout bij exporteren: " + err.message);
+        }
+
+        // Reset laad animatie
+        loadingSpan.style.display = "none";
+        btnText.textContent = "🌐 Open in nieuw tabblad";
+        exportBtn.disabled = false;
+      }
+
+      // Event listeners
+      view.ui.add("messageDiv", "top-right");
+      
+      view.when(() => {
+        const query = { geometry: view.center, returnGeometry: true, outFields: ["*"] };
+        highlightBuurt(query, view.center);
+      });
+
+      view.on("click", async (event) => {
+        const query = { geometry: view.toMap(event), returnGeometry: true, outFields: ["*"] };
+        highlightBuurt(query, query.geometry);
+      });
+
+      exportBtn.addEventListener("click", openInNewTab);
+
     </script>
-  </head>
-  <body>
-    <div id="viewDiv"></div>
-    <div id="messageDiv" class="esri-widget esri-heading">
-      <h4 class="esri-heading">Klik op een buurt in Den Helder</h4>
-    </div>
   </body>
 </html>
