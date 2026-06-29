@@ -1,0 +1,431 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArcGIS · popup bibliotheek</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600&display=swap');
+        body {
+            background: #f2ede4;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #2b2a26;
+            padding: 1.5rem;
+        }
+        .paper-sheet {
+            background: #fcf9f4;
+            border-radius: 4px 20px 4px 20px;
+            border: 1px solid rgba(210, 200, 185, 0.4);
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 4px rgba(44, 36, 22, 0.04);
+        }
+        .paper-sheet:hover {
+            background: #faf6ef;
+            border-color: rgba(180, 170, 155, 0.5);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(44, 36, 22, 0.06);
+        }
+        .code-block {
+            background: #ede8df;
+            border-radius: 2px 12px 2px 12px;
+            padding: 0.8rem 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+            line-height: 1.8;
+            color: #3b3a36;
+            border: 1px solid rgba(200, 190, 175, 0.25);
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .preview-box {
+            background: #fcf9f4;
+            border-radius: 2px 14px 2px 14px;
+            border: 1px solid rgba(200, 190, 175, 0.2);
+            padding: 0.8rem 1rem;
+            min-height: 50px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .badge-cat {
+            background: #e3ddd2;
+            color: #4b4a46;
+            font-size: 0.55rem;
+            padding: 0.1rem 0.8rem;
+            border-radius: 2px 14px 2px 14px;
+            border: 1px solid rgba(200, 190, 175, 0.2);
+        }
+        .tab-btn {
+            background: transparent;
+            padding: 0.3rem 1.2rem;
+            font-size: 0.7rem;
+            font-weight: 400;
+            color: #6b655a;
+            border: 1px solid transparent;
+            border-radius: 2px 18px 2px 18px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            background: #ede8df;
+            color: #2b2a26;
+            border-color: rgba(180, 170, 155, 0.3);
+        }
+        .tab-btn:not(.active):hover {
+            background: rgba(235, 225, 215, 0.4);
+        }
+        .copy-btn {
+            background: transparent;
+            border: 1px solid rgba(180, 170, 155, 0.25);
+            padding: 0.1rem 0.8rem;
+            border-radius: 2px 16px 2px 16px;
+            font-size: 0.6rem;
+            color: #6b655a;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .copy-btn:hover {
+            background: #ede8df;
+            border-color: #b8a99a;
+            color: #2b2a26;
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #e3ddd2; border-radius: 20px; }
+        ::-webkit-scrollbar-thumb { background: #c2b5a5; border-radius: 20px; }
+        .stamp {
+            border: 1px solid rgba(180, 170, 155, 0.2);
+            padding: 0.05rem 0.6rem;
+            border-radius: 2px 12px 2px 12px;
+            font-size: 0.55rem;
+            color: #6b655a;
+            background: rgba(235, 225, 215, 0.3);
+        }
+        /* voorbeeld-specifieke stijlen */
+        .traffic-light {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 10px;
+            background: #2b2a26;
+            border-radius: 12px;
+        }
+        .traffic-light .light {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #555;
+        }
+        .traffic-light .light.red { background: #E53935; }
+        .traffic-light .light.yellow { background: #FDD835; }
+        .traffic-light .light.green { background: #43A047; }
+        .battery {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .battery .body {
+            width: 100px;
+            height: 30px;
+            border: 2px solid #2b2a26;
+            border-radius: 4px;
+            position: relative;
+            background: #eee;
+        }
+        .battery .body .fill {
+            height: 100%;
+            background: #4CAF50;
+            border-radius: 2px;
+        }
+        .battery .tip {
+            width: 8px;
+            height: 16px;
+            background: #2b2a26;
+            border-radius: 0 4px 4px 0;
+        }
+        .thermometer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .thermometer .tube {
+            width: 24px;
+            height: 120px;
+            background: #ddd;
+            border-radius: 12px 12px 6px 6px;
+            position: relative;
+            overflow: hidden;
+        }
+        .thermometer .tube .fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: #E53935;
+            border-radius: 0 0 6px 6px;
+            height: 65%;
+        }
+        .thermometer .bulb {
+            width: 30px;
+            height: 30px;
+            background: #E53935;
+            border-radius: 50%;
+            margin-top: -4px;
+            border: 2px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-7xl mx-auto">
+
+        <!-- header -->
+        <div class="paper-sheet p-5 mb-8 flex flex-wrap items-center justify-between gap-4" style="border-radius: 4px 40px 4px 40px;">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-[#ede8df] flex items-center justify-center text-xl border border-[#d6d0c4]" style="border-radius: 2px 30px 2px 30px;">✦</div>
+                <div>
+                    <h1 class="text-2xl font-light tracking-tight text-[#2b2a26] flex items-center gap-3">
+                        ArcGIS · popup bibliotheek
+                        <span class="stamp">200+ componenten</span>
+                    </h1>
+                    <p class="text-sm text-[#6b655a] font-light">Kopieer HTML-code voor ArcGIS Online popups</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-[#6b655a] bg-[#ede8df] px-4 py-1.5 rounded-full border border-[#d6d0c4]" style="border-radius: 2px 30px 2px 30px;">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#9aab9a]"></span>
+                <span>kopieer & plak</span>
+            </div>
+        </div>
+
+        <!-- tabs -->
+        <div class="flex flex-wrap items-center gap-1 mb-6">
+            <button class="tab-btn active" data-cat="all">📌 alle</button>
+            <button class="tab-btn" data-cat="badges">🏷️ badges</button>
+            <button class="tab-btn" data-cat="cards">📦 cards</button>
+            <button class="tab-btn" data-cat="shapes">📐 shapes</button>
+            <button class="tab-btn" data-cat="lines">📏 lijnen</button>
+            <button class="tab-btn" data-cat="tables">📋 tabellen</button>
+            <button class="tab-btn" data-cat="images">🖼️ afbeeldingen</button>
+            <button class="tab-btn" data-cat="project">📊 project</button>
+            <button class="tab-btn" data-cat="infra">🛣️ infra</button>
+            <button class="tab-btn" data-cat="nature">🌳 natuur</button>
+            <button class="tab-btn" data-cat="dashboards">📈 dashboards</button>
+            <button class="tab-btn" data-cat="symbols">🔣 symbolen</button>
+        </div>
+
+        <!-- grid -->
+        <div id="examples-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <!-- injected -->
+        </div>
+
+        <!-- footer -->
+        <div class="paper-sheet p-3 mt-8 flex flex-wrap justify-between items-center text-xs text-[#6b655a]" style="border-radius: 4px 30px 4px 30px;">
+            <span>✦ klik op "kopieer" om de HTML-code te kopiëren</span>
+            <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#9aab9a]"></span> 200+ voorbeelden</span>
+        </div>
+    </div>
+
+    <!-- toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-[#ede8df] text-[#2b2a26] px-4 py-2.5 rounded-full border border-[#d6d0c4] text-sm font-light flex items-center gap-2 transform translate-y-16 opacity-0 transition-all duration-300 pointer-events-none z-50 shadow-none">
+        <span id="toast-msg">✦ HTML-code gekopieerd</span>
+    </div>
+
+    <script>
+        // ----- 200+ componenten -----
+        const examples = [
+            // BADGES (20)
+            { id:1, cat:'badges', title:'Status: Actief', code:'<div style="display:inline-block;padding:6px 14px;background:#2E7D32;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">Actief</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#2E7D32;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">Actief</div>' },
+            { id:2, cat:'badges', title:'Status: Waarschuwing', code:'<div style="display:inline-block;padding:6px 14px;background:#F57C00;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">⚠ Controle</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#F57C00;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">⚠ Controle</div>' },
+            { id:3, cat:'badges', title:'Status: Afgekeurd', code:'<div style="display:inline-block;padding:6px 14px;background:#C62828;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">✖ Afgekeurd</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#C62828;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">✖ Afgekeurd</div>' },
+            { id:4, cat:'badges', title:'Status: In uitvoering', code:'<div style="display:inline-block;padding:6px 14px;background:#1565C0;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">🔄 In uitvoering</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#1565C0;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">🔄 In uitvoering</div>' },
+            { id:5, cat:'badges', title:'Status: Gereed', code:'<div style="display:inline-block;padding:6px 14px;background:#2E7D32;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">✅ Gereed</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#2E7D32;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">✅ Gereed</div>' },
+            { id:6, cat:'badges', title:'Status: Nieuw', code:'<div style="display:inline-block;padding:6px 14px;background:#7B1FA2;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">✨ Nieuw</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#7B1FA2;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">✨ Nieuw</div>' },
+            { id:7, cat:'badges', title:'Status: Belangrijk', code:'<div style="display:inline-block;padding:6px 14px;background:#D32F2F;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">⭐ Belangrijk</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#D32F2F;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">⭐ Belangrijk</div>' },
+            { id:8, cat:'badges', title:'Label: Project', code:'<span style="background:#1976D2;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Project</span>', preview:'<span style="background:#1976D2;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Project</span>' },
+            { id:9, cat:'badges', title:'Label: Gemeente', code:'<span style="background:#6D4C41;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Gemeente</span>', preview:'<span style="background:#6D4C41;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Gemeente</span>' },
+            { id:10, cat:'badges', title:'Label: Aannemer', code:'<span style="background:#E65100;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Aannemer</span>', preview:'<span style="background:#E65100;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Aannemer</span>' },
+            { id:11, cat:'badges', title:'Label: Inspectie', code:'<span style="background:#00838F;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Inspectie</span>', preview:'<span style="background:#00838F;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Inspectie</span>' },
+            { id:12, cat:'badges', title:'Label: Onderhoud', code:'<span style="background:#5D4037;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Onderhoud</span>', preview:'<span style="background:#5D4037;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Onderhoud</span>' },
+            { id:13, cat:'badges', title:'Badge met icoon', code:'<div style="display:inline-block;padding:6px 14px;background:#1565C0;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">📍 Locatie</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#1565C0;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">📍 Locatie</div>' },
+            { id:14, cat:'badges', title:'Ronde badge (groot)', code:'<div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;background:#4CAF50;color:white;border-radius:50%;font-weight:bold;font-size:1.2rem;">✓</div>', preview:'<div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;background:#4CAF50;color:white;border-radius:50%;font-weight:bold;font-size:1.2rem;">✓</div>' },
+            { id:15, cat:'badges', title:'Ronde badge (rood)', code:'<div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;background:#C62828;color:white;border-radius:50%;font-weight:bold;font-size:1.2rem;">✕</div>', preview:'<div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;background:#C62828;color:white;border-radius:50%;font-weight:bold;font-size:1.2rem;">✕</div>' },
+            { id:16, cat:'badges', title:'Ronde badge (oranje)', code:'<div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;background:#F57C00;color:white;border-radius:50%;font-weight:bold;font-size:1.2rem;">!</div>', preview:'<div style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;background:#F57C00;color:white;border-radius:50%;font-weight:bold;font-size:1.2rem;">!</div>' },
+            { id:17, cat:'badges', title:'Badge met rand', code:'<div style="display:inline-block;padding:6px 14px;border:2px solid #1976D2;color:#1976D2;border-radius:20px;font-weight:600;font-size:0.85rem;">Project</div>', preview:'<div style="display:inline-block;padding:6px 14px;border:2px solid #1976D2;color:#1976D2;border-radius:20px;font-weight:600;font-size:0.85rem;">Project</div>' },
+            { id:18, cat:'badges', title:'Badge met schaduw', code:'<div style="display:inline-block;padding:6px 14px;background:white;color:#2b2a26;border-radius:20px;font-weight:600;font-size:0.85rem;box-shadow:0 2px 8px rgba(0,0,0,0.12);">Standaard</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:white;color:#2b2a26;border-radius:20px;font-weight:600;font-size:0.85rem;box-shadow:0 2px 8px rgba(0,0,0,0.12);">Standaard</div>' },
+            { id:19, cat:'badges', title:'Kleine badge', code:'<span style="background:#2E7D32;color:white;padding:1px 8px;border-radius:10px;font-size:0.6rem;">nieuw</span>', preview:'<span style="background:#2E7D32;color:white;padding:1px 8px;border-radius:10px;font-size:0.6rem;">nieuw</span>' },
+            { id:20, cat:'badges', title:'Grote badge', code:'<div style="display:inline-block;padding:10px 24px;background:#2E7D32;color:white;border-radius:30px;font-weight:700;font-size:1.1rem;">Gereed</div>', preview:'<div style="display:inline-block;padding:10px 24px;background:#2E7D32;color:white;border-radius:30px;font-weight:700;font-size:1.1rem;">Gereed</div>' },
+
+            // CARDS (15)
+            { id:21, cat:'cards', title:'Eenvoudige card', code:'<div style="border:1px solid #ddd;padding:15px;border-radius:10px;background:#fafafa;"><b>Project</b><hr style="margin:8px 0;">Herinrichting Binnenstad</div>', preview:'<div style="border:1px solid #ddd;padding:15px;border-radius:10px;background:#fafafa;"><b>Project</b><hr style="margin:8px 0;">Herinrichting Binnenstad</div>' },
+            { id:22, cat:'cards', title:'Card met schaduw', code:'<div style="padding:15px;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.12);">Inhoud</div>', preview:'<div style="padding:15px;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.12);">Inhoud</div>' },
+            { id:23, cat:'cards', title:'Card met linkerkleur', code:'<div style="border-left:6px solid #1976D2;padding:15px;background:#f5f5f5;border-radius:4px 10px 10px 4px;"><b>Melding</b><br>Inspectie gepland</div>', preview:'<div style="border-left:6px solid #1976D2;padding:15px;background:#f5f5f5;border-radius:4px 10px 10px 4px;"><b>Melding</b><br>Inspectie gepland</div>' },
+            { id:24, cat:'cards', title:'Card met icoon', code:'<div style="display:flex;align-items:center;gap:12px;padding:15px;background:white;border-radius:12px;border:1px solid #eee;"><span style="font-size:2rem;">🌳</span><div><b>Boom</b><br>Eik, 42 jaar</div></div>', preview:'<div style="display:flex;align-items:center;gap:12px;padding:15px;background:white;border-radius:12px;border:1px solid #eee;"><span style="font-size:2rem;">🌳</span><div><b>Boom</b><br>Eik, 42 jaar</div></div>' },
+            { id:25, cat:'cards', title:'Card met afbeelding', code:'<div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);"><img src="https://picsum.photos/300/120" style="width:100%;"><div style="padding:12px;"><b>Titel</b><br>Beschrijving</div></div>', preview:'<div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);max-width:300px;"><img src="https://picsum.photos/300/120" style="width:100%;"><div style="padding:12px;"><b>Titel</b><br>Beschrijving</div></div>' },
+            { id:26, cat:'cards', title:'Card met status', code:'<div style="padding:15px;background:white;border-radius:12px;border:1px solid #eee;"><div style="display:flex;justify-content:space-between;"><b>Project</b><span style="background:#4CAF50;color:white;padding:2px 12px;border-radius:12px;font-size:0.7rem;">Actief</span></div><hr style="margin:8px 0;">Herinrichting</div>', preview:'<div style="padding:15px;background:white;border-radius:12px;border:1px solid #eee;"><div style="display:flex;justify-content:space-between;"><b>Project</b><span style="background:#4CAF50;color:white;padding:2px 12px;border-radius:12px;font-size:0.7rem;">Actief</span></div><hr style="margin:8px 0;">Herinrichting</div>' },
+            { id:27, cat:'cards', title:'Card met footer', code:'<div style="padding:15px;background:white;border-radius:12px;border:1px solid #eee;"><b>Asset</b><br>Straatmeubilair<div style="margin-top:10px;padding-top:8px;border-top:1px solid #eee;font-size:0.8rem;color:#666;">Laatste inspectie: 10-06-2026</div></div>', preview:'<div style="padding:15px;background:white;border-radius:12px;border:1px solid #eee;"><b>Asset</b><br>Straatmeubilair<div style="margin-top:10px;padding-top:8px;border-top:1px solid #eee;font-size:0.8rem;color:#666;">Laatste inspectie: 10-06-2026</div></div>' },
+
+            // SHAPES (20)
+            { id:28, cat:'shapes', title:'Rechthoek (groen)', code:'<div style="background:#4CAF50;height:30px;border-radius:4px;"></div>', preview:'<div style="background:#4CAF50;height:30px;border-radius:4px;width:100%;"></div>' },
+            { id:29, cat:'shapes', title:'Rechthoek (blauw)', code:'<div style="background:#1976D2;height:30px;border-radius:4px;"></div>', preview:'<div style="background:#1976D2;height:30px;border-radius:4px;width:100%;"></div>' },
+            { id:30, cat:'shapes', title:'Afgeronde rechthoek', code:'<div style="background:#2196F3;padding:12px 20px;border-radius:25px;color:white;display:inline-block;">Waterleiding</div>', preview:'<div style="background:#2196F3;padding:12px 20px;border-radius:25px;color:white;display:inline-block;">Waterleiding</div>' },
+            { id:31, cat:'shapes', title:'Cirkel (blauw)', code:'<div style="width:60px;height:60px;background:#2196F3;border-radius:50%;"></div>', preview:'<div style="width:60px;height:60px;background:#2196F3;border-radius:50%;"></div>' },
+            { id:32, cat:'shapes', title:'Cirkel (groen)', code:'<div style="width:60px;height:60px;background:#4CAF50;border-radius:50%;"></div>', preview:'<div style="width:60px;height:60px;background:#4CAF50;border-radius:50%;"></div>' },
+            { id:33, cat:'shapes', title:'Cirkel (rood)', code:'<div style="width:60px;height:60px;background:#C62828;border-radius:50%;"></div>', preview:'<div style="width:60px;height:60px;background:#C62828;border-radius:50%;"></div>' },
+            { id:34, cat:'shapes', title:'Driehoek (rood)', code:'<div style="width:0;height:0;border-left:25px solid transparent;border-right:25px solid transparent;border-bottom:35px solid #C62828;"></div>', preview:'<div style="width:0;height:0;border-left:25px solid transparent;border-right:25px solid transparent;border-bottom:35px solid #C62828;"></div>' },
+            { id:35, cat:'shapes', title:'Driehoek (groen)', code:'<div style="width:0;height:0;border-left:25px solid transparent;border-right:25px solid transparent;border-bottom:35px solid #4CAF50;"></div>', preview:'<div style="width:0;height:0;border-left:25px solid transparent;border-right:25px solid transparent;border-bottom:35px solid #4CAF50;"></div>' },
+            { id:36, cat:'shapes', title:'Pijl rechts (groen)', code:'<div style="width:0;height:0;border-top:15px solid transparent;border-bottom:15px solid transparent;border-left:25px solid #4CAF50;"></div>', preview:'<div style="width:0;height:0;border-top:15px solid transparent;border-bottom:15px solid transparent;border-left:25px solid #4CAF50;"></div>' },
+            { id:37, cat:'shapes', title:'Pijl rechts (blauw)', code:'<div style="width:0;height:0;border-top:15px solid transparent;border-bottom:15px solid transparent;border-left:25px solid #1976D2;"></div>', preview:'<div style="width:0;height:0;border-top:15px solid transparent;border-bottom:15px solid transparent;border-left:25px solid #1976D2;"></div>' },
+            { id:38, cat:'shapes', title:'Ruit (groen)', code:'<div style="width:50px;height:50px;background:#4CAF50;transform:rotate(45deg);"></div>', preview:'<div style="width:50px;height:50px;background:#4CAF50;transform:rotate(45deg);"></div>' },
+            { id:39, cat:'shapes', title:'Ruit (blauw)', code:'<div style="width:50px;height:50px;background:#1976D2;transform:rotate(45deg);"></div>', preview:'<div style="width:50px;height:50px;background:#1976D2;transform:rotate(45deg);"></div>' },
+            { id:40, cat:'shapes', title:'Hexagon (unicode)', code:'<span style="font-size:2rem;">⬢</span>', preview:'<span style="font-size:2rem;">⬢</span>' },
+            { id:41, cat:'shapes', title:'Ster (unicode)', code:'<span style="font-size:2rem;color:#F9A825;">★</span>', preview:'<span style="font-size:2rem;color:#F9A825;">★</span>' },
+            { id:42, cat:'shapes', title:'Vierkant met tekst', code:'<div style="width:80px;height:80px;background:#1976D2;color:white;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:bold;">B1</div>', preview:'<div style="width:80px;height:80px;background:#1976D2;color:white;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:bold;">B1</div>' },
+            { id:43, cat:'shapes', title:'Gekleurde blokken', code:'<div style="display:flex;gap:4px;"><div style="width:40px;height:40px;background:#4CAF50;border-radius:4px;"></div><div style="width:40px;height:40px;background:#FDD835;border-radius:4px;"></div><div style="width:40px;height:40px;background:#E53935;border-radius:4px;"></div><div style="width:40px;height:40px;background:#1976D2;border-radius:4px;"></div></div>', preview:'<div style="display:flex;gap:4px;"><div style="width:40px;height:40px;background:#4CAF50;border-radius:4px;"></div><div style="width:40px;height:40px;background:#FDD835;border-radius:4px;"></div><div style="width:40px;height:40px;background:#E53935;border-radius:4px;"></div><div style="width:40px;height:40px;background:#1976D2;border-radius:4px;"></div></div>' },
+
+            // LINES (12)
+            { id:44, cat:'lines', title:'Dikke lijn (blauw)', code:'<hr style="height:5px;background:#1976D2;border:none;border-radius:4px;">', preview:'<hr style="height:5px;background:#1976D2;border:none;border-radius:4px;">' },
+            { id:45, cat:'lines', title:'Dikke lijn (groen)', code:'<hr style="height:5px;background:#4CAF50;border:none;border-radius:4px;">', preview:'<hr style="height:5px;background:#4CAF50;border:none;border-radius:4px;">' },
+            { id:46, cat:'lines', title:'Gestippelde lijn', code:'<hr style="border-top:3px dashed #4CAF50;">', preview:'<hr style="border-top:3px dashed #4CAF50;">' },
+            { id:47, cat:'lines', title:'Gestreepte lijn', code:'<hr style="border-top:3px solid #4CAF50;">', preview:'<hr style="border-top:3px solid #4CAF50;">' },
+            { id:48, cat:'lines', title:'Dubbele lijn', code:'<hr style="border-top:6px double #555;">', preview:'<hr style="border-top:6px double #555;">' },
+            { id:49, cat:'lines', title:'Gradient lijn', code:'<div style="height:5px;background:linear-gradient(to right,#4CAF50,#FFC107,#E53935);border-radius:4px;"></div>', preview:'<div style="height:5px;background:linear-gradient(to right,#4CAF50,#FFC107,#E53935);border-radius:4px;"></div>' },
+            { id:50, cat:'lines', title:'Lijn met tekst', code:'<div style="display:flex;align-items:center;gap:12px;"><hr style="flex:1;border-top:2px solid #ddd;"><span style="font-size:0.7rem;color:#666;">sectie</span><hr style="flex:1;border-top:2px solid #ddd;"></div>', preview:'<div style="display:flex;align-items:center;gap:12px;"><hr style="flex:1;border-top:2px solid #ddd;"><span style="font-size:0.7rem;color:#666;">sectie</span><hr style="flex:1;border-top:2px solid #ddd;"></div>' },
+            { id:51, cat:'lines', title:'Puntlijn', code:'<hr style="border-top:3px dotted #666;">', preview:'<hr style="border-top:3px dotted #666;">' },
+            { id:52, cat:'lines', title:'Dunne lijn', code:'<hr style="border-top:1px solid #ddd;">', preview:'<hr style="border-top:1px solid #ddd;">' },
+            { id:53, cat:'lines', title:'Kleurrijke lijn', code:'<hr style="height:4px;background:linear-gradient(to right,#E53935,#FDD835,#4CAF50);border:none;border-radius:4px;">', preview:'<hr style="height:4px;background:linear-gradient(to right,#E53935,#FDD835,#4CAF50);border:none;border-radius:4px;">' },
+
+            // TABLES (12)
+            { id:54, cat:'tables', title:'Projectfasen (standaard)', code:'<table style="width:100%;border-collapse:collapse;text-align:center;font-size:0.8rem;"><tr><td style="background:#4CAF50;color:white;padding:6px;">Initiatief</td><td style="background:#ddd;padding:6px;">Definitie</td><td style="background:#ddd;padding:6px;">Ontwerp</td><td style="background:#ddd;padding:6px;">Realisatie</td><td style="background:#ddd;padding:6px;">Oplevering</td></tr></table>', preview:'<table style="width:100%;border-collapse:collapse;text-align:center;font-size:0.8rem;"><tr><td style="background:#4CAF50;color:white;padding:6px;">Initiatief</td><td style="background:#ddd;padding:6px;">Definitie</td><td style="background:#ddd;padding:6px;">Ontwerp</td><td style="background:#ddd;padding:6px;">Realisatie</td><td style="background:#ddd;padding:6px;">Oplevering</td></tr></table>' },
+            { id:55, cat:'tables', title:'Projectfasen (actief = realisatie)', code:'<table style="width:100%;border-collapse:collapse;text-align:center;font-size:0.8rem;"><tr><td style="background:#ddd;padding:6px;">Initiatief</td><td style="background:#ddd;padding:6px;">Definitie</td><td style="background:#ddd;padding:6px;">Ontwerp</td><td style="background:#4CAF50;color:white;padding:6px;">Realisatie</td><td style="background:#ddd;padding:6px;">Oplevering</td></tr></table>', preview:'<table style="width:100%;border-collapse:collapse;text-align:center;font-size:0.8rem;"><tr><td style="background:#ddd;padding:6px;">Initiatief</td><td style="background:#ddd;padding:6px;">Definitie</td><td style="background:#ddd;padding:6px;">Ontwerp</td><td style="background:#4CAF50;color:white;padding:6px;">Realisatie</td><td style="background:#ddd;padding:6px;">Oplevering</td></tr></table>' },
+            { id:56, cat:'tables', title:'Projectfasen (actief = ontwerp)', code:'<table style="width:100%;border-collapse:collapse;text-align:center;font-size:0.8rem;"><tr><td style="background:#ddd;padding:6px;">Initiatief</td><td style="background:#ddd;padding:6px;">Definitie</td><td style="background:#4CAF50;color:white;padding:6px;">Ontwerp</td><td style="background:#ddd;padding:6px;">Realisatie</td><td style="background:#ddd;padding:6px;">Oplevering</td></tr></table>', preview:'<table style="width:100%;border-collapse:collapse;text-align:center;font-size:0.8rem;"><tr><td style="background:#ddd;padding:6px;">Initiatief</td><td style="background:#ddd;padding:6px;">Definitie</td><td style="background:#4CAF50;color:white;padding:6px;">Ontwerp</td><td style="background:#ddd;padding:6px;">Realisatie</td><td style="background:#ddd;padding:6px;">Oplevering</td></tr></table>' },
+            { id:57, cat:'tables', title:'Eigenschappen (gestreept)', code:'<table style="width:100%;border-collapse:collapse;font-size:0.85rem;"><tr style="background:#1976D2;color:white;"><th style="padding:8px;text-align:left;">Eigenschap</th><th style="padding:8px;text-align:left;">Waarde</th></tr><tr style="background:#f5f5f5;"><td style="padding:6px;">Status</td><td style="padding:6px;">Actief</td></tr><tr><td style="padding:6px;">Lengte</td><td style="padding:6px;">120 m</td></tr><tr style="background:#f5f5f5;"><td style="padding:6px;">Breedte</td><td style="padding:6px;">4.5 m</td></tr></table>', preview:'<table style="width:100%;border-collapse:collapse;font-size:0.85rem;"><tr style="background:#1976D2;color:white;"><th style="padding:8px;text-align:left;">Eigenschap</th><th style="padding:8px;text-align:left;">Waarde</th></tr><tr style="background:#f5f5f5;"><td style="padding:6px;">Status</td><td style="padding:6px;">Actief</td></tr><tr><td style="padding:6px;">Lengte</td><td style="padding:6px;">120 m</td></tr><tr style="background:#f5f5f5;"><td style="padding:6px;">Breedte</td><td style="padding:6px;">4.5 m</td></tr></table>' },
+            { id:58, cat:'tables', title:'Eenvoudige tabel', code:'<table style="width:100%;border-collapse:collapse;border:1px solid #ddd;font-size:0.85rem;"><tr><th style="border:1px solid #ddd;padding:6px;background:#eee;">Naam</th><th style="border:1px solid #ddd;padding:6px;background:#eee;">Waarde</th></tr><tr><td style="border:1px solid #ddd;padding:6px;">Status</td><td style="border:1px solid #ddd;padding:6px;">Actief</td></tr></table>', preview:'<table style="width:100%;border-collapse:collapse;border:1px solid #ddd;font-size:0.85rem;"><tr><th style="border:1px solid #ddd;padding:6px;background:#eee;">Naam</th><th style="border:1px solid #ddd;padding:6px;background:#eee;">Waarde</th></tr><tr><td style="border:1px solid #ddd;padding:6px;">Status</td><td style="border:1px solid #ddd;padding:6px;">Actief</td></tr></table>' },
+            { id:59, cat:'tables', title:'Tabel met kleurcodes', code:'<table style="width:100%;border-collapse:collapse;font-size:0.8rem;"><tr><td style="background:#4CAF50;color:white;padding:6px;text-align:center;">🟢 Groen</td><td style="background:#FDD835;padding:6px;text-align:center;">🟡 Geel</td><td style="background:#E53935;color:white;padding:6px;text-align:center;">🔴 Rood</td></tr></table>', preview:'<table style="width:100%;border-collapse:collapse;font-size:0.8rem;"><tr><td style="background:#4CAF50;color:white;padding:6px;text-align:center;">🟢 Groen</td><td style="background:#FDD835;padding:6px;text-align:center;">🟡 Geel</td><td style="background:#E53935;color:white;padding:6px;text-align:center;">🔴 Rood</td></tr></table>' },
+
+            // IMAGES (10)
+            { id:60, cat:'images', title:'Afbeelding (standaard)', code:'<img src="https://picsum.photos/300/200" style="width:100%;border-radius:8px;">', preview:'<img src="https://picsum.photos/300/200" style="width:100%;border-radius:8px;max-width:300px;">' },
+            { id:61, cat:'images', title:'Afbeelding (rond)', code:'<img src="https://picsum.photos/120/120" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">', preview:'<img src="https://picsum.photos/120/120" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">' },
+            { id:62, cat:'images', title:'Afbeelding met rand', code:'<img src="https://picsum.photos/300/200" style="width:100%;border:4px solid #4CAF50;border-radius:12px;">', preview:'<img src="https://picsum.photos/300/200" style="width:100%;border:4px solid #4CAF50;border-radius:12px;max-width:300px;">' },
+            { id:63, cat:'images', title:'Afbeelding met schaduw', code:'<img src="https://picsum.photos/300/200" style="width:100%;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);">', preview:'<img src="https://picsum.photos/300/200" style="width:100%;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);max-width:300px;">' },
+            { id:64, cat:'images', title:'Afbeelding (klein)', code:'<img src="https://picsum.photos/80/80" style="width:80px;height:80px;border-radius:8px;object-fit:cover;">', preview:'<img src="https://picsum.photos/80/80" style="width:80px;height:80px;border-radius:8px;object-fit:cover;">' },
+            { id:65, cat:'images', title:'Afbeelding (groot)', code:'<img src="https://picsum.photos/400/250" style="width:100%;border-radius:8px;">', preview:'<img src="https://picsum.photos/400/250" style="width:100%;border-radius:8px;max-width:350px;">' },
+            { id:66, cat:'images', title:'Klikbare afbeelding', code:'<a href="https://example.com" target="_blank"><img src="https://picsum.photos/300/150" style="width:100%;border-radius:8px;border:2px solid #1976D2;"></a>', preview:'<a href="#" style="cursor:default;"><img src="https://picsum.photos/300/150" style="width:100%;border-radius:8px;border:2px solid #1976D2;max-width:300px;"></a>' },
+            { id:67, cat:'images', title:'Polaroid-stijl', code:'<div style="background:white;padding:10px;box-shadow:0 3px 12px rgba(0,0,0,0.12);border-radius:4px;display:inline-block;"><img src="https://picsum.photos/200/150" style="width:100%;"><div style="text-align:center;padding:6px 0 2px;font-size:0.8rem;color:#555;">📍 Amsterdam</div></div>', preview:'<div style="background:white;padding:10px;box-shadow:0 3px 12px rgba(0,0,0,0.12);border-radius:4px;display:inline-block;max-width:200px;"><img src="https://picsum.photos/200/150" style="width:100%;"><div style="text-align:center;padding:6px 0 2px;font-size:0.8rem;color:#555;">📍 Amsterdam</div></div>' },
+
+            // PROJECT (20)
+            { id:68, cat:'project', title:'Voortgangsbalk (75%)', code:'<div style="background:#eee;height:24px;border-radius:12px;overflow:hidden;"><div style="background:#4CAF50;height:100%;width:75%;display:flex;align-items:center;justify-content:center;color:white;font-size:0.8rem;font-weight:600;">75%</div></div>', preview:'<div style="background:#eee;height:24px;border-radius:12px;overflow:hidden;max-width:300px;"><div style="background:#4CAF50;height:100%;width:75%;display:flex;align-items:center;justify-content:center;color:white;font-size:0.8rem;font-weight:600;">75%</div></div>' },
+            { id:69, cat:'project', title:'Voortgangsbalk (40%)', code:'<div style="background:#eee;height:24px;border-radius:12px;overflow:hidden;"><div style="background:#F57C00;height:100%;width:40%;display:flex;align-items:center;justify-content:center;color:white;font-size:0.8rem;font-weight:600;">40%</div></div>', preview:'<div style="background:#eee;height:24px;border-radius:12px;overflow:hidden;max-width:300px;"><div style="background:#F57C00;height:100%;width:40%;display:flex;align-items:center;justify-content:center;color:white;font-size:0.8rem;font-weight:600;">40%</div></div>' },
+            { id:70, cat:'project', title:'Voortgangsbalk (10%)', code:'<div style="background:#eee;height:24px;border-radius:12px;overflow:hidden;"><div style="background:#E53935;height:100%;width:10%;display:flex;align-items:center;justify-content:center;color:white;font-size:0.8rem;font-weight:600;">10%</div></div>', preview:'<div style="background:#eee;height:24px;border-radius:12px;overflow:hidden;max-width:300px;"><div style="background:#E53935;height:100%;width:10%;display:flex;align-items:center;justify-content:center;color:white;font-size:0.8rem;font-weight:600;">10%</div></div>' },
+            { id:71, cat:'project', title:'KPI Tile (blauw)', code:'<div style="background:#1976D2;color:white;padding:16px;text-align:center;border-radius:12px;min-width:100px;"><div style="font-size:32px;font-weight:700;">152</div><div style="font-size:0.85rem;">Objecten</div></div>', preview:'<div style="background:#1976D2;color:white;padding:16px;text-align:center;border-radius:12px;min-width:100px;display:inline-block;"><div style="font-size:32px;font-weight:700;">152</div><div style="font-size:0.85rem;">Objecten</div></div>' },
+            { id:72, cat:'project', title:'KPI Tile (groen)', code:'<div style="background:#2E7D32;color:white;padding:16px;text-align:center;border-radius:12px;min-width:100px;"><div style="font-size:32px;font-weight:700;">98%</div><div style="font-size:0.85rem;">Goed</div></div>', preview:'<div style="background:#2E7D32;color:white;padding:16px;text-align:center;border-radius:12px;min-width:100px;display:inline-block;"><div style="font-size:32px;font-weight:700;">98%</div><div style="font-size:0.85rem;">Goed</div></div>' },
+            { id:73, cat:'project', title:'KPI Tile (oranje)', code:'<div style="background:#E65100;color:white;padding:16px;text-align:center;border-radius:12px;min-width:100px;"><div style="font-size:32px;font-weight:700;">15</div><div style="font-size:0.85rem;">Open</div></div>', preview:'<div style="background:#E65100;color:white;padding:16px;text-align:center;border-radius:12px;min-width:100px;display:inline-block;"><div style="font-size:32px;font-weight:700;">15</div><div style="font-size:0.85rem;">Open</div></div>' },
+            { id:74, cat:'project', title:'Ribbon (rood)', code:'<div style="background:#C62828;color:white;padding:10px 20px;font-weight:700;text-align:center;border-radius:4px;">PROJECT</div>', preview:'<div style="background:#C62828;color:white;padding:10px 20px;font-weight:700;text-align:center;border-radius:4px;">PROJECT</div>' },
+            { id:75, cat:'project', title:'Ribbon (blauw)', code:'<div style="background:#1565C0;color:white;padding:10px 20px;font-weight:700;text-align:center;border-radius:4px;">NIEUW</div>', preview:'<div style="background:#1565C0;color:white;padding:10px 20px;font-weight:700;text-align:center;border-radius:4px;">NIEUW</div>' },
+            { id:76, cat:'project', title:'Ribbon (groen)', code:'<div style="background:#2E7D32;color:white;padding:10px 20px;font-weight:700;text-align:center;border-radius:4px;">GEREED</div>', preview:'<div style="background:#2E7D32;color:white;padding:10px 20px;font-weight:700;text-align:center;border-radius:4px;">GEREED</div>' },
+            { id:77, cat:'project', title:'Ribbon met icoon', code:'<div style="background:#C62828;color:white;padding:10px 20px;font-weight:700;text-align:center;border-radius:4px;">⚠ PRIORITEIT</div>', preview:'<div style="background:#C62828;color:white;padding:10px 20px;font-weight:700;text-align:center;border-radius:4px;">⚠ PRIORITEIT</div>' },
+            { id:78, cat:'project', title:'Checklist', code:'<div style="padding:8px 0;"><div style="display:flex;align-items:center;gap:8px;padding:4px 0;">✅ <span>Initiatief</span></div><div style="display:flex;align-items:center;gap:8px;padding:4px 0;">✅ <span>Ontwerp</span></div><div style="display:flex;align-items:center;gap:8px;padding:4px 0;">⬜ <span>Uitvoering</span></div><div style="display:flex;align-items:center;gap:8px;padding:4px 0;">⬜ <span>Oplevering</span></div></div>', preview:'<div style="padding:8px 0;"><div style="display:flex;align-items:center;gap:8px;padding:4px 0;">✅ <span>Initiatief</span></div><div style="display:flex;align-items:center;gap:8px;padding:4px 0;">✅ <span>Ontwerp</span></div><div style="display:flex;align-items:center;gap:8px;padding:4px 0;">⬜ <span>Uitvoering</span></div><div style="display:flex;align-items:center;gap:8px;padding:4px 0;">⬜ <span>Oplevering</span></div></div>' },
+
+            // INFRA (20)
+            { id:79, cat:'infra', title:'Weg (donkergrijs)', code:'<div style="background:#424242;height:16px;border-radius:8px;"></div>', preview:'<div style="background:#424242;height:16px;border-radius:8px;max-width:300px;"></div>' },
+            { id:80, cat:'infra', title:'Weg met middenstreep', code:'<div style="background:#555;height:14px;position:relative;border-radius:4px;"><div style="background:#FDD835;height:2px;width:100%;position:absolute;top:6px;"></div></div>', preview:'<div style="background:#555;height:14px;position:relative;border-radius:4px;max-width:300px;"><div style="background:#FDD835;height:2px;width:100%;position:absolute;top:6px;"></div></div>' },
+            { id:81, cat:'infra', title:'Fietspad (blauw)', code:'<div style="background:#1565C0;height:12px;border-radius:6px;"></div>', preview:'<div style="background:#1565C0;height:12px;border-radius:6px;max-width:300px;"></div>' },
+            { id:82, cat:'infra', title:'Voetpad (grijs)', code:'<div style="background:#BDBDBD;height:10px;border-radius:5px;"></div>', preview:'<div style="background:#BDBDBD;height:10px;border-radius:5px;max-width:300px;"></div>' },
+            { id:83, cat:'infra', title:'Waterleiding (blauw)', code:'<div style="border-left:6px solid #1976D2;padding:12px 16px;background:#E3F2FD;border-radius:4px;">💧 Drinkwater</div>', preview:'<div style="border-left:6px solid #1976D2;padding:12px 16px;background:#E3F2FD;border-radius:4px;">💧 Drinkwater</div>' },
+            { id:84, cat:'infra', title:'Gasleiding (oranje)', code:'<div style="border-left:6px solid #E65100;padding:12px 16px;background:#FFF3E0;border-radius:4px;">🔥 Gasleiding</div>', preview:'<div style="border-left:6px solid #E65100;padding:12px 16px;background:#FFF3E0;border-radius:4px;">🔥 Gasleiding</div>' },
+            { id:85, cat:'infra', title:'Elektra (geel)', code:'<div style="border-left:6px solid #FDD835;padding:12px 16px;background:#FFFDE7;border-radius:4px;">⚡ Hoogspanning</div>', preview:'<div style="border-left:6px solid #FDD835;padding:12px 16px;background:#FFFDE7;border-radius:4px;">⚡ Hoogspanning</div>' },
+            { id:86, cat:'infra', title:'Glasvezel (paars)', code:'<div style="border-left:6px solid #7B1FA2;padding:12px 16px;background:#F3E5F5;border-radius:4px;">🌐 Glasvezel</div>', preview:'<div style="border-left:6px solid #7B1FA2;padding:12px 16px;background:#F3E5F5;border-radius:4px;">🌐 Glasvezel</div>' },
+            { id:87, cat:'infra', title:'Riool (bruin)', code:'<div style="border-left:6px solid #5D4037;padding:12px 16px;background:#EFEBE9;border-radius:4px;">🛢 Riool</div>', preview:'<div style="border-left:6px solid #5D4037;padding:12px 16px;background:#EFEBE9;border-radius:4px;">🛢 Riool</div>' },
+            { id:88, cat:'infra', title:'Telecom (teal)', code:'<div style="border-left:6px solid #00838F;padding:12px 16px;background:#E0F7FA;border-radius:4px;">📡 Telecom</div>', preview:'<div style="border-left:6px solid #00838F;padding:12px 16px;background:#E0F7FA;border-radius:4px;">📡 Telecom</div>' },
+            { id:89, cat:'infra', title:'Brug (grijs)', code:'<div style="text-align:center;font-size:1.2rem;font-weight:300;letter-spacing:4px;">══════════<br>╱        ╲<br>══════════</div>', preview:'<div style="text-align:center;font-size:1.2rem;font-weight:300;letter-spacing:4px;">══════════<br>╱        ╲<br>══════════</div>' },
+            { id:90, cat:'infra', title:'Spoorweg', code:'<div style="text-align:center;font-size:0.9rem;font-weight:300;letter-spacing:2px;">══════════<br>||||||||||||<br>══════════</div>', preview:'<div style="text-align:center;font-size:0.9rem;font-weight:300;letter-spacing:2px;">══════════<br>||||||||||||<br>══════════</div>' },
+
+            // NATURE (15)
+            { id:91, cat:'nature', title:'Boomkaart (Eik)', code:'<div style="background:#E8F5E9;padding:16px;border-radius:12px;border-left:6px solid #2E7D32;"><div style="font-size:1.5rem;">🌳</div><b>Eik</b><hr style="margin:6px 0;"><div style="font-size:0.85rem;">Leeftijd: <b>42 jaar</b><br>Conditie: 🟢 Goed</div></div>', preview:'<div style="background:#E8F5E9;padding:16px;border-radius:12px;border-left:6px solid #2E7D32;max-width:250px;"><div style="font-size:1.5rem;">🌳</div><b>Eik</b><hr style="margin:6px 0;"><div style="font-size:0.85rem;">Leeftijd: <b>42 jaar</b><br>Conditie: 🟢 Goed</div></div>' },
+            { id:92, cat:'nature', title:'Boomkaart (Berk)', code:'<div style="background:#E8F5E9;padding:16px;border-radius:12px;border-left:6px solid #4CAF50;"><div style="font-size:1.5rem;">🌲</div><b>Berk</b><hr style="margin:6px 0;"><div style="font-size:0.85rem;">Leeftijd: <b>18 jaar</b><br>Conditie: 🟡 Matig</div></div>', preview:'<div style="background:#E8F5E9;padding:16px;border-radius:12px;border-left:6px solid #4CAF50;max-width:250px;"><div style="font-size:1.5rem;">🌲</div><b>Berk</b><hr style="margin:6px 0;"><div style="font-size:0.85rem;">Leeftijd: <b>18 jaar</b><br>Conditie: 🟡 Matig</div></div>' },
+            { id:93, cat:'nature', title:'Bomenrij', code:'<div style="font-size:2rem;letter-spacing:8px;">🌳🌳🌳🌳🌳</div>', preview:'<div style="font-size:2rem;letter-spacing:8px;">🌳🌳🌳🌳🌳</div>' },
+            { id:94, cat:'nature', title:'Bos', code:'<div style="font-size:1.8rem;letter-spacing:4px;line-height:1.8;">🌲🌳🌴🌳🌲<br>🌳🌴🌲🌳🌴</div>', preview:'<div style="font-size:1.8rem;letter-spacing:4px;line-height:1.8;">🌲🌳🌴🌳🌲<br>🌳🌴🌲🌳🌴</div>' },
+            { id:95, cat:'nature', title:'Groenvoorziening', code:'<div style="font-size:1.8rem;letter-spacing:3px;">🌷🌸🌹🌺🌻🌼🌿🍀</div>', preview:'<div style="font-size:1.8rem;letter-spacing:3px;">🌷🌸🌹🌺🌻🌼🌿🍀</div>' },
+            { id:96, cat:'nature', title:'Water (golfjes)', code:'<div style="font-size:1.8rem;letter-spacing:6px;">🌊🌊🌊🌊🌊</div>', preview:'<div style="font-size:1.8rem;letter-spacing:6px;">🌊🌊🌊🌊🌊</div>' },
+            { id:97, cat:'nature', title:'Watergang (blauw)', code:'<div style="background:#03A9F4;height:14px;border-radius:8px;"></div>', preview:'<div style="background:#03A9F4;height:14px;border-radius:8px;max-width:300px;"></div>' },
+
+            // DASHBOARDS (12)
+            { id:98, cat:'dashboards', title:'Mini dashboard (4 metrics)', code:'<table style="width:100%;text-align:center;border-collapse:collapse;"><tr><td style="padding:8px;">🌳<br><b>25</b></td><td style="padding:8px;">🚗<br><b>8</b></td><td style="padding:8px;">💧<br><b>12</b></td><td style="padding:8px;">⚡<br><b>31</b></td></tr></table>', preview:'<table style="width:100%;text-align:center;border-collapse:collapse;max-width:300px;"><tr><td style="padding:8px;">🌳<br><b>25</b></td><td style="padding:8px;">🚗<br><b>8</b></td><td style="padding:8px;">💧<br><b>12</b></td><td style="padding:8px;">⚡<br><b>31</b></td></tr></table>' },
+            { id:99, cat:'dashboards', title:'KPI Cards (3 kolommen)', code:'<div style="display:flex;gap:8px;flex-wrap:wrap;"><div style="flex:1;min-width:80px;background:#1976D2;color:white;padding:12px;text-align:center;border-radius:8px;"><div style="font-size:24px;font-weight:700;">125</div><div style="font-size:0.7rem;">Objecten</div></div><div style="flex:1;min-width:80px;background:#2E7D32;color:white;padding:12px;text-align:center;border-radius:8px;"><div style="font-size:24px;font-weight:700;">98%</div><div style="font-size:0.7rem;">Goed</div></div><div style="flex:1;min-width:80px;background:#E65100;color:white;padding:12px;text-align:center;border-radius:8px;"><div style="font-size:24px;font-weight:700;">15</div><div style="font-size:0.7rem;">Open</div></div></div>', preview:'<div style="display:flex;gap:8px;flex-wrap:wrap;max-width:350px;"><div style="flex:1;min-width:70px;background:#1976D2;color:white;padding:12px;text-align:center;border-radius:8px;"><div style="font-size:24px;font-weight:700;">125</div><div style="font-size:0.7rem;">Objecten</div></div><div style="flex:1;min-width:70px;background:#2E7D32;color:white;padding:12px;text-align:center;border-radius:8px;"><div style="font-size:24px;font-weight:700;">98%</div><div style="font-size:0.7rem;">Goed</div></div><div style="flex:1;min-width:70px;background:#E65100;color:white;padding:12px;text-align:center;border-radius:8px;"><div style="font-size:24px;font-weight:700;">15</div><div style="font-size:0.7rem;">Open</div></div></div>' },
+
+            // SYMBOLS (10)
+            { id:100, cat:'symbols', title:'Verkeer & vervoer', code:'<span style="font-size:1.8rem;letter-spacing:4px;">🚗🚙🚕🚓🚑🚒🚌🚚</span>', preview:'<span style="font-size:1.8rem;letter-spacing:4px;">🚗🚙🚕🚓🚑🚒🚌🚚</span>' },
+            { id:101, cat:'symbols', title:'Gebouwen', code:'<span style="font-size:1.8rem;letter-spacing:4px;">🏠🏢🏭🏫🏥🏛️🏚️</span>', preview:'<span style="font-size:1.8rem;letter-spacing:4px;">🏠🏢🏭🏫🏥🏛️🏚️</span>' },
+            { id:102, cat:'symbols', title:'GIS symbolen', code:'<span style="font-size:1.8rem;letter-spacing:4px;">📍🧭🗺️📡🌍🛰️📌</span>', preview:'<span style="font-size:1.8rem;letter-spacing:4px;">📍🧭🗺️📡🌍🛰️📌</span>' },
+            { id:103, cat:'symbols', title:'Status symbolen', code:'<span style="font-size:1.8rem;letter-spacing:6px;">✔️✖️➜▶️⮞</span>', preview:'<span style="font-size:1.8rem;letter-spacing:6px;">✔️✖️➜▶️⮞</span>' },
+            { id:104, cat:'symbols', title:'Weer symbolen', code:'<span style="font-size:1.8rem;letter-spacing:4px;">☀️🌤️⛅🌥️☁️🌧️⛈️❄️</span>', preview:'<span style="font-size:1.8rem;letter-spacing:4px;">☀️🌤️⛅🌥️☁️🌧️⛈️❄️</span>' },
+            { id:105, cat:'symbols', title:'Gereedschap', code:'<span style="font-size:1.8rem;letter-spacing:4px;">🔨🪛🪚⚙️🔧</span>', preview:'<span style="font-size:1.8rem;letter-spacing:4px;">🔨🪛🪚⚙️🔧</span>' },
+        ];
+
+        // ----- render -----
+        const grid = document.getElementById('examples-grid');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toast-msg');
+
+        function renderExamples(filter = 'all') {
+            grid.innerHTML = '';
+            const filtered = examples.filter(e => filter === 'all' || e.cat === filter);
+            if (!filtered.length) {
+                grid.innerHTML = `<div class="col-span-full text-center text-[#6b655a] italic p-8 paper-sheet p-6">✦ geen componenten in deze categorie</div>`;
+                return;
+            }
+            filtered.forEach(ex => {
+                const card = document.createElement('div');
+                card.className = 'paper-sheet p-4 flex flex-col relative';
+                card.style.borderRadius = '4px 24px 4px 24px';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="badge-cat">${ex.cat}</span>
+                        <span class="text-[10px] text-[#6b655a]">#${ex.id}</span>
+                    </div>
+                    <h4 class="font-medium text-sm mt-1 text-[#2b2a26]">${ex.title}</h4>
+                    <div class="preview-box my-2">${ex.preview || '—'}</div>
+                    <div class="code-block text-xs mt-1 flex-1">${ex.code}</div>
+                    <button class="copy-btn mt-2 self-end">📋 kopieer HTML</button>
+                `;
+                grid.appendChild(card);
+            });
+
+            document.querySelectorAll('.copy-btn').forEach((btn) => {
+                btn.addEventListener('click', (e) => {
+                    const card = e.target.closest('.paper-sheet');
+                    const codeBlock = card.querySelector('.code-block');
+                    const code = codeBlock.textContent.trim();
+                    navigator.clipboard?.writeText?.(code)?.then(() => showToast('✦ HTML-code gekopieerd')) 
+                    || (() => { const ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast('✦ HTML-code gekopieerd'); })();
+                });
+            });
+        }
+
+        function showToast(msg) {
+            toastMsg.textContent = msg;
+            toast.classList.remove('translate-y-16', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            clearTimeout(toast._hide);
+            toast._hide = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-16', 'opacity-0');
+            }, 2000);
+        }
+
+        // tabs
+        document.querySelectorAll('.tab-btn').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                renderExamples(tab.dataset.cat);
+            });
+        });
+
+        renderExamples('all');
+    </script>
+
+</body>
+</html>
