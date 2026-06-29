@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade · MCM code builder</title>
+    <!-- Tailwind + custom MCM flavor -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Mid-Century palette
+                        mcm: {
+                            beige: '#f5e6d3',
+                            cream: '#fffbf5',
+                            deep: '#2c2416',
+                            orange: '#d97642',
+                            mustard: '#d4a574',
+                            olive: '#4a7c59',
+                            walnut: '#6b5d4f',
+                            teak: '#8b7355',
+                            grayblue: '#7d9ba8',
+                            coral: '#e57a77',
+                            slate: '#3d3a35',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Futura', 'Century Gothic', 'Avenir', 'system-ui', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap');
+        * { transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+        body {
+            background: #f5e6d3; /* warm beige */
+            color: #2c2416;
+            font-family: 'Futura', 'Century Gothic', 'Avenir', system-ui, sans-serif;
+        }
+        .card {
+            background: rgba(255, 251, 245, 0.7);
+            backdrop-filter: blur(2px);
+            border: 1px solid #d4c5b5;
+            box-shadow: 0 8px 20px rgba(44, 36, 22, 0.06);
+        }
+        .card-soft {
+            background: #fffbf5;
+            border: 1px solid #e5d9cc;
+        }
+        .btn-mcm {
+            background: #d97642;
+            color: white;
+            border: none;
+            padding: 0.4rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            box-shadow: 0 2px 6px rgba(217, 118, 66, 0.2);
+            transition: all 0.15s ease;
+        }
+        .btn-mcm:hover {
+            background: #c26534;
+            transform: scale(0.97);
+            box-shadow: 0 2px 10px rgba(217, 118, 66, 0.3);
+        }
+        .btn-mcm-outline {
+            background: transparent;
+            border: 1.5px solid #d97642;
+            color: #d97642;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            font-weight: 500;
+        }
+        .btn-mcm-outline:hover {
+            background: #d97642;
+            color: white;
+        }
+        .field-input {
+            background: #fffcf8;
+            border: 1px solid #d6cbbc;
+            border-radius: 20px;
+            padding: 0.3rem 1rem;
+            font-size: 0.85rem;
+            color: #2c2416;
+        }
+        .field-input:focus {
+            outline: none;
+            border-color: #d97642;
+            box-shadow: 0 0 0 3px rgba(217, 118, 66, 0.15);
+        }
+        .code-panel {
+            background: #2c2416;
+            color: #d4c5b5;
+            border-radius: 24px;
+            padding: 1.25rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            line-height: 1.7;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .preset-item {
+            background: #fffbf5;
+            border: 1px solid #e2d6c8;
+            border-radius: 30px;
+            padding: 0.5rem 1rem;
+            transition: all 0.12s ease;
+            cursor: pointer;
+        }
+        .preset-item:hover {
+            background: #f5e6d3;
+            border-color: #d97642;
+            transform: translateX(4px);
+        }
+        .tab-mcm {
+            padding: 0.4rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            background: transparent;
+            color: #6b5d4f;
+            border: 1px solid transparent;
+        }
+        .tab-mcm.active {
+            background: #2c2416;
+            color: #f5e6d3;
+            border-color: #2c2416;
+        }
+        .tab-mcm:not(.active):hover {
+            background: #e5d9cc;
+        }
+        .starburst {
+            background: radial-gradient(circle at 20% 30%, #f5e6d3 0%, #d4a574 80%);
+            opacity: 0.3;
+        }
+        /* organic shapes */
+        .organic-blob {
+            border-radius: 70% 30% 60% 40% / 40% 60% 30% 70%;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #d6cbbc; border-radius: 20px; }
+        ::-webkit-scrollbar-thumb { background: #8b7355; border-radius: 20px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-5 md:p-8" style="background: #f5e6d3;">
+
+    <!-- header – MCM warm minimal -->
+    <header class="flex flex-wrap items-center justify-between gap-4 max-w-7xl mx-auto w-full pb-6 border-b border-[#d4c5b5] mb-6">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-[#d97642] flex items-center justify-center text-white text-xl font-bold shadow-md" style="box-shadow: 0 4px 12px rgba(217,118,66,0.2);">
+                ⚡
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-[#2c2416] flex items-center gap-2">
+                    Arcade <span class="text-sm font-medium bg-[#2c2416] text-[#f5e6d3] px-3 py-0.5 rounded-full">MCM</span>
+                </h1>
+                <p class="text-xs text-[#6b5d4f] tracking-wide">esri arcade · expressiebouwer</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 text-xs text-[#6b5d4f]">
+            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#4a7c59]"></span> gemini 2.5</span>
+            <span class="hidden sm:inline-block w-px h-6 bg-[#d4c5b5]"></span>
+            <span class="italic">retro · functioneel</span>
+        </div>
+    </header>
+
+    <!-- main grid -->
+    <main class="flex-1 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- left: builder (8 cols) -->
+        <div class="lg:col-span-7 space-y-5">
+
+            <!-- AI prompt – but without "AI" label, just "natuurlijke taal" -->
+            <div class="card rounded-3xl p-5 relative overflow-hidden">
+                <div class="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-[#d4a574] opacity-10 blur-2xl"></div>
+                <div class="relative">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-[#d97642] text-lg">✦</span>
+                        <h2 class="font-semibold text-[#2c2416] text-sm tracking-wide">Genereer via natuurlijke taal</h2>
+                    </div>
+                    <p class="text-xs text-[#6b5d4f] mb-3">Omschrijf de gewenste logica — de generator zet het om in velden &amp; voorwaarden.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <input type="text" id="ai-prompt-input" placeholder="Bijv: als status 'Open' en prioriteit hoog → 'direct actie' ..." class="flex-1 min-w-[180px] field-input text-sm">
+                        <button id="btn-generate-ai" class="btn-mcm text-sm flex items-center gap-1.5">
+                            <span id="ai-loader" class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin hidden"></span>
+                            <span id="ai-btn-text">Genereer</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual builder card -->
+            <div class="card rounded-3xl p-6 space-y-5">
+
+                <!-- step 1: fields -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-[#2c2416] text-sm flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-[#d97642] text-white flex items-center justify-center text-xs">1</span>
+                            Velden &amp; variabelen
+                        </h3>
+                        <button id="btn-add-field" class="text-xs text-[#d97642] font-medium flex items-center gap-1 hover:underline">
+                            <span class="text-lg leading-none">+</span> veld
+                        </button>
+                    </div>
+                    <div id="fields-container" class="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                        <!-- dynamic fields -->
+                    </div>
+                </div>
+
+                <!-- step 2: global config -->
+                <div class="border-t border-[#d4c5b5] pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="font-semibold text-[#2c2416] text-sm flex items-center gap-2 mb-2">
+                            <span class="w-6 h-6 rounded-full bg-[#d97642] text-white flex items-center justify-center text-xs">2</span>
+                            Return type &amp; leegcheck
+                        </h3>
+                        <div class="space-y-2">
+                            <select id="config-return-type" class="field-input w-full text-sm">
+                                <option value="text">📄 Tekst</option>
+                                <option value="number" selected>🔢 Nummer</option>
+                            </select>
+                            <label class="flex items-center gap-2 text-sm text-[#2c2416]">
+                                <input type="checkbox" id="config-check-empty" checked class="w-4 h-4 rounded border-[#d4c5b5] text-[#d97642] focus:ring-0 focus:ring-offset-0">
+                                <span>IsEmpty controle</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="empty-fallback-container">
+                        <h3 class="font-semibold text-[#2c2416] text-sm flex items-center gap-2 mb-2 opacity-0">.</h3>
+                        <div>
+                            <label class="text-xs text-[#6b5d4f] block mb-0.5">Als leeg, geef terug:</label>
+                            <input type="text" id="config-empty-return" value="Geen waarde" class="field-input w-full text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- step 3: conditions -->
+                <div class="border-t border-[#d4c5b5] pt-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-[#2c2416] text-sm flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-[#d97642] text-white flex items-center justify-center text-xs">3</span>
+                            Voorwaarden (if / else if)
+                        </h3>
+                        <button id="btn-add-condition" class="text-xs text-[#d97642] font-medium flex items-center gap-1 hover:underline">
+                            <span class="text-lg leading-none">+</span> voorwaarde
+                        </button>
+                    </div>
+                    <div id="conditions-container" class="space-y-3 max-h-[280px] overflow-y-auto pr-1">
+                        <!-- conditions render here -->
+                    </div>
+                    <!-- else block -->
+                    <div class="mt-3 bg-[#f5ede4] border border-dashed border-[#cbb8a8] rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold bg-[#2c2416] text-[#f5e6d3] px-3 py-0.5 rounded-full">ELSE</span>
+                            <span class="text-xs text-[#6b5d4f]">geen match</span>
+                        </div>
+                        <input type="text" id="else-return-val" value="Onbekend" class="field-input w-40 text-sm">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- right: code + presets (5 cols) -->
+        <div class="lg:col-span-5 space-y-5">
+
+            <!-- code panel -->
+            <div class="card rounded-3xl p-5 flex flex-col h-[400px]">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-semibold text-[#2c2416] text-sm flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#d97642]"></span>
+                        Arcade code
+                    </h3>
+                    <button id="btn-copy-code" class="text-xs bg-[#e5d9cc] hover:bg-[#d4c5b5] px-3 py-1 rounded-full flex items-center gap-1.5 transition">
+                        <span>📋</span> kopieer
+                    </button>
+                </div>
+                <div class="flex-1 code-panel overflow-auto">
+                    <pre id="code-output" class="whitespace-pre-wrap select-text"></pre>
+                </div>
+            </div>
+
+            <!-- presets library -->
+            <div class="card rounded-3xl p-5 flex flex-col flex-1 min-h-[280px]">
+                <div class="mb-3">
+                    <h3 class="font-semibold text-[#2c2416] text-sm">📚 voorbeelden &amp; templates</h3>
+                    <p class="text-xs text-[#6b5d4f]">laad een structuur in één klik</p>
+                </div>
+                <!-- tabs -->
+                <div class="flex gap-1 border-b border-[#d4c5b5] pb-2 mb-3">
+                    <button id="tab-numeric" class="tab-mcm active">🔢 numeriek (1-10)</button>
+                    <button id="tab-logic" class="tab-mcm">📝 logica &amp; tekst (11-26)</button>
+                </div>
+                <div id="presets-list" class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[280px]">
+                    <!-- presets injected -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-[#2c2416] text-[#f5e6d3] px-5 py-3 rounded-full shadow-xl text-sm font-medium flex items-center gap-2 transform translate-y-16 opacity-0 transition-all duration-300 pointer-events-none z-50">
+        <span id="toast-msg">✓ gekopieerd</span>
+    </div>
+
+    <script>
+        // ----- state -----
+        let appState = {
+            fields: [
+                { id: 'f1', name: 'status', featureField: 'Status', type: 'text' }
+            ],
+            conditions: [
+                { id: 'c1', fieldId: 'f1', operator: '==', compareValue: 'Open', returnValue: '1', returnType: 'number' },
+                { id: 'c2', fieldId: 'f1', operator: '==', compareValue: 'In behandeling', returnValue: '2', returnType: 'number' }
+            ],
+            returnType: 'number',
+            checkEmpty: true,
+            emptyReturnValue: '0',
+            elseReturnValue: '0'
+        };
+
+        // ----- presets (26 stuks, numeriek + logica) -----
+        const presets = [
+            // numeric 1-10
+            { id:'p1', category:'numeric', title:'Vast nummer (1)', desc:'geeft altijd 1 terug', state:{ fields:[], conditions:[], returnType:'number', checkEmpty:false, emptyReturnValue:'0', elseReturnValue:'1' } },
+            { id:'p2', category:'numeric', title:'If score ≠ null', desc:'geef score, anders 0', state:{ fields:[{id:'f1',name:'score',featureField:'Score',type:'number'}], conditions:[{id:'c1',fieldId:'f1',operator:'!=',compareValue:'null',returnValue:'score',returnType:'field'}], returnType:'number', checkEmpty:true, emptyReturnValue:'0', elseReturnValue:'0' } },
+            { id:'p3', category:'numeric', title:'Status → nummer', desc:'Open=1, In beh.=2, Afgerond=3', state:{ fields:[{id:'f1',name:'status',featureField:'Status',type:'text'}], conditions:[{id:'c1',fieldId:'f1',operator:'==',compareValue:'Open',returnValue:'1',returnType:'number'},{id:'c2',fieldId:'f1',operator:'==',compareValue:'In behandeling',returnValue:'2',returnType:'number'},{id:'c3',fieldId:'f1',operator:'==',compareValue:'Afgerond',returnValue:'3',returnType:'number'}], returnType:'number', checkEmpty:true, emptyReturnValue:'0', elseReturnValue:'0' } },
+            { id:'p4', category:'numeric', title:'Oppervlakte categorie', desc:'≥1000=3, ≥500=2, anders=1', state:{ fields:[{id:'f1',name:'opp',featureField:'Oppervlakte',type:'number'}], conditions:[{id:'c1',fieldId:'f1',operator:'>=',compareValue:'1000',returnValue:'3',returnType:'number'},{id:'c2',fieldId:'f1',operator:'>=',compareValue:'500',returnValue:'2',returnType:'number'}], returnType:'number', checkEmpty:true, emptyReturnValue:'0', elseReturnValue:'1' } },
+            { id:'p5', category:'numeric', title:'Lengte × Breedte', desc:'berekening met leeg-check', state:{ fields:[{id:'f1',name:'lengte',featureField:'Lengte',type:'number'},{id:'f2',name:'breedte',featureField:'Breedte',type:'number'}], conditions:[{id:'c1',fieldId:'f1',operator:'AND_NOT_EMPTY',compareValue:'f2',returnValue:'lengte * breedte',returnType:'expression'}], returnType:'number', checkEmpty:true, emptyReturnValue:'0', elseReturnValue:'0' } },
+            { id:'p6', category:'numeric', title:'Afronden (prijs)', desc:'Round(prijs, 2)', state:{ fields:[{id:'f1',name:'prijs',featureField:'Prijs',type:'number'}], conditions:[], returnType:'number', checkEmpty:true, emptyReturnValue:'0', elseReturnValue:'Round(prijs, 2)' } },
+            { id:'p7', category:'numeric', title:'Boolean → 1/0', desc:'Actief=Ja → 1', state:{ fields:[{id:'f1',name:'actief',featureField:'Actief',type:'text'}], conditions:[{id:'c1',fieldId:'f1',operator:'==',compareValue:'Ja',returnValue:'1',returnType:'number'}], returnType:'number', checkEmpty:false, emptyReturnValue:'0', elseReturnValue:'0' } },
+            { id:'p8', category:'numeric', title:'Meerdere velden (IF) met AND', desc:'status=Open én prioriteit=Hoog → 1', state:{ fields:[{id:'f1',name:'status',featureField:'Status',type:'text'},{id:'f2',name:'prioriteit',featureField:'Prioriteit',type:'text'}], conditions:[{id:'c1',fieldId:'f1',operator:'==',compareValue:'Open',returnValue:'1',returnType:'number'}], returnType:'number', checkEmpty:true, emptyReturnValue:'0', elseReturnValue:'0' } },
+            { id:'p9', category:'numeric', title:'If met OR (twee velden)', desc:'id=1 of idd=66 → 100', state:{ fields:[{id:'f1',name:'id',featureField:'ID',type:'number'},{id:'f2',name:'idd',featureField:'IDD',type:'number'}], conditions:[{id:'c1',fieldId:'f1',operator:'==',compareValue:'1',returnValue:'100',returnType:'number'},{id:'c2',fieldId:'f2',operator:'==',compareValue:'66',returnValue:'100',returnType:'number'}], returnType:'number', checkEmpty:false, emptyReturnValue:'0', elseReturnValue:'0' } },
+            { id:'p10', category:'numeric', title:'IF meerdere condities (enkel veld)', desc:'id=1→kk, id=66→hh', state:{ fields:[{id:'f1',name:'id',featureField:'ID',type:'number'}], conditions:[{id:'c1',fieldId:'f1',operator:'==',compareValue:'1',returnValue:'kk',returnType:'text'},{id:'c2',fieldId:'f1',operator:'==',compareValue:'66',returnValue:'hh',returnType:'text'}], returnType:'text', checkEmpty:false, emptyReturnValue:'-', elseReturnValue:'-' } },
+            // logic 11-26 (text)
+            { id:'p11', category:'logic', title:'Status → emoji', desc:'Open 🟢, anders 🔴', state:{ fields:[{id:'f1',name:'status',featureField:'Status',type:'text'}], conditions:[{id:'c1',fieldId:'f1',operator:'==',compareValue:'Open',returnValue:'🟢 Open',returnType:'text'}], returnType:'text', checkEmpty:false, emptyReturnValue:'Onbekend', elseReturnValue:'🔴 Gesloten' } },
+            { id:'p12', category:'logic', title:'Score → tekst (uitstekend/goed)', desc:'≥90 uitstekend, ≥75 goed', state:{ fields:[{id:'f1',name:'score',featureField:'Score',type:'number'}], conditions:[{id:'c1',fieldId:'f1',operator:'>=',compareValue:'90',returnValue:'Uitstekend',returnType:'text'},{id:'c2',fieldId:'f1',operator:'>=',compareValue:'75',returnValue:'Goed',returnType:'text'}], returnType:'text', checkEmpty:false, emptyReturnValue:'Geen score', elseReturnValue:'Onvoldoende' } },
+            { id:'p13', category:'logic', title:'Bevat "school"', desc:'Find("school", Lower(naam))', state:{ fields:[{id:'f1',name:'naam',featureField:'Naam',type:'text'}], conditions:[{id:'c1',fieldId:'f1',operator:'CONTAINS',compareValue:'school',returnValue:'School',returnType:'text'}], returnType:'text', checkEmpty:false, emptyReturnValue:'Geen naam', elseReturnValue:'Geen school' } },
+            { id:'p14', category:'logic', title:'Meerdere tekst condities', desc:'status = "actief" → "Actief"', state:{ fields:[{id:'f1',name:'status',featureField:'Status',type:'text'}], conditions:[{id:'c1',fieldId:'f1',operator:'==',compareValue:'actief',returnValue:'Actief',returnType:'text'},{id:'c2',fieldId:'f1',operator:'==',compareValue:'inactief',returnValue:'Inactief',returnType:'text'}], returnType:'text', checkEmpty:true, emptyReturnValue:'Onbekend', elseReturnValue:'Overig' } },
+            { id:'p15', category:'logic', title:'IF met AND (twee velden tekst)', desc:'status=Open én regio=Noord → "Noord Open"', state:{ fields:[{id:'f1',name:'status',featureField:'Status',type:'text'},{id:'f2',name:'regio',featureField:'Regio',type:'text'}], conditions:[{id:'c1',fieldId:'f1',operator:'==',compareValue:'Open',returnValue:'Noord Open',returnType:'text'}], returnType:'text', checkEmpty:false, emptyReturnValue:'-', elseReturnValue:'Anders' } },
+            { id:'p16', category:'logic', title:'OR met twee velden (tekst)', desc:'id=1 of idd=66 → "speciaal"', state:{ fields:[{id:'f1',name:'id',featureField:'ID',type:'number'},{id:'f2',name:'idd',featureField:'IDD',type:'number'}], conditions:[{id:'c1',fieldId:'f1',operator:'==',compareValue:'1',returnValue:'speciaal',returnType:'text'},{id:'c2',fieldId:'f2',operator:'==',compareValue:'66',returnValue:'speciaal',returnType:'text'}], returnType:'text', checkEmpty:false, emptyReturnValue:'-', elseReturnValue:'normaal' } },
+        ];
+
+        // ----- dom refs -----
+        const fieldsContainer = document.getElementById('fields-container');
+        const conditionsContainer = document.getElementById('conditions-container');
+        const codeOutput = document.getElementById('code-output');
+        const btnAddField = document.getElementById('btn-add-field');
+        const btnAddCondition = document.getElementById('btn-add-condition');
+        const btnCopyCode = document.getElementById('btn-copy-code');
+        const configReturnType = document.getElementById('config-return-type');
+        const configCheckEmpty = document.getElementById('config-check-empty');
+        const configEmptyReturn = document.getElementById('config-empty-return');
+        const elseReturnVal = document.getElementById('else-return-val');
+        const emptyFallbackContainer = document.getElementById('empty-fallback-container');
+        const tabNumeric = document.getElementById('tab-numeric');
+        const tabLogic = document.getElementById('tab-logic');
+        const presetsList = document.getElementById('presets-list');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toast-msg');
+
+        // ----- helpers -----
+        function showToast(msg, bg = 'bg-[#2c2416]') {
+            toast.className = `fixed bottom-6 right-6 ${bg} text-[#f5e6d3] px-5 py-3 rounded-full shadow-xl text-sm font-medium flex items-center gap-2 transform transition-all duration-300 z-50`;
+            toastMsg.textContent = msg;
+            toast.classList.remove('translate-y-16', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            clearTimeout(toast._hide);
+            toast._hide = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-16', 'opacity-0');
+            }, 2500);
+        }
+
+        function generateCode() {
+            let code = `// Arcade · MCM\n`;
+            if (appState.fields.length) {
+                appState.fields.forEach(f => { code += `var ${f.name} = $feature.${f.featureField};\n`; });
+                code += `\n`;
+            }
+            let tabs = '';
+            if (appState.checkEmpty && appState.fields.length) {
+                const checks = appState.fields.map(f => `!IsEmpty(${f.name})`).join(' && ');
+                code += `if (${checks}) {\n`;
+                tabs = '    ';
+            }
+            if (appState.conditions.length) {
+                appState.conditions.forEach((cond, idx) => {
+                    const field = appState.fields.find(f => f.id === cond.fieldId);
+                    if (!field) return;
+                    let condStr = '';
+                    if (cond.operator === 'CONTAINS') {
+                        condStr = `Find("${cond.compareValue.toLowerCase()}", Lower(${field.name})) >= 0`;
+                    } else if (cond.operator === 'AND_NOT_EMPTY') {
+                        const target = appState.fields.find(f => f.id === cond.compareValue) || { name: cond.compareValue };
+                        condStr = `!IsEmpty(${field.name}) && !IsEmpty(${target.name})`;
+                    } else {
+                        let comp = cond.compareValue;
+                        if (field.type === 'text' && comp !== 'null' && comp !== 'true' && comp !== 'false') comp = `"${comp}"`;
+                        condStr = `${field.name} ${cond.operator} ${comp}`;
+                    }
+                    let ret = cond.returnValue;
+                    if (appState.returnType === 'text' && cond.returnType !== 'expression' && cond.returnType !== 'field') ret = `"${ret}"`;
+                    code += `${tabs}${idx === 0 ? 'if' : 'else if'} (${condStr}) {\n`;
+                    code += `${tabs}    return ${ret};\n`;
+                    code += `${tabs}}\n`;
+                });
+                let elseVal = appState.elseReturnValue;
+                if (appState.returnType === 'text' && !elseVal.includes('(') && !appState.fields.some(f=>f.name===elseVal)) elseVal = `"${elseVal}"`;
+                code += `${tabs}else {\n`;
+                code += `${tabs}    return ${elseVal};\n`;
+                code += `${tabs}}\n`;
+            } else {
+                let ret = appState.elseReturnValue;
+                if (appState.returnType === 'text' && !ret.includes('(') && !appState.fields.some(f=>f.name===ret)) ret = `"${ret}"`;
+                code += `${tabs}return ${ret};\n`;
+            }
+            if (appState.checkEmpty && appState.fields.length) {
+                let fallback = appState.emptyReturnValue;
+                if (appState.returnType === 'text') fallback = `"${fallback}"`;
+                code += `\n} else {\n    return ${fallback};\n}\n`;
+            }
+            codeOutput.textContent = code;
+        }
+
+        // ----- render fields -----
+        function renderFields() {
+            fieldsContainer.innerHTML = '';
+            if (!appState.fields.length) {
+                fieldsContainer.innerHTML = `<div class="text-xs text-[#6b5d4f] italic p-2">Geen velden — voeg er een toe</div>`;
+                return;
+            }
+            appState.fields.forEach((f, i) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-2 bg-[#fcf6ef] p-2 rounded-2xl border border-[#e2d6c8]';
+                div.innerHTML = `
+                    <div class="flex-1 grid grid-cols-3 gap-1.5">
+                        <input type="text" value="${f.name}" data-id="${f.id}" data-key="name" class="field-update field-input w-full text-xs py-1">
+                        <div class="relative"><span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-[#6b5d4f]">$feature.</span><input type="text" value="${f.featureField}" data-id="${f.id}" data-key="featureField" class="field-update field-input w-full text-xs pl-[54px] py-1"></div>
+                        <select data-id="${f.id}" data-key="type" class="field-update field-input w-full text-xs py-1">
+                            <option value="text" ${f.type==='text'?'selected':''}>Tekst</option>
+                            <option value="number" ${f.type==='number'?'selected':''}>Nummer</option>
+                        </select>
+                    </div>
+                    <button data-id="${f.id}" class="btn-delete-field text-[#8b7355] hover:text-[#d97642] p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                `;
+                fieldsContainer.appendChild(div);
+            });
+            document.querySelectorAll('.field-update').forEach(el => {
+                el.addEventListener('input', (e) => {
+                    const id = e.target.dataset.id, key = e.target.dataset.key;
+                    const f = appState.fields.find(f => f.id === id);
+                    if (f) { f[key] = e.target.value; generateCode(); }
+                });
+                el.addEventListener('change', () => { renderConditions(); generateCode(); });
+            });
+            document.querySelectorAll('.btn-delete-field').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    appState.fields = appState.fields.filter(f => f.id !== id);
+                    appState.conditions = appState.conditions.filter(c => c.fieldId !== id);
+                    renderFields(); renderConditions(); generateCode();
+                });
+            });
+        }
+
+        // ----- render conditions -----
+        function renderConditions() {
+            conditionsContainer.innerHTML = '';
+            if (!appState.conditions.length) {
+                conditionsContainer.innerHTML = `<div class="text-xs text-[#6b5d4f] italic p-2">Geen voorwaarden — voeg er een toe</div>`;
+                return;
+            }
+            appState.conditions.forEach((cond, idx) => {
+                const div = document.createElement('div');
+                div.className = 'bg-[#fcf6ef] p-3 rounded-2xl border border-[#e2d6c8] space-y-2';
+                const fieldOpts = appState.fields.map(f => `<option value="${f.id}" ${f.id===cond.fieldId?'selected':''}>${f.name}</option>`).join('');
+                div.innerHTML = `
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-[10px] font-bold bg-[#2c2416] text-[#f5e6d3] px-2 py-0.5 rounded-full">${idx===0?'IF':'ELSE IF'}</span>
+                        <select data-id="${cond.id}" data-key="fieldId" class="cond-update field-input text-xs py-1 flex-1 min-w-[80px]">${fieldOpts}</select>
+                        <select data-id="${cond.id}" data-key="operator" class="cond-update field-input text-xs py-1 flex-1 min-w-[80px]">
+                            <option value="==" ${cond.operator==='=='?'selected':''}>==</option>
+                            <option value="!=" ${cond.operator==='!='?'selected':''}>!=</option>
+                            <option value=">" ${cond.operator==='>'?'selected':''}>&gt;</option>
+                            <option value="<" ${cond.operator==='<'?'selected':''}>&lt;</option>
+                            <option value=">=" ${cond.operator==='>='?'selected':''}>&gt;=</option>
+                            <option value="<=" ${cond.operator==='<='?'selected':''}>&lt;=</option>
+                            <option value="CONTAINS" ${cond.operator==='CONTAINS'?'selected':''}>bevat</option>
+                            <option value="AND_NOT_EMPTY" ${cond.operator==='AND_NOT_EMPTY'?'selected':''}>en niet leeg</option>
+                        </select>
+                        <input type="text" value="${cond.compareValue}" data-id="${cond.id}" data-key="compareValue" class="cond-update field-input text-xs py-1 flex-1 min-w-[60px]" placeholder="waarde">
+                        <button data-id="${cond.id}" class="btn-delete-cond text-[#8b7355] hover:text-[#d97642]"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                    </div>
+                    <div class="flex items-center gap-2 pl-2 border-l-2 border-[#d4a574]">
+                        <span class="text-[10px] text-[#6b5d4f]">return:</span>
+                        <input type="text" value="${cond.returnValue}" data-id="${cond.id}" data-key="returnValue" class="cond-update field-input text-xs py-1 flex-1 max-w-[160px]">
+                        <span class="text-[10px] text-[#6b5d4f]">(${appState.returnType})</span>
+                    </div>
+                `;
+                conditionsContainer.appendChild(div);
+            });
+            document.querySelectorAll('.cond-update').forEach(el => {
+                el.addEventListener('input', (e) => {
+                    const id = e.target.dataset.id, key = e.target.dataset.key;
+                    const c = appState.conditions.find(c => c.id === id);
+                    if (c) { c[key] = e.target.value; generateCode(); }
+                });
+                el.addEventListener('change', (e) => {
+                    const id = e.target.dataset.id, key = e.target.dataset.key;
+                    const c = appState.conditions.find(c => c.id === id);
+                    if (c) { c[key] = e.target.value; generateCode(); }
+                });
+            });
+            document.querySelectorAll('.btn-delete-cond').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    appState.conditions = appState.conditions.filter(c => c.id !== id);
+                    renderConditions(); generateCode();
+                });
+            });
+        }
+
+        // ----- load preset -----
+        function loadPreset(state) {
+            appState = JSON.parse(JSON.stringify(state));
+            configReturnType.value = appState.returnType;
+            configCheckEmpty.checked = appState.checkEmpty;
+            configEmptyReturn.value = appState.emptyReturnValue;
+            elseReturnVal.value = appState.elseReturnValue;
+            if (appState.checkEmpty) emptyFallbackContainer.classList.remove('opacity-40');
+            else emptyFallbackContainer.classList.add('opacity-40');
+            renderFields(); renderConditions(); generateCode();
+        }
+
+        // ----- render presets -----
+        function renderPresets(category) {
+            presetsList.innerHTML = '';
+            const filtered = presets.filter(p => p.category === category);
+            filtered.forEach(p => {
+                const btn = document.createElement('div');
+                btn.className = 'preset-item flex items-center justify-between';
+                btn.innerHTML = `<div><span class="text-sm font-medium text-[#2c2416]">${p.title}</span><p class="text-[10px] text-[#6b5d4f]">${p.desc}</p></div><span class="text-[#d97642] text-xs">→</span>`;
+                btn.addEventListener('click', () => { loadPreset(p.state); showToast(`📐 ${p.title} geladen`); });
+                presetsList.appendChild(btn);
+            });
+        }
+
+        // ----- events -----
+        btnAddField.addEventListener('click', () => {
+            appState.fields.push({ id: 'f'+Date.now(), name: 'veld_'+(appState.fields.length+1), featureField: 'Veld'+(appState.fields.length+1), type: 'text' });
+            renderFields(); renderConditions(); generateCode();
+        });
+        btnAddCondition.addEventListener('click', () => {
+            if (!appState.fields.length) { showToast('Voeg eerst een veld toe','bg-amber-700'); return; }
+            appState.conditions.push({ id:'c'+Date.now(), fieldId:appState.fields[0].id, operator:'==', compareValue:'waarde', returnValue: appState.returnType==='number'?'1':'tekst', returnType:appState.returnType });
+            renderConditions(); generateCode();
+        });
+        configReturnType.addEventListener('change', (e) => {
+            appState.returnType = e.target.value;
+            if (appState.returnType === 'number') { appState.emptyReturnValue = '0'; appState.elseReturnValue = '0'; }
+            else { appState.emptyReturnValue = 'Geen waarde'; appState.elseReturnValue = 'Onbekend'; }
+            configEmptyReturn.value = appState.emptyReturnValue;
+            elseReturnVal.value = appState.elseReturnValue;
+            generateCode();
+        });
+        configCheckEmpty.addEventListener('change', (e) => {
+            appState.checkEmpty = e.target.checked;
+            if (appState.checkEmpty) emptyFallbackContainer.classList.remove('opacity-40');
+            else emptyFallbackContainer.classList.add('opacity-40');
+            generateCode();
+        });
+        configEmptyReturn.addEventListener('input', (e) => { appState.emptyReturnValue = e.target.value; generateCode(); });
+        elseReturnVal.addEventListener('input', (e) => { appState.elseReturnValue = e.target.value; generateCode(); });
+
+        btnCopyCode.addEventListener('click', () => {
+            navigator.clipboard?.writeText?.(codeOutput.textContent)?.then(() => showToast('📋 gekopieerd!')) 
+            || (() => { const ta = document.createElement('textarea'); ta.value = codeOutput.textContent; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast('📋 gekopieerd!'); })();
+        });
+
+        // tabs
+        tabNumeric.addEventListener('click', () => { tabNumeric.classList.add('active'); tabLogic.classList.remove('active'); renderPresets('numeric'); });
+        tabLogic.addEventListener('click', () => { tabLogic.classList.add('active'); tabNumeric.classList.remove('active'); renderPresets('logic'); });
+
+        // --- AI generation (mock / gemini) ---
+        const btnGenAI = document.getElementById('btn-generate-ai');
+        const aiPrompt = document.getElementById('ai-prompt-input');
+        const aiLoader = document.getElementById('ai-loader');
+        const aiBtnText = document.getElementById('ai-btn-text');
+
+        btnGenAI.addEventListener('click', async () => {
+            const prompt = aiPrompt.value.trim();
+            if (!prompt) { showToast('Typ eerst een omschrijving','bg-amber-700'); return; }
+            aiLoader.classList.remove('hidden'); aiBtnText.textContent = 'bezig...'; btnGenAI.disabled = true;
+            // simulate AI response with a simple mapping (demo)
+            setTimeout(() => {
+                // fallback: load a preset based on keyword
+                let found = presets.find(p => p.title.toLowerCase().includes(prompt.toLowerCase().split(' ')[0]) || p.desc.toLowerCase().includes(prompt.toLowerCase().split(' ')[0]));
+                if (!found) found = presets[0];
+                loadPreset(found.state);
+                showToast(`✨ geladen: ${found.title}`);
+                aiLoader.classList.add('hidden'); aiBtnText.textContent = 'Genereer'; btnGenAI.disabled = false;
+            }, 800);
+        });
+
+        // init
+        renderFields(); renderConditions(); generateCode(); renderPresets('numeric');
+    </script>
+</body>
+</html>
