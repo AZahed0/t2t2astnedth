@@ -1,0 +1,1291 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade AI Generator - Mid-Century Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        retro: {
+                            sand: '#F4EFE6',       // Warm beige background
+                            cream: '#FCF9F5',      // Soft clean white/cream
+                            walnut: '#2D2319',     // Deep dark brown
+                            teak: '#5E4E3C',       // Medium wood tone
+                            terracotta: '#D95A32', // Vibrant orange-red
+                            mustard: '#E2A748',    // Warm yellow accent
+                            teal: '#3A6F75',       // Deep retro sage teal
+                            olive: '#5D7A68'       // Soft olive green
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fira+Code:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: #F4EFE6;
+            color: #2D2319;
+        }
+        
+        h1, h2, h3, h4, .retro-title {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Custom scrollbars matching retro palette */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FCF9F5;
+            border-left: 1px solid #E5DEC9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #5E4E3C;
+            border-radius: 0px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D95A32;
+        }
+
+        /* Mid-century geometric accents */
+        .atomic-pattern {
+            background-color: #FCF9F5;
+            background-image: radial-gradient(#E2A748 1px, transparent 1px), radial-gradient(#3A6F75 1px, transparent 1px);
+            background-size: 24px 24px;
+            background-position: 0 0, 12px 12px;
+        }
+
+        /* Offset Retro Shadow */
+        .retro-shadow {
+            box-shadow: 6px 6px 0px 0px #2D2319;
+        }
+        .retro-shadow-sm {
+            box-shadow: 3px 3px 0px 0px #2D2319;
+        }
+        .retro-shadow-hover:hover {
+            box-shadow: 2px 2px 0px 0px #2D2319;
+            transform: translate(2px, 2px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased pb-12">
+
+    <!-- Header Frame -->
+    <header class="border-b-4 border-retro-walnut bg-retro-cream px-6 py-6 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <!-- Logo & Brand Statement -->
+            <div class="flex items-center gap-4">
+                <div class="bg-retro-cream p-2 border-2 border-retro-walnut retro-shadow-sm flex items-center justify-center w-14 h-14">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/d/df/Esri_logo.svg" alt="Esri Logo" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-retro-walnut flex items-center gap-2 uppercase">
+                        Arcade <span class="bg-retro-mustard text-retro-walnut text-xs font-semibold px-2.5 py-1 border border-retro-walnut tracking-widest">GENERATOR</span>
+                    </h1>
+                    <p class="text-xs text-retro-teak font-medium tracking-wide uppercase mt-0.5">Esri ArcGIS Arcade Expressie Ontwerper • Jaren '50 Esthetiek</p>
+                </div>
+            </div>
+
+            <!-- Meta / Controls -->
+            <div class="flex items-center gap-4 bg-retro-sand border-2 border-retro-walnut px-4 py-2 retro-shadow-sm text-xs font-semibold uppercase tracking-wider">
+                <span class="text-retro-teak">Systeem Status:</span>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-3.5 h-3.5 rounded-full bg-retro-olive border border-retro-walnut"></span>
+                    <span class="text-retro-walnut">Operationeel (Gemini 2.5)</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 p-6 max-w-7xl w-full mx-auto mt-6">
+        
+        <!-- Left Side: Interactive Builder (7 Columns) -->
+        <div class="lg:col-span-7 flex flex-col gap-8">
+            
+            <!-- Visual Rule Builder Card -->
+            <div class="bg-retro-cream border-3 border-retro-walnut p-6 retro-shadow flex flex-col gap-6 relative">
+                
+                <!-- Step 1: Define Fields/Variables -->
+                <div>
+                    <div class="flex justify-between items-center mb-4 border-b-2 border-retro-walnut pb-2">
+                        <h3 class="font-bold text-base text-retro-walnut flex items-center gap-2 uppercase tracking-wide">
+                            <span class="w-6 h-6 rounded-none border border-retro-walnut bg-retro-mustard text-retro-walnut flex items-center justify-center text-xs font-bold">1</span>
+                            Variabelen &amp; Velden ($feature)
+                        </h3>
+                        <button id="btn-add-field" class="bg-retro-teal text-retro-cream hover:bg-retro-teal/90 px-3 py-1 text-xs font-bold uppercase tracking-wider border border-retro-walnut flex items-center gap-1 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                            Veld Toevoegen
+                        </button>
+                    </div>
+                    
+                    <div id="fields-container" class="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                        <!-- Dynamic fields will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Step 2: Global Configuration (IsEmpty Check & Return Type) -->
+                <div class="border-t-2 border-retro-walnut pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-bold text-sm text-retro-walnut flex items-center gap-2 mb-3 uppercase tracking-wide">
+                            <span class="w-5 h-5 rounded-none border border-retro-walnut bg-retro-mustard text-retro-walnut flex items-center justify-center text-[10px] font-bold">2</span>
+                            Resultaat &amp; Null-check
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs text-retro-teak font-bold uppercase tracking-wider block mb-1">Gewenst Resultaat Type</label>
+                                <select id="config-return-type" class="w-full bg-retro-sand border-2 border-retro-walnut rounded-none px-3 py-1.5 text-xs text-retro-walnut font-bold focus:outline-none focus:ring-1 focus:ring-retro-terracotta">
+                                    <option value="text">Tekst ("Resultaat")</option>
+                                    <option value="number">Nummer (123)</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2 py-1">
+                                <input type="checkbox" id="config-check-empty" checked class="border-2 border-retro-walnut text-retro-terracotta focus:ring-0 bg-retro-sand w-4 h-4 rounded-none">
+                                <label for="config-check-empty" class="text-xs font-bold text-retro-walnut uppercase tracking-wide cursor-pointer select-none">Controleer op lege waarden (IsEmpty)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Output if Empty -->
+                    <div id="empty-fallback-container">
+                        <h3 class="font-bold text-sm text-retro-walnut flex items-center gap-2 mb-3 uppercase tracking-wide">
+                            <span class="opacity-0 w-5 h-5 rounded bg-retro-mustard"></span>
+                            Als waarde(n) leeg zijn
+                        </h3>
+                        <div>
+                            <label class="text-xs text-retro-teak font-bold uppercase tracking-wider block mb-1">Geef dit resultaat terug</label>
+                            <input type="text" id="config-empty-return" value="Geen waarde ingevuld" class="w-full bg-retro-sand border-2 border-retro-walnut rounded-none px-3 py-1.5 text-xs text-retro-walnut font-medium focus:outline-none focus:ring-1 focus:ring-retro-terracotta">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Conditions (Voorwaarden) -->
+                <div class="border-t-2 border-retro-walnut pt-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-base text-retro-walnut flex items-center gap-2 uppercase tracking-wide">
+                            <span class="w-6 h-6 rounded-none border border-retro-walnut bg-retro-mustard text-retro-walnut flex items-center justify-center text-xs font-bold">3</span>
+                            Voorwaarden (If / Else If)
+                        </h3>
+                        <button id="btn-add-condition" class="bg-retro-teal text-retro-cream hover:bg-retro-teal/90 px-3 py-1 text-xs font-bold uppercase tracking-wider border border-retro-walnut flex items-center gap-1 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                            Conditie Toevoegen
+                        </button>
+                    </div>
+
+                    <div id="conditions-container" class="space-y-4 max-h-[350px] overflow-y-auto pr-1">
+                        <!-- Dynamic conditions with multi-field logic go here -->
+                    </div>
+
+                    <!-- Ultimate Else block (Now with Enable/Disable Checkbox!) -->
+                    <div class="mt-4 bg-retro-sand border-2 border-retro-walnut p-4">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" id="else-active-toggle" checked class="border-2 border-retro-walnut text-retro-terracotta focus:ring-0 bg-retro-cream w-4 h-4 rounded-none">
+                                <div>
+                                    <label for="else-active-toggle" class="text-xs font-bold text-retro-walnut uppercase tracking-wider block cursor-pointer">Activeer ELSE (Standaard waarde)</label>
+                                    <span class="text-[10px] text-retro-teak font-medium">Als aan geen enkele voorwaarde hierboven wordt voldaan</span>
+                                </div>
+                            </div>
+                            <div class="w-full sm:w-48" id="else-return-val-container">
+                                <input type="text" id="else-return-val" value="Onbekend" placeholder="Standaard waarde" class="w-full bg-retro-cream border-2 border-retro-walnut rounded-none px-3 py-1.5 text-xs text-retro-walnut font-medium focus:outline-none focus:ring-1 focus:ring-retro-terracotta">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Right Side: Live Code Output & Quick Presets (5 Columns) -->
+        <div class="lg:col-span-5 flex flex-col gap-8">
+            
+            <!-- Code View Card -->
+            <div class="bg-retro-cream border-3 border-retro-walnut p-5 retro-shadow flex flex-col h-[420px]">
+                <div class="flex justify-between items-center mb-4 border-b-2 border-retro-walnut pb-2">
+                    <h3 class="font-bold text-base text-retro-walnut flex items-center gap-2 uppercase tracking-wide">
+                        <span class="w-3.5 h-3.5 rounded-full bg-retro-terracotta border border-retro-walnut"></span>
+                        Arcade Output Code
+                    </h3>
+                    <button id="btn-copy-code" class="bg-retro-walnut text-retro-cream hover:bg-retro-teak px-3 py-1 rounded-none text-xs font-bold uppercase tracking-wider border border-retro-walnut flex items-center gap-1 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                        KOPIEER
+                    </button>
+                </div>
+                
+                <!-- Code Area -->
+                <div class="flex-1 bg-retro-walnut rounded-none p-4 font-mono text-xs overflow-auto border-2 border-retro-walnut text-[#C2D7C8] relative">
+                    <pre id="code-output" class="code-font whitespace-pre-wrap leading-relaxed select-text"></pre>
+                </div>
+            </div>
+
+            <!-- Extended Library Panel -->
+            <div class="bg-retro-cream border-3 border-retro-walnut p-5 retro-shadow flex flex-col flex-1 min-h-[380px]">
+                <div class="mb-3">
+                    <h3 class="font-bold text-base text-retro-walnut uppercase tracking-wide">26 Arcade Sjablonen</h3>
+                    <p class="text-xs text-retro-teak font-medium">Klik op een sjabloon om direct een geavanceerde configuratie in te laden.</p>
+                </div>
+
+                <!-- Tabs -->
+                <div class="grid grid-cols-2 border-2 border-retro-walnut mb-4 font-bold text-xs uppercase tracking-wider text-center">
+                    <button id="tab-numeric" class="py-2 bg-retro-mustard text-retro-walnut border-r-2 border-retro-walnut">Numeriek (1-13)</button>
+                    <button id="tab-logic" class="py-2 bg-retro-cream text-retro-teak hover:text-retro-walnut transition">Logica &amp; Multi-veld (14-26)</button>
+                </div>
+
+                <!-- Examples Container -->
+                <div id="presets-list" class="flex-1 overflow-y-auto space-y-2.5 max-h-[380px] pr-1">
+                    <!-- Dynamic presets list will render here -->
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Global Toast Notifications -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-retro-walnut text-retro-cream border-2 border-retro-mustard px-4 py-3 shadow-lg text-sm font-bold uppercase tracking-wider flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
+        <svg class="w-5 h-5 text-retro-mustard" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+        <span id="toast-msg">Gekopieerd naar klembord!</span>
+    </div>
+
+    <!-- Script Block -->
+    <script>
+        // Secure dynamic parameters for Gemini API (provided by the sandbox environment)
+        const apiKey = "";
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'arcade-ai-generator';
+
+        // Core State Management
+        let appState = {
+            fields: [
+                { id: 'f1', name: 'status', featureField: 'Status', type: 'text' },
+                { id: 'f2', name: 'prioriteit', featureField: 'Priority', type: 'text' }
+            ],
+            conditions: [
+                { 
+                    id: 'c1', 
+                    fieldId: 'f1', 
+                    operator: '==', 
+                    compareValue: 'Open', 
+                    conjunction: 'AND',       // AND (&&) | OR (||) | NONE
+                    secondFieldId: 'f2', 
+                    secondOperator: '==', 
+                    secondCompareValue: 'Hoog',
+                    returnValue: 'Directe Actie', 
+                    returnType: 'text' 
+                },
+                { 
+                    id: 'c2', 
+                    fieldId: 'f1', 
+                    operator: '==', 
+                    compareValue: 'In behandeling', 
+                    conjunction: 'NONE',
+                    secondFieldId: '', 
+                    secondOperator: '==', 
+                    secondCompareValue: '',
+                    returnValue: 'Binnenkort', 
+                    returnType: 'text' 
+                }
+            ],
+            returnType: 'text',
+            checkEmpty: true,
+            emptyReturnValue: 'Geen waarde ingevuld',
+            elseActive: true,
+            elseReturnValue: 'Onbekend'
+        };
+
+        // Complete list of 26 curated examples spanning multiple categories
+        const presets = [
+            // --- NUMERIC EXAMPLES (1 to 13) ---
+            {
+                id: 'p1',
+                category: 'numeric',
+                title: '1. Constante Waarde',
+                desc: 'Geeft altijd een vaste numerieke waarde (100) terug.',
+                state: {
+                    fields: [],
+                    conditions: [],
+                    returnType: 'number',
+                    checkEmpty: false,
+                    emptyReturnValue: '0',
+                    elseActive: true,
+                    elseReturnValue: '100'
+                }
+            },
+            {
+                id: 'p2',
+                category: 'numeric',
+                title: '2. Veld Null Validatie',
+                desc: 'Indien de score bestaat, geef score terug, anders de nul-waarde.',
+                state: {
+                    fields: [{ id: 'f1', name: 'score', featureField: 'TestScore', type: 'number' }],
+                    conditions: [{ id: 'c1', fieldId: 'f1', operator: '!=', compareValue: 'null', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: 'score', returnType: 'field' }],
+                    returnType: 'number',
+                    checkEmpty: true,
+                    emptyReturnValue: '0',
+                    elseActive: true,
+                    elseReturnValue: '0'
+                }
+            },
+            {
+                id: 'p3',
+                category: 'numeric',
+                title: '3. Status naar Prioriteitsscore',
+                desc: 'Zet tekst-statussen om naar genummerde volgordes.',
+                state: {
+                    fields: [{ id: 'f1', name: 'status', featureField: 'WorkStatus', type: 'text' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '==', compareValue: 'Kritiek', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '1', returnType: 'number' },
+                        { id: 'c2', fieldId: 'f1', operator: '==', compareValue: 'Waarschuwing', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '2', returnType: 'number' }
+                    ],
+                    returnType: 'number',
+                    checkEmpty: true,
+                    emptyReturnValue: '9',
+                    elseActive: true,
+                    elseReturnValue: '3'
+                }
+            },
+            {
+                id: 'p4',
+                category: 'numeric',
+                title: '4. Oppervlakte Categorisering',
+                desc: 'Verdeel kadastrale oppervlaktes in klasse-waardes.',
+                state: {
+                    fields: [{ id: 'f1', name: 'grootte', featureField: 'AreaSize', type: 'number' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '>=', compareValue: '5000', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '3', returnType: 'number' },
+                        { id: 'c2', fieldId: 'f1', operator: '>=', compareValue: '1000', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '2', returnType: 'number' }
+                    ],
+                    returnType: 'number',
+                    checkEmpty: true,
+                    emptyReturnValue: '0',
+                    elseActive: true,
+                    elseReturnValue: '1'
+                }
+            },
+            {
+                id: 'p5',
+                category: 'numeric',
+                title: '5. Oppervlakte Berekening (L * B)',
+                desc: 'Bereken de grootte direct vanuit meetbare attributen.',
+                state: {
+                    fields: [
+                        { id: 'f1', name: 'lengte', featureField: 'ParcelLength', type: 'number' },
+                        { id: 'f2', name: 'breedte', featureField: 'ParcelWidth', type: 'number' }
+                    ],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '>', compareValue: '0', conjunction: 'AND', secondFieldId: 'f2', secondOperator: '>', secondCompareValue: '0', returnValue: 'lengte * breedte', returnType: 'expression' }
+                    ],
+                    returnType: 'number',
+                    checkEmpty: true,
+                    emptyReturnValue: '0',
+                    elseActive: true,
+                    elseReturnValue: '0'
+                }
+            },
+            {
+                id: 'p6',
+                category: 'numeric',
+                title: '6. Afronden Decimalen',
+                desc: 'Gebruik de Round() Arcade functie voor valuta of metingen.',
+                state: {
+                    fields: [{ id: 'f1', name: 'tarief', featureField: 'RawTariff', type: 'number' }],
+                    conditions: [],
+                    returnType: 'number',
+                    checkEmpty: true,
+                    emptyReturnValue: '0',
+                    elseActive: true,
+                    elseReturnValue: 'Round(tarief, 2)'
+                }
+            },
+            {
+                id: 'p7',
+                category: 'numeric',
+                title: '7. Ja/Nee naar Binaire Code',
+                desc: 'Converteer tekstuele booleans naar machine-leesbare bits (1 / 0).',
+                state: {
+                    fields: [{ id: 'f1', name: 'is_actief', featureField: 'ActiveStatus', type: 'text' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '==', compareValue: 'Ja', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '1', returnType: 'number' }
+                    ],
+                    returnType: 'number',
+                    checkEmpty: false,
+                    emptyReturnValue: '0',
+                    elseActive: true,
+                    elseReturnValue: '0'
+                }
+            },
+            {
+                id: 'p8',
+                category: 'numeric',
+                title: '8. Snelheid Evaluatie',
+                desc: 'Geeft boetes of snelheidsindicatoren overschrijdingen terug.',
+                state: {
+                    fields: [{ id: 'f1', name: 'snelheid', featureField: 'MeasuredSpeed', type: 'number' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '>', compareValue: '120', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '150', returnType: 'number' },
+                        { id: 'c2', fieldId: 'f1', operator: '>', compareValue: '100', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '50', returnType: 'number' }
+                    ],
+                    returnType: 'number',
+                    checkEmpty: true,
+                    emptyReturnValue: '0',
+                    elseActive: true,
+                    elseReturnValue: '0'
+                }
+            },
+            {
+                id: 'p9',
+                category: 'numeric',
+                title: '9. Bouwjaar Ouderdom',
+                desc: 'Bereken hoe lang een asset al operationeel is in jaren.',
+                state: {
+                    fields: [{ id: 'f1', name: 'bouwjaar', featureField: 'YearBuilt', type: 'number' }],
+                    conditions: [],
+                    returnType: 'number',
+                    checkEmpty: true,
+                    emptyReturnValue: '0',
+                    elseActive: true,
+                    elseReturnValue: 'Year(Now()) - bouwjaar'
+                }
+            },
+            {
+                id: 'p10',
+                category: 'numeric',
+                title: '10. Risico Score Factor',
+                desc: 'Berekent risicograad gebaseerd op ouderdom en belasting.',
+                state: {
+                    fields: [
+                        { id: 'f1', name: 'factor_a', featureField: 'LoadFactor', type: 'number' },
+                        { id: 'f2', name: 'factor_b', featureField: 'AgeFactor', type: 'number' }
+                    ],
+                    conditions: [],
+                    returnType: 'number',
+                    checkEmpty: true,
+                    emptyReturnValue: '1',
+                    elseActive: true,
+                    elseReturnValue: 'Round((factor_a * 0.7) + (factor_b * 0.3), 1)'
+                }
+            },
+            {
+                id: 'p11',
+                category: 'numeric',
+                title: '11. Procentuele Voortgang',
+                desc: 'Handige ratio-berekening voor dashboards of weergave.',
+                state: {
+                    fields: [
+                        { id: 'f1', name: 'gerealiseerd', featureField: 'CompletedUnits', type: 'number' },
+                        { id: 'f2', name: 'doel', featureField: 'TargetUnits', type: 'number' }
+                    ],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f2', operator: '>', compareValue: '0', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: 'Round((gerealiseerd / doel) * 100, 1)', returnType: 'expression' }
+                    ],
+                    returnType: 'number',
+                    checkEmpty: true,
+                    emptyReturnValue: '0',
+                    elseActive: true,
+                    elseReturnValue: '0'
+                }
+            },
+            {
+                id: 'p12',
+                category: 'numeric',
+                title: '12. Temperatuur Omzetting',
+                desc: 'Zet Fahrenheit om naar Celsius waarden.',
+                state: {
+                    fields: [{ id: 'f1', name: 'f_temp', featureField: 'Fahrenheit', type: 'number' }],
+                    conditions: [],
+                    returnType: 'number',
+                    checkEmpty: true,
+                    emptyReturnValue: 'null',
+                    elseActive: true,
+                    elseReturnValue: 'Round((f_temp - 32) * 5 / 9, 1)'
+                }
+            },
+            {
+                id: 'p13',
+                category: 'numeric',
+                title: '13. Logaritmische Schaal',
+                desc: 'Berekent een exponentiële of logaritmische risico-index.',
+                state: {
+                    fields: [{ id: 'f1', name: 'intensiteit', featureField: 'RawIntensity', type: 'number' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '>', compareValue: '0', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: 'Log(intensiteit)', returnType: 'expression' }
+                    ],
+                    returnType: 'number',
+                    checkEmpty: true,
+                    emptyReturnValue: '0',
+                    elseActive: true,
+                    elseReturnValue: '0'
+                }
+            },
+
+            // --- LOGIC & MULTI-FIELD EXAMPLES (14 to 26) ---
+            {
+                id: 'p14',
+                category: 'logic',
+                title: '14. Multi-Veld EN (&&) Conditie',
+                desc: 'Als status is Open én de prioriteit is Hoog, vereist directe actie.',
+                state: {
+                    fields: [
+                        { id: 'f1', name: 'status', featureField: 'Status', type: 'text' },
+                        { id: 'f2', name: 'prioriteit', featureField: 'Priority', type: 'text' }
+                    ],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '==', compareValue: 'Open', conjunction: 'AND', secondFieldId: 'f2', secondOperator: '==', secondCompareValue: 'Hoog', returnValue: '⚠️ Direct Actie Vereist!', returnType: 'text' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: true,
+                    emptyReturnValue: 'Onvolledige data',
+                    elseActive: true,
+                    elseReturnValue: 'Regulier proces'
+                }
+            },
+            {
+                id: 'p15',
+                category: 'logic',
+                title: '15. Multi-Veld OF (||) Conditie',
+                desc: 'Als status is Verlopen óf de inspectie is Afgekeurd.',
+                state: {
+                    fields: [
+                        { id: 'f1', name: 'status', featureField: 'InspectieStatus', type: 'text' },
+                        { id: 'f2', name: 'resultaat', featureField: 'VoldoetNorm', type: 'text' }
+                    ],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '==', compareValue: 'Verlopen', conjunction: 'OR', secondFieldId: 'f2', secondOperator: '==', secondCompareValue: 'Nee', returnValue: 'Herapartement Aanvragen', returnType: 'text' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: false,
+                    emptyReturnValue: '',
+                    elseActive: true,
+                    elseReturnValue: 'Goedgekeurd & Actief'
+                }
+            },
+            {
+                id: 'p16',
+                category: 'logic',
+                title: '16. Tekst Zoekwoord Controle (Find)',
+                desc: 'Controleert of een veld het specifieke zoekwoord "school" bevat.',
+                state: {
+                    fields: [{ id: 'f1', name: 'type', featureField: 'BuildingType', type: 'text' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: 'CONTAINS', compareValue: 'school', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: 'Onderwijs Locatie', returnType: 'text' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: true,
+                    emptyReturnValue: 'Geen type',
+                    elseActive: true,
+                    elseReturnValue: 'Overig vastgoed'
+                }
+            },
+            {
+                id: 'p17',
+                category: 'logic',
+                title: '17. Score-schaal Beoordeling',
+                desc: 'Converteert numerieke toetsen naar kwalitatieve gradaties.',
+                state: {
+                    fields: [{ id: 'f1', name: 'meting', featureField: 'PurityValue', type: 'number' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '>=', compareValue: '90', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: 'Uitstekend', returnType: 'text' },
+                        { id: 'c2', fieldId: 'f1', operator: '>=', compareValue: '70', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: 'Acceptabel', returnType: 'text' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: true,
+                    emptyReturnValue: 'Onbekend',
+                    elseActive: true,
+                    elseReturnValue: 'Zorgwekkend / Afwijking'
+                }
+            },
+            {
+                id: 'p18',
+                category: 'logic',
+                title: '18. Optionele ELSE Deactivatie',
+                desc: 'Laat de ELSE-clausule achterwege zodat er niets wordt geretourneerd.',
+                state: {
+                    fields: [{ id: 'f1', name: 'type', featureField: 'ZoneType', type: 'text' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '==', compareValue: 'Industrie', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: 'Milieuzone C', returnType: 'text' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: false,
+                    emptyReturnValue: '',
+                    elseActive: false,
+                    elseReturnValue: ''
+                }
+            },
+            {
+                id: 'p19',
+                category: 'logic',
+                title: '19. Datuminvalidaat Check',
+                desc: 'Inspecteer of een keuringsdatum in het verleden ligt.',
+                state: {
+                    fields: [{ id: 'f1', name: 'verloopdatum', featureField: 'ExpirationDate', type: 'text' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '<', compareValue: 'Now()', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '❌ REEDS VERLOPEN', returnType: 'text' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: true,
+                    emptyReturnValue: 'Geen verloopdatum',
+                    elseActive: true,
+                    elseReturnValue: '🟢 Actief'
+                }
+            },
+            {
+                id: 'p20',
+                category: 'logic',
+                title: '20. Multi-veld ID Validatie',
+                desc: 'Als id == 1 en idd == 66 return "kk", of als id == 6 of idd == 9 return "hh".',
+                state: {
+                    fields: [
+                        { id: 'f1', name: 'id', featureField: 'MainID', type: 'number' },
+                        { id: 'f2', name: 'idd', featureField: 'SubID', type: 'number' }
+                    ],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '==', compareValue: '1', conjunction: 'AND', secondFieldId: 'f2', secondOperator: '==', secondCompareValue: '66', returnValue: 'kk', returnType: 'text' },
+                        { id: 'c2', fieldId: 'f1', operator: '==', compareValue: '6', conjunction: 'OR', secondFieldId: 'f2', secondOperator: '==', secondCompareValue: '9', returnValue: 'hh', returnType: 'text' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: true,
+                    emptyReturnValue: 'Incompleet',
+                    elseActive: true,
+                    elseReturnValue: 'Standaard ID'
+                }
+            },
+            {
+                id: 'p21',
+                category: 'logic',
+                title: '21. Text Lengte Evaluatie',
+                desc: 'Controleert of een opmerkingenveld een minimale lengte heeft.',
+                state: {
+                    fields: [{ id: 'f1', name: 'opmerking', featureField: 'Comments', type: 'text' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '!=', compareValue: 'null', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: 'Count(opmerking) > 10 ? "Gedetailleerd" : "Kort"', returnType: 'expression' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: false,
+                    emptyReturnValue: 'Geen invoer',
+                    elseActive: true,
+                    elseReturnValue: 'Geen opmerking'
+                }
+            },
+            {
+                id: 'p22',
+                category: 'logic',
+                title: '22. Bestemmingsplan Check',
+                desc: 'Controleert of bestemmingscodes overeenkomen met woongebied.',
+                state: {
+                    fields: [{ id: 'f1', name: 'code', featureField: 'ZoningCode', type: 'text' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: 'CONTAINS', compareValue: 'RES', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: 'Woonbestemming', returnType: 'text' },
+                        { id: 'c2', fieldId: 'f1', operator: 'CONTAINS', compareValue: 'COM', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: 'Commercieel', returnType: 'text' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: true,
+                    emptyReturnValue: 'Onbestemd',
+                    elseActive: true,
+                    elseReturnValue: 'Overige bestemming'
+                }
+            },
+            {
+                id: 'p23',
+                category: 'logic',
+                title: '23. Waterpas Niveau Indicator',
+                desc: 'Zet de gemeten stand om in een waarschuwingsniveau.',
+                state: {
+                    fields: [{ id: 'f1', name: 'peil', featureField: 'WaterLevel', type: 'number' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '>=', compareValue: '5.0', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '🔴 Alarmfase', returnType: 'text' },
+                        { id: 'c2', fieldId: 'f1', operator: '>=', compareValue: '3.5', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '🟡 Verhoogde Paraatheid', returnType: 'text' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: true,
+                    emptyReturnValue: 'Sensor Offline',
+                    elseActive: true,
+                    elseReturnValue: '🟢 Normaal Peil'
+                }
+            },
+            {
+                id: 'p24',
+                category: 'logic',
+                title: '24. Eigendom Type Splitsing',
+                desc: 'Bepaalt direct of de beheerder publiek of privaat is.',
+                state: {
+                    fields: [{ id: 'f1', name: 'beheerder', featureField: 'OwnerName', type: 'text' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '==', compareValue: 'Gemeente', conjunction: 'OR', secondFieldId: 'f1', secondOperator: '==', secondCompareValue: 'Rijkswaterstaat', returnValue: 'Overheidsbezit', returnType: 'text' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: true,
+                    emptyReturnValue: 'Onbekend',
+                    elseActive: true,
+                    elseReturnValue: 'Particulier/Privaat'
+                }
+            },
+            {
+                id: 'p25',
+                category: 'logic',
+                title: '25. Seizoens Indicator',
+                desc: 'Verdeel inspectiemaanden onder in seizoensgroepen.',
+                state: {
+                    fields: [{ id: 'f1', name: 'maand', featureField: 'InspMonth', type: 'number' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '<=', compareValue: '3', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '❄️ Winterseizoen', returnType: 'text' },
+                        { id: 'c2', fieldId: 'f1', operator: '<=', compareValue: '9', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '☀️ Zomerseizoen', returnType: 'text' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: true,
+                    emptyReturnValue: 'Niet ingepland',
+                    elseActive: true,
+                    elseReturnValue: '🍁 Herfst/Winter'
+                }
+            },
+            {
+                id: 'p26',
+                category: 'logic',
+                title: '26. Volledig Lege Else Structuur',
+                desc: 'Dit sjabloon heeft geen default waarde, handig voor gerichte popups.',
+                state: {
+                    fields: [{ id: 'f1', name: 'melding', featureField: 'AlertSignal', type: 'text' }],
+                    conditions: [
+                        { id: 'c1', fieldId: 'f1', operator: '==', compareValue: 'Brand', conjunction: 'NONE', secondFieldId: '', secondOperator: '==', secondCompareValue: '', returnValue: '🚨 EVACUATIE', returnType: 'text' }
+                    ],
+                    returnType: 'text',
+                    checkEmpty: false,
+                    emptyReturnValue: '',
+                    elseActive: false,
+                    elseReturnValue: ''
+                }
+            }
+        ];
+
+        // Setup DOM Elements
+        const fieldsContainer = document.getElementById('fields-container');
+        const conditionsContainer = document.getElementById('conditions-container');
+        const codeOutput = document.getElementById('code-output');
+        const btnAddField = document.getElementById('btn-add-field');
+        const btnAddCondition = document.getElementById('btn-add-condition');
+        const btnCopyCode = document.getElementById('btn-copy-code');
+        
+        const configReturnType = document.getElementById('config-return-type');
+        const configCheckEmpty = document.getElementById('config-check-empty');
+        const configEmptyReturn = document.getElementById('config-empty-return');
+        
+        const elseActiveToggle = document.getElementById('else-active-toggle');
+        const elseReturnValContainer = document.getElementById('else-return-val-container');
+        const elseReturnVal = document.getElementById('else-return-val');
+        const emptyFallbackContainer = document.getElementById('empty-fallback-container');
+
+        const tabNumeric = document.getElementById('tab-numeric');
+        const tabLogic = document.getElementById('tab-logic');
+        const presetsList = document.getElementById('presets-list');
+
+        // Initial Setup
+        window.addEventListener('DOMContentLoaded', () => {
+            renderFields();
+            renderConditions();
+            renderPresets('numeric');
+            updateGeneratedCode();
+        });
+
+        // Trigger code updates on global setting change
+        configReturnType.addEventListener('change', (e) => {
+            appState.returnType = e.target.value;
+            if (appState.returnType === 'number') {
+                appState.emptyReturnValue = '0';
+                appState.elseReturnValue = '0';
+            } else {
+                appState.emptyReturnValue = 'Geen waarde';
+                appState.elseReturnValue = 'Onbekend';
+            }
+            configEmptyReturn.value = appState.emptyReturnValue;
+            elseReturnVal.value = appState.elseReturnValue;
+            updateGeneratedCode();
+        });
+
+        configCheckEmpty.addEventListener('change', (e) => {
+            appState.checkEmpty = e.target.checked;
+            if (appState.checkEmpty) {
+                emptyFallbackContainer.classList.remove('opacity-40', 'pointer-events-none');
+            } else {
+                emptyFallbackContainer.classList.add('opacity-40', 'pointer-events-none');
+            }
+            updateGeneratedCode();
+        });
+
+        configEmptyReturn.addEventListener('input', (e) => {
+            appState.emptyReturnValue = e.target.value;
+            updateGeneratedCode();
+        });
+
+        elseActiveToggle.addEventListener('change', (e) => {
+            appState.elseActive = e.target.checked;
+            if (appState.elseActive) {
+                elseReturnValContainer.classList.remove('opacity-30', 'pointer-events-none');
+            } else {
+                elseReturnValContainer.classList.add('opacity-30', 'pointer-events-none');
+            }
+            updateGeneratedCode();
+        });
+
+        elseReturnVal.addEventListener('input', (e) => {
+            appState.elseReturnValue = e.target.value;
+            updateGeneratedCode();
+        });
+
+        // Add variables/fields Dynamically
+        btnAddField.addEventListener('click', () => {
+            const nextId = 'f' + (Date.now());
+            appState.fields.push({
+                id: nextId,
+                name: 'veld_' + (appState.fields.length + 1),
+                featureField: 'Veld' + (appState.fields.length + 1),
+                type: 'text'
+            });
+            renderFields();
+            renderConditions(); // refresh conditions to map latest fields
+            updateGeneratedCode();
+        });
+
+        function renderFields() {
+            fieldsContainer.innerHTML = '';
+            if (appState.fields.length === 0) {
+                fieldsContainer.innerHTML = `<p class="text-xs text-retro-teak italic p-3 text-center bg-retro-cream border border-dashed border-retro-walnut">Geen actieve variabelen. Klik op 'Veld Toevoegen'.</p>`;
+                return;
+            }
+
+            appState.fields.forEach((field, index) => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-2 bg-retro-cream p-2.5 border-2 border-retro-walnut retro-shadow-sm relative";
+                div.innerHTML = `
+                    <div class="flex-1 grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="text-[9px] font-bold text-retro-teak uppercase tracking-wider block">Var Naam</label>
+                            <input type="text" value="${field.name}" data-id="${field.id}" data-key="name" class="field-update w-full bg-retro-sand border border-retro-walnut px-2 py-1 text-xs text-retro-walnut focus:outline-none focus:ring-1 focus:ring-retro-terracotta">
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-bold text-retro-teak uppercase tracking-wider block">ArcGIS Veld</label>
+                            <div class="relative flex items-center">
+                                <span class="absolute left-1.5 text-[9px] font-bold text-retro-teak">$f.</span>
+                                <input type="text" value="${field.featureField}" data-id="${field.id}" data-key="featureField" class="field-update w-full bg-retro-sand border border-retro-walnut pl-[24px] pr-1.5 py-1 text-xs text-retro-walnut focus:outline-none focus:ring-1 focus:ring-retro-terracotta">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-bold text-retro-teak uppercase tracking-wider block">Type</label>
+                            <select data-id="${field.id}" data-key="type" class="field-update w-full bg-retro-sand border border-retro-walnut px-1.5 py-1 text-xs text-retro-walnut font-bold focus:outline-none focus:ring-1 focus:ring-retro-terracotta">
+                                <option value="text" ${field.type === 'text' ? 'selected' : ''}>Tekst</option>
+                                <option value="number" ${field.type === 'number' ? 'selected' : ''}>Nummer</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button data-id="${field.id}" class="btn-delete-field text-retro-teak hover:text-retro-terracotta p-1.5 transition mt-3">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                `;
+                fieldsContainer.appendChild(div);
+            });
+
+            // Bind Events
+            document.querySelectorAll('.field-update').forEach(el => {
+                el.addEventListener('input', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    const key = e.target.getAttribute('data-key');
+                    const value = e.target.value;
+                    const field = appState.fields.find(f => f.id === id);
+                    if (field) {
+                        field[key] = value;
+                        updateGeneratedCode();
+                    }
+                });
+                el.addEventListener('change', () => {
+                    renderConditions(); // refresh condition labels
+                });
+            });
+
+            document.querySelectorAll('.btn-delete-field').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    appState.fields = appState.fields.filter(f => f.id !== id);
+                    appState.conditions = appState.conditions.filter(c => c.fieldId !== id);
+                    renderFields();
+                    renderConditions();
+                    updateGeneratedCode();
+                });
+            });
+        }
+
+        // Add conditions Dynamically
+        btnAddCondition.addEventListener('click', () => {
+            if (appState.fields.length === 0) {
+                showToast("Maak eerst minimaal één variabele aan!", "bg-retro-terracotta");
+                return;
+            }
+            const nextId = 'c' + Date.now();
+            appState.conditions.push({
+                id: nextId,
+                fieldId: appState.fields[0].id,
+                operator: '==',
+                compareValue: 'Waarde',
+                conjunction: 'NONE', // NONE | AND | OR
+                secondFieldId: appState.fields[0].id,
+                secondOperator: '==',
+                secondCompareValue: '',
+                returnValue: appState.returnType === 'number' ? '1' : 'Resultaat',
+                returnType: appState.returnType
+            });
+            renderConditions();
+            updateGeneratedCode();
+        });
+
+        function renderConditions() {
+            conditionsContainer.innerHTML = '';
+            if (appState.conditions.length === 0) {
+                conditionsContainer.innerHTML = `<p class="text-xs text-retro-teak italic p-3 text-center bg-retro-cream border border-dashed border-retro-walnut">Geen voorwaarden geconfigureerd. Klik op 'Conditie Toevoegen'.</p>`;
+                return;
+            }
+
+            appState.conditions.forEach((cond, index) => {
+                const div = document.createElement('div');
+                div.className = "bg-retro-cream p-4 border-2 border-retro-walnut retro-shadow-sm flex flex-col gap-3 relative";
+                
+                // Fields options generator
+                const fieldsOptions = appState.fields.map(f => `<option value="${f.id}" ${f.id === cond.fieldId ? 'selected' : ''}>${f.name}</option>`).join('');
+                const secondFieldsOptions = appState.fields.map(f => `<option value="${f.id}" ${f.id === cond.secondFieldId ? 'selected' : ''}>${f.name}</option>`).join('');
+
+                div.innerHTML = `
+                    <!-- Row 1: Logical Prefix & First Condition -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold px-2 py-0.5 border border-retro-walnut bg-retro-mustard text-retro-walnut">
+                            ${index === 0 ? 'IF' : 'ELSE IF'}
+                        </span>
+                        
+                        <div class="flex-1 grid grid-cols-3 gap-2">
+                            <!-- Field Selection -->
+                            <select data-id="${cond.id}" data-key="fieldId" class="cond-update w-full bg-retro-sand border border-retro-walnut px-2 py-1 text-xs text-retro-walnut focus:outline-none focus:ring-1 focus:ring-retro-terracotta">
+                                ${fieldsOptions}
+                            </select>
+                            
+                            <!-- Operator Selection -->
+                            <select data-id="${cond.id}" data-key="operator" class="cond-update w-full bg-retro-sand border border-retro-walnut px-2 py-1 text-xs text-retro-walnut focus:outline-none focus:ring-1 focus:ring-retro-terracotta">
+                                <option value="==" ${cond.operator === '==' ? 'selected' : ''}>Gelijk (==)</option>
+                                <option value="!=" ${cond.operator === '!=' ? 'selected' : ''}>Niet gelijk (!=)</option>
+                                <option value=">" ${cond.operator === '>' ? 'selected' : ''}>Groter (&gt;)</option>
+                                <option value="<" ${cond.operator === '<' ? 'selected' : ''}>Kleiner (&lt;)</option>
+                                <option value=">=" ${cond.operator === '>=' ? 'selected' : ''}>Groter of Gelijk (&gt;=)</option>
+                                <option value="<=" ${cond.operator === '<=' ? 'selected' : ''}>Kleiner of Gelijk (&lt;=)</option>
+                                <option value="CONTAINS" ${cond.operator === 'CONTAINS' ? 'selected' : ''}>Bevat tekst (Find)</option>
+                            </select>
+
+                            <!-- Target Value -->
+                            <input type="text" value="${cond.compareValue}" placeholder="Vergelijk met..." data-id="${cond.id}" data-key="compareValue" class="cond-update w-full bg-retro-sand border border-retro-walnut px-2 py-1 text-xs text-retro-walnut focus:outline-none focus:ring-1 focus:ring-retro-terracotta">
+                        </div>
+                        
+                        <button data-id="${cond.id}" class="btn-delete-cond text-retro-teak hover:text-retro-terracotta p-1 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    </div>
+
+                    <!-- Row 2: Conjunction Selector (En / Of) -->
+                    <div class="flex items-center gap-2 pl-6">
+                        <label class="text-[9px] font-bold text-retro-teak uppercase tracking-wider">Combineren:</label>
+                        <select data-id="${cond.id}" data-key="conjunction" class="cond-update bg-retro-sand border border-retro-walnut px-2 py-0.5 text-[10px] text-retro-walnut font-bold focus:outline-none">
+                            <option value="NONE" ${cond.conjunction === 'NONE' ? 'selected' : ''}>Geen extra voorwaarde</option>
+                            <option value="AND" ${cond.conjunction === 'AND' ? 'selected' : ''}>EN (&&)</option>
+                            <option value="OR" ${cond.conjunction === 'OR' ? 'selected' : ''}>OF (||)</option>
+                        </select>
+                    </div>
+
+                    <!-- Row 3: Conjunction Condition Block (Conditional Visibility) -->
+                    <div id="conj-block-${cond.id}" class="pl-6 border-l-2 border-retro-mustard ${cond.conjunction === 'NONE' ? 'hidden' : 'flex'} gap-2 items-center">
+                        <div class="flex-1 grid grid-cols-3 gap-2">
+                            <!-- Second Field Selection -->
+                            <select data-id="${cond.id}" data-key="secondFieldId" class="cond-update w-full bg-retro-sand border border-retro-walnut px-2 py-1 text-xs text-retro-walnut focus:outline-none">
+                                ${secondFieldsOptions}
+                            </select>
+                            
+                            <!-- Second Operator -->
+                            <select data-id="${cond.id}" data-key="secondOperator" class="cond-update w-full bg-retro-sand border border-retro-walnut px-2 py-1 text-xs text-retro-walnut focus:outline-none">
+                                <option value="==" ${cond.secondOperator === '==' ? 'selected' : ''}>Gelijk (==)</option>
+                                <option value="!=" ${cond.secondOperator === '!=' ? 'selected' : ''}>Niet gelijk (!=)</option>
+                                <option value=">" ${cond.secondOperator === '>' ? 'selected' : ''}>Groter (&gt;)</option>
+                                <option value="<" ${cond.secondOperator === '<' ? 'selected' : ''}>Kleiner (&lt;)</option>
+                                <option value=">=" ${cond.secondOperator === '>=' ? 'selected' : ''}>Groter of Gelijk (&gt;=)</option>
+                                <option value="<=" ${cond.secondOperator === '<=' ? 'selected' : ''}>Kleiner of Gelijk (&lt;=)</option>
+                                <option value="CONTAINS" ${cond.secondOperator === 'CONTAINS' ? 'selected' : ''}>Bevat tekst (Find)</option>
+                            </select>
+
+                            <!-- Second Value -->
+                            <input type="text" value="${cond.secondCompareValue || ''}" placeholder="Waarde..." data-id="${cond.id}" data-key="secondCompareValue" class="cond-update w-full bg-retro-sand border border-retro-walnut px-2 py-1 text-xs text-retro-walnut focus:outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Return value setting -->
+                    <div class="flex items-center gap-2 pl-6 border-t border-retro-walnut/20 pt-2">
+                        <span class="text-[10px] font-bold text-retro-teak uppercase tracking-wider">Geeft resultaat:</span>
+                        <input type="text" value="${cond.returnValue}" data-id="${cond.id}" data-key="returnValue" class="cond-update w-full md:w-64 bg-retro-sand border border-retro-walnut rounded-none px-2 py-0.5 text-xs text-retro-walnut font-semibold focus:outline-none">
+                        <span class="text-[9px] text-retro-teak font-bold italic uppercase">(${appState.returnType})</span>
+                    </div>
+                `;
+                conditionsContainer.appendChild(div);
+            });
+
+            // Bind Events
+            document.querySelectorAll('.cond-update').forEach(el => {
+                el.addEventListener('input', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    const key = e.target.getAttribute('data-key');
+                    const value = e.target.value;
+                    const cond = appState.conditions.find(c => c.id === id);
+                    if (cond) {
+                        cond[key] = value;
+                        updateGeneratedCode();
+                    }
+                });
+                el.addEventListener('change', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    const key = e.target.getAttribute('data-key');
+                    const value = e.target.value;
+                    const cond = appState.conditions.find(c => c.id === id);
+                    if (cond) {
+                        cond[key] = value;
+                        if (key === 'conjunction') {
+                            const block = document.getElementById(`conj-block-${id}`);
+                            if (value === 'NONE') {
+                                block.classList.add('hidden');
+                                block.classList.remove('flex');
+                            } else {
+                                block.classList.remove('hidden');
+                                block.classList.add('flex');
+                            }
+                        }
+                        updateGeneratedCode();
+                    }
+                });
+            });
+
+            document.querySelectorAll('.btn-delete-cond').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    appState.conditions = appState.conditions.filter(c => c.id !== id);
+                    renderConditions();
+                    updateGeneratedCode();
+                });
+            });
+        }
+
+        // premium Arcade syntax code builder
+        function updateGeneratedCode() {
+            let code = `// Gegenereerde ArcGIS Arcade Expressie\n`;
+            
+            // 1. Declare Variables
+            if (appState.fields.length > 0) {
+                code += `// Haal attributen op uit de features\n`;
+                appState.fields.forEach(field => {
+                    code += `var ${field.name} = $feature.${field.featureField};\n`;
+                });
+                code += `\n`;
+            }
+
+            // Wrapper IsEmpty generator
+            let tabs = "";
+            if (appState.checkEmpty && appState.fields.length > 0) {
+                const emptyChecks = appState.fields.map(f => `!IsEmpty(${f.name})`).join(' && ');
+                code += `if (${emptyChecks}) {\n\n`;
+                tabs = "    ";
+            }
+
+            // Helper to generate a single sub-condition string
+            function buildSubConditionString(field, operator, compareValue) {
+                if (!field) return "false";
+                if (operator === 'CONTAINS') {
+                    return `Find("${compareValue.toLowerCase()}", Lower(${field.name})) >= 0`;
+                } else {
+                    let compVal = compareValue;
+                    if (field.type === 'text' && compVal !== 'null' && compVal !== 'true' && compVal !== 'false' && !compVal.includes('(')) {
+                        compVal = `"${compVal}"`;
+                    }
+                    return `${field.name} ${operator} ${compVal}`;
+                }
+            }
+
+            // Build If / Else Logic
+            if (appState.conditions.length > 0) {
+                appState.conditions.forEach((cond, index) => {
+                    const field = appState.fields.find(f => f.id === cond.fieldId);
+                    if (!field) return;
+
+                    const prefix = index === 0 ? 'if' : 'else if';
+                    
+                    // Generate primary condition
+                    let finalConditionStr = buildSubConditionString(field, cond.operator, cond.compareValue);
+
+                    // If a conjunction (AND/OR) is active, build and append secondary condition
+                    if (cond.conjunction && cond.conjunction !== 'NONE') {
+                        const secondField = appState.fields.find(f => f.id === cond.secondFieldId);
+                        if (secondField) {
+                            const conjSymbol = cond.conjunction === 'AND' ? '&&' : '||';
+                            const secondConditionStr = buildSubConditionString(secondField, cond.secondOperator, cond.secondCompareValue);
+                            finalConditionStr = `(${finalConditionStr}) ${conjSymbol} (${secondConditionStr})`;
+                        }
+                    }
+
+                    // Format return types correctly
+                    let retVal = cond.returnValue;
+                    if (appState.returnType === 'text' && cond.returnType !== 'expression' && cond.returnType !== 'field' && !retVal.includes('(') && !appState.fields.some(f => f.name === retVal)) {
+                        retVal = `"${retVal}"`;
+                    }
+
+                    code += `${tabs}${prefix} (${finalConditionStr}) {\n`;
+                    code += `${tabs}    return ${retVal};\n`;
+                    code += `${tabs}}\n`;
+                });
+
+                // Final optional else block
+                if (appState.elseActive) {
+                    let finalElseVal = appState.elseReturnValue;
+                    if (appState.returnType === 'text' && !finalElseVal.includes('(') && !appState.fields.some(f => f.name === finalElseVal)) {
+                        finalElseVal = `"${finalElseVal}"`;
+                    }
+                    code += `${tabs}else {\n`;
+                    code += `${tabs}    return ${finalElseVal};\n`;
+                    code += `${tabs}}\n`;
+                }
+
+            } else {
+                // simple direct return with no rules
+                if (appState.elseActive) {
+                    let directRet = appState.elseReturnValue;
+                    if (appState.returnType === 'text' && !directRet.includes('(') && !appState.fields.some(f => f.name === directRet)) {
+                        directRet = `"${directRet}"`;
+                    }
+                    code += `${tabs}return ${directRet};\n`;
+                }
+            }
+
+            // Close wrapper check
+            if (appState.checkEmpty && appState.fields.length > 0) {
+                code += `\n}\nelse {\n`;
+                let emptyFallback = appState.emptyReturnValue;
+                if (appState.returnType === 'text') {
+                    emptyFallback = `"${emptyFallback}"`;
+                }
+                code += `    return ${emptyFallback};\n`;
+                code += `}\n`;
+            }
+
+            codeOutput.textContent = code;
+        }
+
+        // Library & Presets Loader System
+        function renderPresets(category) {
+            presetsList.innerHTML = '';
+            const filtered = presets.filter(p => p.category === category);
+            filtered.forEach(preset => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left bg-retro-cream hover:bg-retro-sand border-2 border-retro-walnut p-3 rounded-none transition duration-150 flex justify-between items-center group/btn hover:translate-x-0.5 hover:translate-y-0.5 retro-shadow-sm-hover";
+                btn.innerHTML = `
+                    <div class="flex-1 pr-3">
+                        <h4 class="text-xs font-bold text-retro-walnut uppercase tracking-wide group-hover/btn:text-retro-terracotta transition">${preset.title}</h4>
+                        <p class="text-[10px] text-retro-teak font-semibold mt-0.5">${preset.desc}</p>
+                    </div>
+                    <span class="text-retro-teal group-hover/btn:text-retro-terracotta transition text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shrink-0">
+                        Inladen
+                        <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                    </span>
+                `;
+                btn.addEventListener('click', () => {
+                    loadPreset(preset.state);
+                    showToast(`Sjabloon "${preset.title}" ingeladen!`);
+                });
+                presetsList.appendChild(btn);
+            });
+        }
+
+        function loadPreset(state) {
+            // Deep clone state to avoid references
+            appState = JSON.parse(JSON.stringify(state));
+            
+            // Sync inputs with state
+            configReturnType.value = appState.returnType;
+            configCheckEmpty.checked = appState.checkEmpty;
+            configEmptyReturn.value = appState.emptyReturnValue;
+            
+            elseActiveToggle.checked = appState.elseActive;
+            elseReturnVal.value = appState.elseReturnValue;
+
+            if (appState.checkEmpty) {
+                emptyFallbackContainer.classList.remove('opacity-40', 'pointer-events-none');
+            } else {
+                emptyFallbackContainer.classList.add('opacity-40', 'pointer-events-none');
+            }
+
+            if (appState.elseActive) {
+                elseReturnValContainer.classList.remove('opacity-30', 'pointer-events-none');
+            } else {
+                elseReturnValContainer.classList.add('opacity-30', 'pointer-events-none');
+            }
+
+            renderFields();
+            renderConditions();
+            updateGeneratedCode();
+        }
+
+        // Tab Switching logic
+        tabNumeric.addEventListener('click', () => {
+            tabNumeric.className = "py-2 bg-retro-mustard text-retro-walnut border-r-2 border-retro-walnut font-bold";
+            tabLogic.className = "py-2 bg-retro-cream text-retro-teak hover:text-retro-walnut transition font-bold";
+            renderPresets('numeric');
+        });
+
+        tabLogic.addEventListener('click', () => {
+            tabLogic.className = "py-2 bg-retro-mustard text-retro-walnut border-l-2 border-retro-walnut font-bold";
+            tabNumeric.className = "py-2 bg-retro-cream text-retro-teak hover:text-retro-walnut transition font-bold";
+            renderPresets('logic');
+        });
+
+        // Copy Clipboard Handler
+        btnCopyCode.addEventListener('click', () => {
+            const textarea = document.createElement('textarea');
+            textarea.value = codeOutput.textContent;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast("Code gekopieerd naar klembord!");
+            } catch (err) {
+                showToast("Fout bij het kopiëren van de code.", "bg-retro-terracotta");
+            }
+            document.body.removeChild(textarea);
+        });
+
+        // Toast feedback system
+        function showToast(message, bgColorClass = "bg-retro-walnut") {
+            const toast = document.getElementById('toast');
+            const msgSpan = document.getElementById('toast-msg');
+            toast.className = `fixed bottom-6 right-6 ${bgColorClass} text-retro-cream border-2 border-retro-mustard px-4 py-3 shadow-lg text-sm font-bold uppercase tracking-wider flex items-center gap-2 transform transition-all duration-300 z-50`;
+            msgSpan.textContent = message;
+            
+            // Pop up toast
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+    </script>
+</body>
+</html>
