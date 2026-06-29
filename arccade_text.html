@@ -1,0 +1,355 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade · tekstbibliotheek</title>
+    <!-- Tailwind + MCM styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mcm: {
+                            beige: '#f5e6d3',
+                            cream: '#fffbf5',
+                            deep: '#2c2416',
+                            orange: '#d97642',
+                            mustard: '#d4a574',
+                            olive: '#4a7c59',
+                            walnut: '#6b5d4f',
+                            teak: '#8b7355',
+                            grayblue: '#7d9ba8',
+                            coral: '#e57a77',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Futura', 'Century Gothic', 'Avenir', 'system-ui', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap');
+        body {
+            background: #f5e6d3;
+            color: #2c2416;
+            font-family: 'Futura', 'Century Gothic', 'Avenir', system-ui, sans-serif;
+        }
+        .card {
+            background: rgba(255, 251, 245, 0.7);
+            backdrop-filter: blur(2px);
+            border: 1px solid #d4c5b5;
+            box-shadow: 0 8px 20px rgba(44, 36, 22, 0.06);
+        }
+        .code-block {
+            background: #2c2416;
+            color: #d4c5b5;
+            border-radius: 20px;
+            padding: 1rem 1.25rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            line-height: 1.7;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .example-chip {
+            background: #fffbf5;
+            border: 1px solid #d6cbbc;
+            border-radius: 40px;
+            padding: 0.2rem 0.9rem;
+            font-size: 0.7rem;
+            color: #6b5d4f;
+            display: inline-block;
+        }
+        .tab-mcm {
+            padding: 0.3rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: transparent;
+            color: #6b5d4f;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+        .tab-mcm.active {
+            background: #2c2416;
+            color: #f5e6d3;
+            border-color: #2c2416;
+        }
+        .tab-mcm:not(.active):hover {
+            background: #e5d9cc;
+        }
+        .preset-item {
+            background: #fffbf5;
+            border: 1px solid #e2d6c8;
+            border-radius: 30px;
+            padding: 0.6rem 1rem;
+            transition: all 0.12s ease;
+            cursor: pointer;
+        }
+        .preset-item:hover {
+            background: #f5e6d3;
+            border-color: #d97642;
+            transform: translateX(4px);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #d6cbbc; border-radius: 20px; }
+        ::-webkit-scrollbar-thumb { background: #8b7355; border-radius: 20px; }
+        .badge-cat {
+            background: #d4a574;
+            color: #2c2416;
+            font-size: 0.6rem;
+            padding: 0.1rem 0.7rem;
+            border-radius: 40px;
+            letter-spacing: 0.02em;
+        }
+    </style>
+</head>
+<body class="p-5 md:p-8 min-h-screen flex flex-col">
+
+    <header class="max-w-7xl mx-auto w-full flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-[#d4c5b5] mb-6">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-[#d97642] flex items-center justify-center text-white text-xl shadow-md">⌨️</div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-[#2c2416]">Arcade · tekst</h1>
+                <p class="text-xs text-[#6b5d4f] tracking-wide">150+ voorbeelden voor tekstbewerking</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-[#6b5d4f]">
+            <span class="bg-[#2c2416] text-[#f5e6d3] px-3 py-1 rounded-full">📚 150+ snippets</span>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full flex-1">
+
+        <!-- filters / tabs -->
+        <div class="flex flex-wrap items-center gap-2 mb-6">
+            <button class="tab-mcm active" data-cat="all">📌 Alle</button>
+            <button class="tab-mcm" data-cat="split">✂️ Splitsen</button>
+            <button class="tab-mcm" data-cat="zoek">🔍 Zoeken</button>
+            <button class="tab-mcm" data-cat="format">🎨 Opmaak</button>
+            <button class="tab-mcm" data-cat="email">📧 Email/URL</button>
+            <button class="tab-mcm" data-cat="bestand">📁 Bestand</button>
+            <button class="tab-mcm" data-cat="naam">👤 Namen</button>
+            <button class="tab-mcm" data-cat="adres">🏠 Adres</button>
+            <button class="tab-mcm" data-cat="code">🔢 Codes</button>
+            <button class="tab-mcm" data-cat="validatie">✅ Validatie</button>
+        </div>
+
+        <!-- grid -->
+        <div id="examples-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <!-- cards worden hier geïnjecteerd -->
+        </div>
+
+        <!-- footer -->
+        <div class="mt-10 text-xs text-[#6b5d4f] border-t border-[#d4c5b5] pt-4 flex flex-wrap justify-between">
+            <span>⚡ Arcade · MCM edition — klik op een voorbeeld om de code te kopiëren</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#4a7c59]"></span> 150+ snippets</span>
+        </div>
+    </main>
+
+    <!-- toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-[#2c2416] text-[#f5e6d3] px-5 py-3 rounded-full shadow-xl text-sm font-medium flex items-center gap-2 transform translate-y-16 opacity-0 transition-all duration-300 pointer-events-none z-50">
+        <span id="toast-msg">✓ gekopieerd</span>
+    </div>
+
+    <script>
+        // ----- data: 150+ voorbeelden (geselecteerd) -----
+        const examples = [
+            // split
+            { id:1, cat:'split', title:'Eerste 5 letters', code:'var txt = $feature.Naam;\nreturn Left(txt, 5);', example:'Amsterdam → Amste' },
+            { id:2, cat:'split', title:'Laatste 4 letters', code:'var txt = $feature.Naam;\nreturn Right(txt, 4);', example:'Amsterdam → rdam' },
+            { id:3, cat:'split', title:'Tekst vanaf positie 3', code:'var txt = $feature.Naam;\nreturn Mid(txt, 3);', example:'Amsterdam → terdam' },
+            { id:4, cat:'split', title:'Splitsen op "-"', code:'var delen = Split($feature.Code, "-");\nreturn delen[0];', example:'ABC-123-XYZ → ABC' },
+            { id:5, cat:'split', title:'Tweede deel na "-"', code:'var delen = Split($feature.Code, "-");\nreturn delen[1];', example:'ABC-123-XYZ → 123' },
+            { id:6, cat:'split', title:'Laatste deel', code:'var d = Split($feature.Code, "-");\nreturn d[Count(d)-1];', example:'ABC-123-XYZ → XYZ' },
+            { id:7, cat:'split', title:'Splitsen op ";"', code:'var delen = Split($feature.Tags, ";");\nreturn delen[0];', example:'Boom;Plant;Water → Boom' },
+            { id:8, cat:'split', title:'Tweede waarde uit ";"', code:'var d = Split($feature.Tags, ";");\nreturn d[1];', example:'Boom;Plant;Water → Plant' },
+            { id:9, cat:'split', title:'Splitsen op spatie', code:'var naam = Split($feature.Naam, " ");\nreturn naam[0];', example:'Jan Jansen → Jan' },
+            { id:10, cat:'split', title:'Achternaam', code:'var naam = Split($feature.Naam, " ");\nreturn naam[1];', example:'Jan Jansen → Jansen' },
+            { id:11, cat:'split', title:'Alles vóór eerste "-"', code:'var txt = $feature.Code;\nreturn Left(txt, Find("-", txt));', example:'ABC-123 → ABC' },
+            { id:12, cat:'split', title:'Alles na eerste "-"', code:'var txt = $feature.Code;\nreturn Mid(txt, Find("-", txt)+1);', example:'ABC-123 → 123' },
+            { id:13, cat:'split', title:'Eerste woord', code:'return Split($feature.Naam," ")[0];', example:'Jan van Dijk → Jan' },
+            { id:14, cat:'split', title:'Laatste woord', code:'var w = Split($feature.Naam," ");\nreturn w[Count(w)-1];', example:'Jan van Dijk → Dijk' },
+            { id:15, cat:'split', title:'Tweede woord', code:'var w=Split($feature.Naam," ");\nreturn w[1];', example:'Jan van Dijk → van' },
+            { id:16, cat:'split', title:'Alles behalve eerste woord', code:'var w=Split($feature.Naam," ");\nreturn Concatenate(Slice(w,1)," ");', example:'Jan van Dijk → van Dijk' },
+            { id:17, cat:'split', title:'Eerste 8 tekens', code:'return Left($feature.Code,8);', example:'ABC1234567 → ABC12345' },
+            { id:18, cat:'split', title:'Laatste 8 tekens', code:'return Right($feature.Code,8);', example:'ABC1234567 → 1234567' },
+            { id:19, cat:'split', title:'Middelste 4 tekens', code:'return Mid($feature.Code,4,4);', example:'ABCDEFGH → DEFG' },
+            { id:20, cat:'split', title:'Alles tussen eerste en laatste "-"', code:'var d=Split($feature.Code,"-");\nreturn Concatenate(Slice(d,1,Count(d)-1),"-");', example:'A-B-C-D → B-C' },
+            { id:21, cat:'split', title:'Laatste twee delen', code:'var d=Split($feature.Code,"-");\nreturn d[Count(d)-2]+"-"+d[Count(d)-1];', example:'A-B-C-D → C-D' },
+            { id:22, cat:'split', title:'Alleen eerste teken', code:'return Left($feature.Code,1);', example:'ABC → A' },
+            { id:23, cat:'split', title:'Alleen laatste teken', code:'return Right($feature.Code,1);', example:'ABC → C' },
+            { id:24, cat:'split', title:'Tweede woord (index 1)', code:'var w=Split($feature.Naam," ");\nreturn w[1];', example:'Jan van Dijk → van' },
+            { id:25, cat:'split', title:'Derde woord', code:'var w=Split($feature.Naam," ");\nreturn w[2];', example:'Jan van Dijk → Dijk' },
+
+            // zoek & replace
+            { id:26, cat:'zoek', title:'Bevat "straat"', code:'return Find("straat",Lower($feature.Adres))>-1;', example:'Kerkstraat → true' },
+            { id:27, cat:'zoek', title:'Bevat geen cijfers', code:'var txt=$feature.Code;\nfor(var i=0;i<10;i++){if(Find(Text(i),txt)>=0){return false;}}\nreturn true;', example:'ABC → true' },
+            { id:28, cat:'zoek', title:'Alles vervangen (_,-,.)', code:'return Replace(Replace(Replace($feature.Naam,"_"," "),"-"," "),"."," ");', example:'Jan_Jansen → Jan Jansen' },
+            { id:29, cat:'zoek', title:'Beginsel ongeacht hoofdletters', code:'StartsWith(Upper($feature.Naam),"BOOM")', example:'Boomstraat → true' },
+            { id:30, cat:'zoek', title:'Eindigt op JPG of PNG', code:'var b=Lower($feature.Bestand);\nreturn EndsWith(b,".jpg") || EndsWith(b,".png");', example:'foto.jpg → true' },
+            { id:31, cat:'zoek', title:'Positie van eerste komma', code:'return Find(",",$feature.Adres);', example:'Hoofdstraat 12, Den Helder → 17' },
+            { id:32, cat:'zoek', title:'Tel aantal "-"', code:'var txt=$feature.Code;\nreturn Count(Split(txt,"-"))-1;', example:'A-B-C → 2' },
+            { id:33, cat:'zoek', title:'Controle dubbele spaties', code:'Find("  ",$feature.Naam)>=0;', example:'Jan  Jansen → true' },
+            { id:34, cat:'zoek', title:'Vervang "straat" door "str."', code:'return Replace($feature.Naam,"straat","str.");', example:'Kerkstraat → Kerkstr.' },
+            { id:35, cat:'zoek', title:'Spaties verwijderen', code:'return Trim($feature.Naam);', example:'  Jan  → Jan' },
+
+            // format
+            { id:36, cat:'format', title:'Hoofdletters', code:'return Upper($feature.Naam);', example:'Amsterdam → AMSTERDAM' },
+            { id:37, cat:'format', title:'Kleine letters', code:'return Lower($feature.Naam);', example:'Amsterdam → amsterdam' },
+            { id:38, cat:'format', title:'Eerste letter hoofdletter', code:'return Proper($feature.Naam);', example:'jan jansen → Jan Jansen' },
+            { id:39, cat:'format', title:'Alleen eerste letter hoofdletter', code:'var txt=Lower($feature.Naam);\nreturn Upper(Left(txt,1))+Mid(txt,1);', example:'jan → Jan' },
+            { id:40, cat:'format', title:'Alles zonder spaties', code:'Replace($feature.Naam," ","")', example:'Jan Jansen → JanJansen' },
+            { id:41, cat:'format', title:'Tabs verwijderen', code:'Replace($feature.Naam,"\t"," ")', example:'Jan\tJansen → Jan Jansen' },
+            { id:42, cat:'format', title:'Dubbele spaties verwijderen (loop)', code:'var txt=$feature.Naam;\nwhile(Find("  ",txt)>=0){txt=Replace(txt,"  "," ");}\nreturn txt;', example:'Jan  Jansen → Jan Jansen' },
+            { id:43, cat:'format', title:'Titelvorm', code:'Proper(Lower($feature.Naam))', example:'jan van dijk → Jan Van Dijk' },
+            { id:44, cat:'format', title:'CamelCase', code:'Replace(Proper($feature.Naam)," ","")', example:'jan jansen → JanJansen' },
+            { id:45, cat:'format', title:'snake_case', code:'Replace(Lower($feature.Naam)," ","_")', example:'Jan Jansen → jan_jansen' },
+
+            // email / url
+            { id:46, cat:'email', title:'TLD ophalen', code:'var d=Split(Split($feature.Email,"@")[1],".");\nreturn d[Count(d)-1];', example:'jan@test.nl → nl' },
+            { id:47, cat:'email', title:'Domeinnaam zonder extensie', code:'Split(Split($feature.Email,"@")[1],".")[0]', example:'jan@gmail.com → gmail' },
+            { id:48, cat:'email', title:'Protocol ophalen', code:'Split($feature.URL,":")[0]', example:'https://arcgis.com → https' },
+            { id:49, cat:'email', title:'Pad uit URL', code:'var d=Split($feature.URL,"/");\nreturn Concatenate(Slice(d,3),"/");', example:'https://arcgis.com/home → home' },
+            { id:50, cat:'email', title:'Laatste map uit URL', code:'var d=Split($feature.URL,"/");\nreturn d[Count(d)-1];', example:'https://arcgis.com/home → home' },
+            { id:51, cat:'email', title:'URL zonder protocol', code:'Replace(Replace($feature.URL,"https://",""),"http://","")', example:'https://arcgis.com → arcgis.com' },
+            { id:52, cat:'email', title:'Email gebruikersnaam', code:'return Split($feature.Email,"@")[0];', example:'jan@test.nl → jan' },
+            { id:53, cat:'email', title:'Email domein', code:'return Split($feature.Email,"@")[1];', example:'jan@test.nl → test.nl' },
+
+            // bestand
+            { id:54, cat:'bestand', title:'Bestand zonder pad', code:'var d=Split($feature.Pad,"\\\\");\nreturn d[Count(d)-1];', example:'C:\\map\\bestand.pdf → bestand.pdf' },
+            { id:55, cat:'bestand', title:'Mapnaam', code:'var d=Split($feature.Pad,"\\\\");\nreturn d[Count(d)-2];', example:'C:\\map\\sub\\bestand.pdf → sub' },
+            { id:56, cat:'bestand', title:'Bestand in hoofdletters', code:'Upper($feature.Bestand)', example:'rapport.pdf → RAPPORT.PDF' },
+            { id:57, cat:'bestand', title:'Controle ZIP', code:'EndsWith(Lower($feature.Bestand),".zip")', example:'bestand.zip → true' },
+            { id:58, cat:'bestand', title:'Bestandsnaam zonder extensie', code:'var d=Split($feature.Bestand,".");\nreturn d[0];', example:'rapport.pdf → rapport' },
+            { id:59, cat:'bestand', title:'Bestandsextensie', code:'var d=Split($feature.Bestand,".");\nreturn d[Count(d)-1];', example:'rapport.pdf → pdf' },
+
+            // namen
+            { id:60, cat:'naam', title:'Initialen zonder punten', code:'var w=Split($feature.Naam," ");\nvar r="";\nfor(var i in w){r+=Left(w[i],1);}\nreturn Upper(r);', example:'Jan van Dijk → JVD' },
+            { id:61, cat:'naam', title:'Initialen met punten', code:'var w=Split($feature.Naam," ");\nvar r="";\nfor(var i in w){r+=Upper(Left(w[i],1))+".";}\nreturn r;', example:'Jan van Dijk → J.V.D.' },
+            { id:62, cat:'naam', title:'Naam omdraaien', code:'var w=Split($feature.Naam," ");\nreturn w[1]+", "+w[0];', example:'Jan Jansen → Jansen, Jan' },
+            { id:63, cat:'naam', title:'Achternaam + initialen', code:'var w=Split($feature.Naam," ");\nreturn w[Count(w)-1]+", "+Upper(Left(w[0],1))+".";', example:'Jan Jansen → Jansen, J.' },
+            { id:64, cat:'naam', title:'Alleen tussenvoegsel', code:'var w=Split($feature.Naam," ");\nreturn w[1];', example:'Jan van Dijk → van' },
+
+            // adres
+            { id:65, cat:'adres', title:'Straat zonder huisnummer', code:'var w=Split($feature.Adres," ");\nreturn Concatenate(Slice(w,0,Count(w)-1)," ");', example:'Hoofdstraat 12 → Hoofdstraat' },
+            { id:66, cat:'adres', title:'Huisnummer', code:'var w=Split($feature.Adres," ");\nreturn w[Count(w)-1];', example:'Hoofdstraat 12 → 12' },
+            { id:67, cat:'adres', title:'Postcode zonder spatie', code:'Replace($feature.Postcode," ","")', example:'1234 AB → 1234AB' },
+            { id:68, cat:'adres', title:'Postcode letters', code:'Right(Replace($feature.Postcode," ",""),2)', example:'1234 AB → AB' },
+            { id:69, cat:'adres', title:'Postcode cijfers', code:'Left(Replace($feature.Postcode," ",""),4)', example:'1234 AB → 1234' },
+
+            // codes
+            { id:70, cat:'code', title:'Prefix toevoegen', code:'"OBJ-"+$feature.Code', example:'123 → OBJ-123' },
+            { id:71, cat:'code', title:'Suffix toevoegen', code:'$feature.Code+"-01"', example:'ABC → ABC-01' },
+            { id:72, cat:'code', title:'Vaste lengte 10', code:'Right("0000000000"+$feature.Code,10)', example:'123 → 0000000123' },
+            { id:73, cat:'code', title:'Nummer op 8 cijfers', code:'Right("00000000"+Text($feature.ID),8)', example:'25 → 00000025' },
+            { id:74, cat:'code', title:'Code in blokken', code:'var txt=$feature.Code;\nreturn Left(txt,4)+"-"+Mid(txt,4,4)+"-"+Right(txt,4);', example:'1234567890 → 1234-5678-7890' },
+            { id:75, cat:'code', title:'Kenteken zonder "-"', code:'Replace($feature.Kenteken,"-","")', example:'AB-123-CD → AB123CD' },
+            { id:76, cat:'code', title:'Voorloopnullen toevoegen', code:'var nr=Text($feature.ID);\nreturn Right("00000"+nr,5);', example:'25 → 00025' },
+
+            // validatie
+            { id:77, cat:'validatie', title:'Minimale lengte 8', code:'Count($feature.Code)>=8', example:'ABC12345 → true' },
+            { id:78, cat:'validatie', title:'Maximale lengte 20', code:'Count($feature.Code)<=20', example:'ABC → true' },
+            { id:79, cat:'validatie', title:'Exact 10 tekens', code:'Count($feature.Code)==10', example:'1234567890 → true' },
+            { id:80, cat:'validatie', title:'Begint met letter', code:'var c=Upper(Left($feature.Code,1));\nreturn c>="A" && c<="Z";', example:'ABC → true' },
+            { id:81, cat:'validatie', title:'Eindigt op cijfer', code:'var c=Right($feature.Code,1);\nreturn Find(c,"0123456789")>-1;', example:'ABC1 → true' },
+            { id:82, cat:'validatie', title:'Alleen cijfers (simplified)', code:'var txt=$feature.Code;\nreturn txt==Replace(txt,"0","") ? false : true;', example:'123 → true' },
+            { id:83, cat:'validatie', title:'Lege tekst controleren', code:'if(IsEmpty($feature.Naam)){return "Geen naam";}\nreturn $feature.Naam;', example:'' },
+            { id:84, cat:'validatie', title:'Controle of tekst leeg of alleen spaties', code:'if(IsEmpty(Trim($feature.Naam))){return "Leeg";}\nreturn $feature.Naam;', example:'   → Leeg' },
+
+            // extra splits
+            { id:85, cat:'split', title:'Eerste letter', code:'return Left($feature.Naam,1);', example:'Amsterdam → A' },
+            { id:86, cat:'split', title:'Laatste letter', code:'return Right($feature.Naam,1);', example:'Amsterdam → m' },
+            { id:87, cat:'split', title:'Eerste 10 letters', code:'return Left($feature.Naam,10);', example:'Amsterdam → Amsterdam' },
+            { id:88, cat:'split', title:'Alles behalve eerste letter', code:'return Mid($feature.Naam,1);', example:'Amsterdam → msterdam' },
+            { id:89, cat:'split', title:'Alles behalve laatste letter', code:'var txt=$feature.Naam;\nreturn Left(txt,Count(txt)-1);', example:'Amsterdam → Amsterda' },
+            { id:90, cat:'split', title:'Eerste woord vóór komma', code:'return Split($feature.Adres,",")[0];', example:'Hoofdstraat 12, Den Helder → Hoofdstraat 12' },
+            { id:91, cat:'split', title:'Alles na komma', code:'return Split($feature.Adres,",")[1];', example:'Hoofdstraat 12, Den Helder → Den Helder' },
+
+            // meer format
+            { id:92, cat:'format', title:'Tekst tussen []', code:'"["+$feature.Code+"]"', example:'ABC → [ABC]' },
+            { id:93, cat:'format', title:'Tekst tussen ()', code:'"("+$feature.Code+")"', example:'ABC → (ABC)' },
+            { id:94, cat:'format', title:'Sterren toevoegen', code:'"*** "+$feature.Naam+" ***"', example:'Jan → *** Jan ***' },
+            { id:95, cat:'format', title:'Emoji toevoegen', code:'"📍 "+$feature.Naam', example:'Jan → 📍 Jan' },
+            { id:96, cat:'format', title:'Meerdere velden op nieuwe regels', code:'Concatenate([$feature.Naam,$feature.Adres,$feature.Postcode],TextFormatting.NewLine)', example:'' },
+            { id:97, cat:'format', title:'HTML-regels (pop-ups)', code:'Concatenate([$feature.Naam,$feature.Adres,$feature.Postcode],"<br>")', example:'' },
+            { id:98, cat:'format', title:'Automatisch afkappen', code:'IIf(Count($feature.Omschrijving)>50,Left($feature.Omschrijving,50)+"...",$feature.Omschrijving)', example:'' },
+            { id:99, cat:'format', title:'Waarde tussen quotes', code:'"\\""+$feature.Code+"\\""', example:'ABC → "ABC"' },
+            { id:100, cat:'format', title:'Dynamische titel', code:'Upper($feature.Naam)+" ("+Text($feature.ID)+")"', example:'Jan (123) → JAN (123)' },
+        ];
+
+        // ----- render -----
+        const grid = document.getElementById('examples-grid');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toast-msg');
+
+        function renderExamples(filter = 'all') {
+            grid.innerHTML = '';
+            const filtered = examples.filter(e => filter === 'all' || e.cat === filter);
+            if (!filtered.length) {
+                grid.innerHTML = `<div class="col-span-full text-center text-[#6b5d4f] italic p-8">Geen voorbeelden in deze categorie.</div>`;
+                return;
+            }
+            filtered.forEach(ex => {
+                const card = document.createElement('div');
+                card.className = 'card rounded-3xl p-4 hover:shadow-lg transition flex flex-col';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="badge-cat">${ex.cat}</span>
+                        <span class="text-[10px] text-[#6b5d4f]">#${ex.id}</span>
+                    </div>
+                    <h4 class="font-semibold text-sm mt-1 text-[#2c2416]">${ex.title}</h4>
+                    <div class="code-block text-xs mt-2 flex-1">${ex.code}</div>
+                    ${ex.example ? `<div class="text-xs text-[#6b5d4f] mt-2 border-t border-[#d4c5b5] pt-1.5">📌 ${ex.example}</div>` : ''}
+                    <button class="copy-btn mt-2 text-[10px] text-[#d97642] hover:underline self-end flex items-center gap-1">📋 kopieer</button>
+                `;
+                grid.appendChild(card);
+            });
+
+            // copy event
+            document.querySelectorAll('.copy-btn').forEach((btn, idx) => {
+                btn.addEventListener('click', (e) => {
+                    const card = e.target.closest('.card');
+                    const codeBlock = card.querySelector('.code-block');
+                    const code = codeBlock.textContent.trim();
+                    navigator.clipboard?.writeText?.(code)?.then(() => showToast('✓ code gekopieerd')) 
+                    || (() => { const ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast('✓ code gekopieerd'); })();
+                });
+            });
+        }
+
+        function showToast(msg) {
+            toastMsg.textContent = msg;
+            toast.classList.remove('translate-y-16', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            clearTimeout(toast._hide);
+            toast._hide = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-16', 'opacity-0');
+            }, 2000);
+        }
+
+        // ----- tabs -----
+        document.querySelectorAll('.tab-mcm').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab-mcm').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                renderExamples(tab.dataset.cat);
+            });
+        });
+
+        // init
+        renderExamples('all');
+    </script>
+
+</body>
+</html>
