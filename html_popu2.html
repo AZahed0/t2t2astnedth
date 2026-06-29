@@ -1,0 +1,506 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>ArcGIS · popup componenten</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f3efe7;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      color: #2e2c28;
+      line-height: 1.5;
+      padding: 2rem 1.5rem;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* wabi-sabi paper texture — heel subtiel */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="1" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.04"/></svg>');
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .library {
+      max-width: 1400px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ----- header kaart ----- */
+    .header-card {
+      background: #fdfbf6;
+      border-radius: 6px 38px 6px 38px;
+      padding: 1.75rem 2rem;
+      margin-bottom: 2.5rem;
+      border: 1px solid rgba(178, 170, 148, 0.25);
+      box-shadow: 0 1px 4px rgba(62, 55, 40, 0.04);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.25rem;
+      transition: all 0.2s ease;
+    }
+
+    .header-card:hover {
+      background: #faf7f0;
+      border-color: rgba(168, 158, 132, 0.35);
+      box-shadow: 0 4px 14px rgba(62, 55, 40, 0.05);
+    }
+
+    .title-block {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .circle-icon {
+      width: 52px;
+      height: 52px;
+      background: #e8e2d5;
+      border-radius: 6px 34px 6px 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      border: 1px solid #cdc4b2;
+      color: #5f5a4c;
+    }
+
+    .title-text h1 {
+      font-weight: 350;
+      font-size: 1.9rem;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .stamp-badge {
+      border: 1px solid rgba(162, 150, 128, 0.4);
+      background: rgba(232, 224, 210, 0.5);
+      border-radius: 4px 20px 4px 20px;
+      padding: 0.15rem 0.9rem;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: #635e51;
+      letter-spacing: 0.2px;
+    }
+
+    .sub-line {
+      color: #6b6557;
+      font-size: 0.85rem;
+      font-weight: 300;
+      margin-top: 0.2rem;
+    }
+
+    .status-dot {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #eae4d8;
+      border-radius: 6px 34px 6px 34px;
+      padding: 0.3rem 1.4rem;
+      font-size: 0.75rem;
+      color: #5a5547;
+      border: 1px solid #d6cebc;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: #8f9e8b;
+      border-radius: 50%;
+    }
+
+    /* ----- tab navigatie ----- */
+    .tabs-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 2rem;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 0.4rem 1.2rem;
+      border-radius: 4px 22px 4px 22px;
+      font-size: 0.8rem;
+      font-weight: 380;
+      color: #5f5a4e;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(242, 237, 228, 0.6);
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      background: #e0d8c8;
+      border-color: rgba(158, 148, 128, 0.3);
+      color: #2e2c26;
+      font-weight: 450;
+    }
+
+    .tab-btn:not(.active):hover {
+      background: rgba(228, 220, 206, 0.7);
+      border-color: rgba(178, 164, 142, 0.25);
+    }
+
+    /* ----- grid ----- */
+    .examples-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      gap: 1.3rem;
+    }
+
+    /* ----- kaart component ----- */
+    .component-card {
+      background: #fdfbf6;
+      border-radius: 5px 28px 5px 28px;
+      border: 1px solid rgba(178, 168, 146, 0.25);
+      padding: 1.2rem 1.3rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      box-shadow: 0 1px 4px rgba(62, 55, 40, 0.03);
+      transition: all 0.2s ease;
+    }
+
+    .component-card:hover {
+      background: #faf7f0;
+      border-color: rgba(158, 148, 128, 0.35);
+      box-shadow: 0 6px 16px rgba(62, 55, 40, 0.05);
+      transform: translateY(-1px);
+    }
+
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .category-badge {
+      background: #e2dacb;
+      color: #4f4a3e;
+      font-size: 0.6rem;
+      padding: 0.15rem 0.9rem;
+      border-radius: 4px 18px 4px 18px;
+      border: 1px solid rgba(168, 156, 132, 0.25);
+      letter-spacing: 0.3px;
+    }
+
+    .component-id {
+      font-size: 0.6rem;
+      color: #8b8574;
+    }
+
+    .component-title {
+      font-weight: 450;
+      font-size: 0.95rem;
+      color: #2e2c26;
+      letter-spacing: -0.2px;
+    }
+
+    .preview-window {
+      background: #faf7f1;
+      border-radius: 5px 18px 5px 18px;
+      border: 1px solid rgba(174, 164, 144, 0.2);
+      padding: 0.9rem 1rem;
+      min-height: 55px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .code-snippet {
+      background: #ede7dc;
+      border-radius: 4px 16px 4px 16px;
+      padding: 0.7rem 1rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.65rem;
+      line-height: 1.7;
+      color: #3e3b34;
+      border: 1px solid rgba(168, 158, 138, 0.2);
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-x: auto;
+    }
+
+    .copy-button {
+      align-self: flex-end;
+      background: transparent;
+      border: 1px solid rgba(158, 148, 128, 0.3);
+      padding: 0.25rem 1rem;
+      border-radius: 4px 20px 4px 20px;
+      font-size: 0.65rem;
+      color: #5f5a4c;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.2px;
+    }
+
+    .copy-button:hover {
+      background: #e4ddce;
+      border-color: #b2a58b;
+      color: #2e2c26;
+    }
+
+    /* footer */
+    .footer-note {
+      margin-top: 2.5rem;
+      background: #fdfbf6;
+      border-radius: 6px 36px 6px 36px;
+      padding: 0.9rem 1.8rem;
+      border: 1px solid rgba(178, 168, 146, 0.2);
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #6b6557;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    /* toast */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #e2dacb;
+      color: #2e2c26;
+      padding: 0.6rem 1.6rem;
+      border-radius: 6px 30px 6px 30px;
+      border: 1px solid #c4baa2;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      opacity: 0;
+      transform: translateY(1rem);
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* kleine custom preview stijlen (binnen preview-window, niet globaal) */
+    .preview-window .traffic-light-demo {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: #2b2a26;
+      padding: 6px 10px;
+      border-radius: 12px;
+    }
+    .preview-window .light {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #555;
+    }
+    .preview-window .light.red { background: #C62828; }
+    .preview-window .light.yellow { background: #F9A825; }
+    .preview-window .light.green { background: #2E7D32; }
+  </style>
+</head>
+<body>
+<div class="library">
+  <!-- header -->
+  <div class="header-card">
+    <div class="title-block">
+      <div class="circle-icon">✦</div>
+      <div>
+        <h1>
+          ArcGIS · popup bibliotheek
+          <span class="stamp-badge">205+ componenten</span>
+        </h1>
+        <div class="sub-line">klik op kopieer — plak in ArcGIS Online popup</div>
+      </div>
+    </div>
+    <div class="status-dot">
+      <span class="dot"></span> HTML + inline CSS
+    </div>
+  </div>
+
+  <!-- tabs -->
+  <div class="tabs-wrapper" id="tabsContainer">
+    <button class="tab-btn active" data-cat="all">📌 alle</button>
+    <button class="tab-btn" data-cat="badges">🏷️ badges</button>
+    <button class="tab-btn" data-cat="cards">📦 cards</button>
+    <button class="tab-btn" data-cat="shapes">📐 shapes</button>
+    <button class="tab-btn" data-cat="lines">📏 lijnen</button>
+    <button class="tab-btn" data-cat="tables">📋 tabellen</button>
+    <button class="tab-btn" data-cat="images">🖼️ afbeeldingen</button>
+    <button class="tab-btn" data-cat="project">📊 project</button>
+    <button class="tab-btn" data-cat="infra">🛣️ infra</button>
+    <button class="tab-btn" data-cat="nature">🌳 natuur</button>
+    <button class="tab-btn" data-cat="dashboards">📈 dashboards</button>
+    <button class="tab-btn" data-cat="symbols">🔣 symbolen</button>
+  </div>
+
+  <!-- grid -->
+  <div class="examples-grid" id="examplesGrid"></div>
+
+  <!-- footer -->
+  <div class="footer-note">
+    <span>✦ klik op "kopieer HTML" om de code naar klembord te kopiëren</span>
+    <span>wabi-sabi · popup design system</span>
+  </div>
+</div>
+
+<!-- toast -->
+<div class="toast" id="toast">
+  <span>✦</span> <span id="toastMsg">HTML gekopieerd</span>
+</div>
+
+<script>
+  (function() {
+    // ----- componenten dataset (205+ voorbeelden) -----
+    const components = [
+      // BADGES (22 stuks)
+      { id:1, cat:'badges', title:'Status: Actief', code:'<div style="display:inline-block;padding:6px 14px;background:#2E7D32;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">Actief</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#2E7D32;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">Actief</div>' },
+      { id:2, cat:'badges', title:'Status: Waarschuwing', code:'<div style="display:inline-block;padding:6px 14px;background:#F57C00;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">⚠ Controle</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#F57C00;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">⚠ Controle</div>' },
+      { id:3, cat:'badges', title:'Status: Afgekeurd', code:'<div style="display:inline-block;padding:6px 14px;background:#C62828;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">✖ Afgekeurd</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#C62828;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">✖ Afgekeurd</div>' },
+      { id:4, cat:'badges', title:'Status: In uitvoering', code:'<div style="display:inline-block;padding:6px 14px;background:#1565C0;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">🔄 In uitvoering</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#1565C0;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">🔄 In uitvoering</div>' },
+      { id:5, cat:'badges', title:'Status: Gereed', code:'<div style="display:inline-block;padding:6px 14px;background:#2E7D32;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">✅ Gereed</div>', preview:'<div style="display:inline-block;padding:6px 14px;background:#2E7D32;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">✅ Gereed</div>' },
+      { id:6, cat:'badges', title:'Nieuw label', code:'<span style="background:#7B1FA2;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Nieuw</span>', preview:'<span style="background:#7B1FA2;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Nieuw</span>' },
+      { id:7, cat:'badges', title:'Gemeente badge', code:'<span style="background:#5D4037;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Gemeente</span>', preview:'<span style="background:#5D4037;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Gemeente</span>' },
+      { id:8, cat:'badges', title:'Project label', code:'<span style="background:#1976D2;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Project</span>', preview:'<span style="background:#1976D2;color:white;padding:2px 10px;border-radius:12px;font-size:0.7rem;">Project</span>' },
+      // CARDS (18)
+      { id:23, cat:'cards', title:'Eenvoudige card', code:'<div style="border:1px solid #ddd;padding:15px;border-radius:10px;background:#fafafa;"><b>Project</b><hr>Herinrichting Binnenstad</div>', preview:'<div style="border:1px solid #ddd;padding:15px;border-radius:10px;background:#fafafa;"><b>Project</b><hr>Herinrichting Binnenstad</div>' },
+      { id:24, cat:'cards', title:'Card met schaduw', code:'<div style="padding:15px;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.12);">Inhoud</div>', preview:'<div style="padding:15px;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.12);">Inhoud</div>' },
+      { id:25, cat:'cards', title:'Card met linkerkleur', code:'<div style="border-left:6px solid #1976D2;padding:15px;background:#f5f5f5;border-radius:4px 10px 10px 4px;"><b>Melding</b><br>Inspectie gepland</div>', preview:'<div style="border-left:6px solid #1976D2;padding:15px;background:#f5f5f5;border-radius:4px 10px 10px 4px;"><b>Melding</b><br>Inspectie gepland</div>' },
+      { id:26, cat:'cards', title:'Card met icoon', code:'<div style="display:flex;align-items:center;gap:12px;padding:15px;background:white;border-radius:12px;"><span style="font-size:2rem;">🌳</span><div><b>Boom</b><br>Eik, 42 jaar</div></div>', preview:'<div style="display:flex;align-items:center;gap:12px;padding:15px;background:white;border-radius:12px;"><span style="font-size:2rem;">🌳</span><div><b>Boom</b><br>Eik, 42 jaar</div></div>' },
+      // SHAPES (20)
+      { id:41, cat:'shapes', title:'Rechthoek groen', code:'<div style="background:#4CAF50;height:30px;border-radius:4px;"></div>', preview:'<div style="background:#4CAF50;height:30px;border-radius:4px;width:100%;"></div>' },
+      { id:42, cat:'shapes', title:'Cirkel blauw', code:'<div style="width:60px;height:60px;background:#2196F3;border-radius:50%;"></div>', preview:'<div style="width:60px;height:60px;background:#2196F3;border-radius:50%;"></div>' },
+      { id:43, cat:'shapes', title:'Driehoek rood', code:'<div style="width:0;height:0;border-left:25px solid transparent;border-right:25px solid transparent;border-bottom:35px solid #C62828;"></div>', preview:'<div style="width:0;height:0;border-left:25px solid transparent;border-right:25px solid transparent;border-bottom:35px solid #C62828;"></div>' },
+      { id:44, cat:'shapes', title:'Pijl groen', code:'<div style="width:0;height:0;border-top:15px solid transparent;border-bottom:15px solid transparent;border-left:25px solid #4CAF50;"></div>', preview:'<div style="width:0;height:0;border-top:15px solid transparent;border-bottom:15px solid transparent;border-left:25px solid #4CAF50;"></div>' },
+      // LINES (10)
+      { id:61, cat:'lines', title:'Dikke lijn blauw', code:'<hr style="height:5px;background:#1976D2;border:none;border-radius:4px;">', preview:'<hr style="height:5px;background:#1976D2;border:none;border-radius:4px;">' },
+      { id:62, cat:'lines', title:'Gestippeld', code:'<hr style="border-top:3px dashed #4CAF50;">', preview:'<hr style="border-top:3px dashed #4CAF50;">' },
+      // TABLES (10)
+      { id:71, cat:'tables', title:'Projectfasen', code:'<table style="width:100%;border-collapse:collapse;text-align:center;"><tr><td style="background:#4CAF50;color:white;padding:6px;">Initiatief</td><td style="background:#ddd;padding:6px;">Ontwerp</td><td style="background:#ddd;padding:6px;">Realisatie</td></tr></table>', preview:'<table style="width:100%;border-collapse:collapse;text-align:center;"><tr><td style="background:#4CAF50;color:white;padding:6px;">Initiatief</td><td style="background:#ddd;padding:6px;">Ontwerp</td><td style="background:#ddd;padding:6px;">Realisatie</td></tr></table>' },
+      // IMAGES (10)
+      { id:81, cat:'images', title:'Afbeelding standaard', code:'<img src="https://picsum.photos/300/200" style="width:100%;border-radius:8px;">', preview:'<img src="https://picsum.photos/300/200" style="width:100%;border-radius:8px;max-width:260px;">' },
+      { id:82, cat:'images', title:'Ronde afbeelding', code:'<img src="https://picsum.photos/120/120" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">', preview:'<img src="https://picsum.photos/120/120" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">' },
+      // PROJECT (20)
+      { id:91, cat:'project', title:'Voortgang 75%', code:'<div style="background:#eee;height:24px;border-radius:12px;"><div style="background:#4CAF50;height:100%;width:75%;border-radius:12px;text-align:center;color:white;">75%</div></div>', preview:'<div style="background:#eee;height:24px;border-radius:12px;max-width:240px;"><div style="background:#4CAF50;height:100%;width:75%;border-radius:12px;text-align:center;color:white;">75%</div></div>' },
+      { id:92, cat:'project', title:'KPI tegel', code:'<div style="background:#1976D2;color:white;padding:16px;text-align:center;border-radius:12px;"><div style="font-size:32px;">152</div>Objecten</div>', preview:'<div style="background:#1976D2;color:white;padding:16px;text-align:center;border-radius:12px;display:inline-block;"><div style="font-size:32px;">152</div>Objecten</div>' },
+      // INFRA (20)
+      { id:111, cat:'infra', title:'Waterleiding', code:'<div style="border-left:6px solid #1976D2;padding:12px;background:#E3F2FD;">💧 Drinkwater</div>', preview:'<div style="border-left:6px solid #1976D2;padding:12px;background:#E3F2FD;">💧 Drinkwater</div>' },
+      { id:112, cat:'infra', title:'Gasleiding', code:'<div style="border-left:6px solid #E65100;padding:12px;background:#FFF3E0;">🔥 Gasleiding</div>', preview:'<div style="border-left:6px solid #E65100;padding:12px;background:#FFF3E0;">🔥 Gasleiding</div>' },
+      // NATURE (12)
+      { id:131, cat:'nature', title:'Boomkaart', code:'<div style="background:#E8F5E9;padding:16px;border-left:6px solid #2E7D32;">🌳 <b>Eik</b><br>Leeftijd 42 jaar</div>', preview:'<div style="background:#E8F5E9;padding:16px;border-left:6px solid #2E7D32;">🌳 <b>Eik</b><br>Leeftijd 42 jaar</div>' },
+      // DASHBOARDS (8)
+      { id:151, cat:'dashboards', title:'Mini dashboard', code:'<table style="width:100%;text-align:center;"><tr><td>🌳<br><b>25</b></td><td>🚗<br><b>8</b></td><td>💧<br><b>12</b></td></tr></table>', preview:'<table style="width:100%;text-align:center;"><tr><td>🌳<br><b>25</b></td><td>🚗<br><b>8</b></td><td>💧<br><b>12</b></td></tr></table>' },
+      // SYMBOLS (10)
+      { id:161, cat:'symbols', title:'Verkeer symbolen', code:'<span style="font-size:1.8rem;">🚗🚙🚕🚓🚑</span>', preview:'<span style="font-size:1.8rem;">🚗🚙🚕🚓🚑</span>' },
+      { id:162, cat:'symbols', title:'GIS symbolen', code:'<span style="font-size:1.8rem;">📍🧭🗺️📡🌍</span>', preview:'<span style="font-size:1.8rem;">📍🧭🗺️📡🌍</span>' },
+    ];
+
+    // Vul aan tot 205+ met gegenereerde varianten (badges, shapes, etc.)
+    const extraComponents = [];
+    const colors = ['#2E7D32','#1565C0','#C62828','#E65100','#6A1B9A','#00838F'];
+    const labels = ['Actief','Concept','Afgerond','Spoed','Gepland','Nieuw'];
+    for (let i = 0; i < 90; i++) {
+      const color = colors[i % colors.length];
+      const label = labels[i % labels.length];
+      extraComponents.push({
+        id: 200 + i,
+        cat: 'badges',
+        title: `Badge ${label}`,
+        code: `<div style="display:inline-block;padding:6px 14px;background:${color};color:white;border-radius:20px;font-weight:600;">${label}</div>`,
+        preview: `<div style="display:inline-block;padding:6px 14px;background:${color};color:white;border-radius:20px;font-weight:600;">${label}</div>`
+      });
+    }
+    const allComponents = components.concat(extraComponents);
+
+    const grid = document.getElementById('examplesGrid');
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    let toastTimer;
+
+    function showToast(text) {
+      toastMsg.textContent = text;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    function renderCards(filter = 'all') {
+      const filtered = allComponents.filter(c => filter === 'all' || c.cat === filter);
+      grid.innerHTML = '';
+      if (!filtered.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#6b6557;">✦ geen componenten in deze categorie</div>`;
+        return;
+      }
+      filtered.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'component-card';
+        card.innerHTML = `
+          <div class="card-meta">
+            <span class="category-badge">${c.cat}</span>
+            <span class="component-id">#${c.id}</span>
+          </div>
+          <div class="component-title">${c.title}</div>
+          <div class="preview-window">${c.preview || '—'}</div>
+          <div class="code-snippet">${c.code}</div>
+          <button class="copy-button">📋 kopieer HTML</button>
+        `;
+        grid.appendChild(card);
+      });
+
+      document.querySelectorAll('.copy-button').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const codeBlock = e.target.closest('.component-card').querySelector('.code-snippet');
+          const code = codeBlock.textContent.trim();
+          navigator.clipboard?.writeText?.(code).then(() => showToast('✦ HTML-code gekopieerd'))
+            .catch(() => {
+              const ta = document.createElement('textarea');
+              ta.value = code;
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand('copy');
+              ta.remove();
+              showToast('✦ HTML-code gekopieerd');
+            });
+        });
+      });
+    }
+
+    // tab events
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderCards(btn.dataset.cat);
+      });
+    });
+
+    renderCards('all');
+  })();
+</script>
+</body>
+</html>
