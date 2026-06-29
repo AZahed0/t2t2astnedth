@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>⚡ Arcade Code Generator · Comic Edition</title>
+    <!-- Inter font & comic vibes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Inter:opsz,wght@14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1e1e1e;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: radial-gradient(circle at 20% 30%, #2c2c2c 0%, #0f0f0f 100%);
+        }
+
+        /* ---- COMIC PANEL CONTAINER ---- */
+        .comic-book {
+            max-width: 1300px;
+            width: 100%;
+            background: #fffcf0;
+            padding: 2rem 2rem 2.5rem;
+            border-radius: 40px 40px 20px 20px;
+            box-shadow: 10px 10px 0 #000, 20px 20px 0 rgba(0, 0, 0, 0.2);
+            border: 4px solid #000;
+            position: relative;
+            transform: rotate(-0.5deg);
+            transition: 0.1s;
+        }
+
+        /* comic halftone overlay (subtle) */
+        .comic-book::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle at 30% 40%, rgba(0,0,0,0.02) 2px, transparent 2px);
+            background-size: 16px 16px;
+            pointer-events: none;
+            border-radius: inherit;
+            z-index: 0;
+        }
+
+        /* ---- HEADER (Kirby style) ---- */
+        .hero-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 6px solid #000;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.8rem;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+            color: #e23636;
+            text-shadow: 4px 4px 0 #000, 6px 6px 0 #1e90ff;
+            transform: skew(-3deg);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .hero-title span {
+            background: #ffd700;
+            padding: 0.1rem 0.8rem;
+            border-radius: 40px;
+            font-size: 1.2rem;
+            color: #000;
+            text-shadow: none;
+            border: 3px solid #000;
+            box-shadow: 3px 3px 0 #000;
+            transform: rotate(2deg);
+        }
+
+        .hero-badge {
+            background: #1e90ff;
+            color: #fff;
+            font-weight: 700;
+            padding: 0.4rem 1.2rem;
+            border-radius: 60px;
+            border: 3px solid #000;
+            box-shadow: 5px 5px 0 #000;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transform: rotate(1deg);
+        }
+
+        /* ---- GRID LAYOUT (PANELS) ---- */
+        .panel-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        @media (max-width: 860px) {
+            .panel-grid {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+            }
+            .hero-title {
+                font-size: 2rem;
+                flex-wrap: wrap;
+            }
+        }
+
+        /* ---- CLAYMORPH PANEL CARDS (fluffy + comic) ---- */
+        .panel-card {
+            background: #fffcf0;
+            border: 4px solid #000;
+            border-radius: 48px 48px 24px 24px;
+            padding: 1.8rem 1.8rem 2rem;
+            box-shadow: 8px 8px 0 #000, 0 20px 30px -10px rgba(0,0,0,0.5);
+            transition: 0.2s;
+            position: relative;
+            transform: rotate(var(--rot, 0deg));
+        }
+
+        .panel-card:nth-child(1) { --rot: -0.8deg; }
+        .panel-card:nth-child(2) { --rot: 0.6deg; }
+
+        .panel-card:hover {
+            transform: rotate(0deg) translateY(-4px);
+            box-shadow: 10px 12px 0 #000, 0 25px 40px -12px rgba(0,0,0,0.6);
+        }
+
+        .panel-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            color: #1e1e1e;
+            border-bottom: 4px solid #000;
+            padding-bottom: 0.3rem;
+            margin-bottom: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            letter-spacing: -0.01em;
+        }
+
+        .panel-title .badge-num {
+            background: #e23636;
+            color: #fff;
+            border: 3px solid #000;
+            border-radius: 60px;
+            padding: 0.1rem 0.7rem;
+            font-size: 0.8rem;
+            box-shadow: 3px 3px 0 #000;
+        }
+
+        /* ---- FIELDS & CONDITIONS (comic inputs) ---- */
+        .comic-field-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem;
+            background: #f5f0e6;
+            border: 3px solid #000;
+            border-radius: 60px;
+            padding: 0.4rem 0.8rem 0.4rem 1.2rem;
+            margin-bottom: 0.7rem;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05), 3px 3px 0 #000;
+        }
+
+        .comic-field-row .var-badge {
+            font-weight: 700;
+            font-size: 0.7rem;
+            background: #ffd700;
+            padding: 0.15rem 0.6rem;
+            border-radius: 40px;
+            border: 2px solid #000;
+            text-transform: uppercase;
+        }
+
+        .comic-input {
+            background: #fff;
+            border: 3px solid #000;
+            border-radius: 40px;
+            padding: 0.35rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            color: #1e1e1e;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
+            transition: 0.1s;
+            flex: 1 0 100px;
+            min-width: 60px;
+        }
+
+        .comic-input:focus {
+            outline: 2px solid #1e90ff;
+            outline-offset: 2px;
+            box-shadow: 3px 3px 0 #000;
+        }
+
+        .comic-select {
+            background: #fff;
+            border: 3px solid #000;
+            border-radius: 40px;
+            padding: 0.35rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            color: #1e1e1e;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
+            flex: 1 0 80px;
+            min-width: 60px;
+            cursor: pointer;
+        }
+
+        .comic-select:focus {
+            outline: 2px solid #1e90ff;
+            outline-offset: 2px;
+        }
+
+        .comic-btn {
+            font-family: 'Fredoka One', cursive;
+            background: #ffd700;
+            border: 3px solid #000;
+            border-radius: 60px;
+            padding: 0.4rem 1.2rem;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0 #000;
+            cursor: pointer;
+            transition: 0.08s linear;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #1e1e1e;
+            font-weight: 700;
+        }
+
+        .comic-btn:active {
+            transform: translate(3px, 3px);
+            box-shadow: 1px 1px 0 #000;
+        }
+
+        .comic-btn-danger {
+            background: #e23636;
+            color: #fff;
+        }
+
+        .comic-btn-primary {
+            background: #1e90ff;
+            color: #fff;
+        }
+
+        .comic-btn-small {
+            padding: 0.2rem 0.8rem;
+            font-size: 0.65rem;
+        }
+
+        .comic-conditions-list {
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 0.3rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .condition-item {
+            background: #faf6ee;
+            border: 3px solid #000;
+            border-radius: 30px;
+            padding: 0.6rem 1rem;
+            box-shadow: 4px 4px 0 #000;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .condition-item .if-label {
+            font-weight: 700;
+            font-size: 0.7rem;
+            background: #1e90ff;
+            color: #fff;
+            padding: 0.1rem 0.6rem;
+            border-radius: 40px;
+            border: 2px solid #000;
+        }
+
+        .condition-item .else-label {
+            background: #e23636;
+        }
+
+        .flex-between {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .mt-2 { margin-top: 0.8rem; }
+        .mb-1 { margin-bottom: 0.3rem; }
+        .gap-1 { gap: 0.4rem; }
+        .flex-wrap { flex-wrap: wrap; }
+        .items-center { align-items: center; }
+        .flex { display: flex; }
+
+        /* ---- ELSE TOGGLE (optional) ---- */
+        .else-toggle-wrap {
+            background: #e8e0d4;
+            border: 3px solid #000;
+            border-radius: 60px;
+            padding: 0.3rem 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .else-toggle-wrap input[type="checkbox"] {
+            width: 1.2rem;
+            height: 1.2rem;
+            accent-color: #1e90ff;
+            border: 2px solid #000;
+            cursor: pointer;
+        }
+
+        /* ---- CODE PANEL (comic style) ---- */
+        .code-panel {
+            background: #1e1e1e;
+            border: 6px solid #000;
+            border-radius: 30px;
+            padding: 1.5rem;
+            box-shadow: inset 0 0 0 3px #444, 8px 8px 0 #000;
+            color: #b3e5b0;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.75rem;
+            line-height: 1.7;
+            max-height: 380px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            position: relative;
+        }
+
+        .code-panel::after {
+            content: '/* ⚡ POW! CODE ⚡ */';
+            position: absolute;
+            bottom: 0.5rem;
+            right: 1rem;
+            color: #ffd700;
+            font-family: 'Fredoka One', cursive;
+            font-size: 0.6rem;
+            opacity: 0.3;
+            letter-spacing: 1px;
+        }
+
+        .copy-badge {
+            background: #ffd700;
+            border: 3px solid #000;
+            border-radius: 60px;
+            padding: 0.2rem 1.2rem;
+            font-weight: 700;
+            font-size: 0.7rem;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 #000;
+            transition: 0.05s linear;
+            color: #1e1e1e;
+            text-transform: uppercase;
+        }
+
+        .copy-badge:active {
+            transform: translate(3px, 3px);
+            box-shadow: 1px 1px 0 #000;
+        }
+
+        /* scrollbar comic */
+        .comic-conditions-list::-webkit-scrollbar,
+        .code-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        .comic-conditions-list::-webkit-scrollbar-track,
+        .code-panel::-webkit-scrollbar-track {
+            background: #ddd6c8;
+            border-radius: 20px;
+        }
+        .comic-conditions-list::-webkit-scrollbar-thumb,
+        .code-panel::-webkit-scrollbar-thumb {
+            background: #1e1e1e;
+            border-radius: 20px;
+            border: 2px solid #000;
+        }
+
+        /* ---- responsive ---- */
+        @media (max-width: 500px) {
+            .comic-book { padding: 1rem; }
+            .panel-card { padding: 1rem; }
+            .hero-title { font-size: 1.6rem; }
+            .comic-input, .comic-select { flex: 1 0 60px; font-size: 0.7rem; }
+            .condition-item { flex-direction: column; align-items: stretch; }
+        }
+
+        /* utility */
+        .relative { position: relative; }
+        .z-10 { z-index: 10; }
+        .op-50 { opacity: 0.5; }
+        .pointer-none { pointer-events: none; }
+        .hidden { display: none !important; }
+        .w-full { width: 100%; }
+        .text-center { text-align: center; }
+    </style>
+</head>
+<body>
+<div class="comic-book">
+
+    <!-- HEADER -->
+    <div class="hero-header">
+        <div class="hero-title">
+            ⚡ Arcade <span>Generator</span>
+        </div>
+        <div class="hero-badge">
+            🦸 Comic · Claymorph
+        </div>
+    </div>
+
+    <!-- MAIN PANELS -->
+    <div class="panel-grid">
+
+        <!-- LEFT PANEL: Builder -->
+        <div class="panel-card">
+            <div class="panel-title">
+                <span class="badge-num">1</span> Velden &amp; Condities
+            </div>
+
+            <!-- Fields -->
+            <div class="flex-between">
+                <span class="font-bold text-sm uppercase" style="color:#1e1e1e;">📁 Variabelen</span>
+                <button class="comic-btn comic-btn-small" id="addFieldBtn">+ Veld</button>
+            </div>
+            <div id="fieldsContainer" class="mt-2" style="display:flex; flex-direction:column; gap:0.5rem; max-height:160px; overflow-y:auto; padding-right:0.2rem;">
+                <!-- dynamic fields -->
+            </div>
+
+            <!-- Conditions -->
+            <div class="flex-between mt-2">
+                <span class="font-bold text-sm uppercase" style="color:#1e1e1e;">⚡ Voorwaarden</span>
+                <button class="comic-btn comic-btn-small comic-btn-primary" id="addConditionBtn">+ Voorwaarde</button>
+            </div>
+            <div id="conditionsContainer" class="comic-conditions-list mt-1">
+                <!-- dynamic conditions -->
+            </div>
+
+            <!-- ELSE optional -->
+            <div class="flex-between mt-2" style="border-top:3px solid #000; padding-top:0.8rem;">
+                <div class="else-toggle-wrap">
+                    <input type="checkbox" id="elseToggle" checked />
+                    <label for="elseToggle" class="font-bold text-xs" style="cursor:pointer;">ELSE (standaard)</label>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="text-xs font-bold">Return:</span>
+                    <input type="text" id="elseReturnVal" value="Onbekend" class="comic-input" style="flex:0 0 100px;" />
+                </div>
+            </div>
+
+            <!-- Return type & empty check -->
+            <div class="flex flex-wrap gap-2 mt-2" style="border-top:3px dashed #000; padding-top:0.8rem;">
+                <div class="flex items-center gap-1">
+                    <span class="text-xs font-bold">Type:</span>
+                    <select id="returnTypeSelect" class="comic-select" style="flex:0 0 80px;">
+                        <option value="text">Tekst</option>
+                        <option value="number" selected>Nummer</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-1">
+                    <input type="checkbox" id="emptyCheckToggle" checked />
+                    <label for="emptyCheckToggle" class="text-xs font-bold" style="cursor:pointer;">IsEmpty check</label>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="text-xs font-bold">Leeg →</span>
+                    <input type="text" id="emptyReturnVal" value="0" class="comic-input" style="flex:0 0 70px;" />
+                </div>
+            </div>
+
+            <!-- Generate button -->
+            <button class="comic-btn comic-btn-primary w-full text-center justify-center mt-3" id="generateBtn" style="font-size:1rem; padding:0.6rem;">
+                ⚡ GENEREER CODE!
+            </button>
+        </div>
+
+        <!-- RIGHT PANEL: Code output + presets -->
+        <div class="panel-card">
+            <div class="panel-title">
+                <span class="badge-num">2</span> Code · POW!
+            </div>
+
+            <div class="code-panel" id="codeOutput">
+                // Arcade code verschijnt hier
+            </div>
+
+            <div class="flex-between mt-2">
+                <button class="copy-badge" id="copyBtn">📋 Kopieer</button>
+                <div class="flex gap-1">
+                    <button class="comic-btn comic-btn-small" id="presetStatusBtn">📌 Status</button>
+                    <button class="comic-btn comic-btn-small comic-btn-primary" id="presetScoreBtn">📊 Score</button>
+                </div>
+            </div>
+
+            <!-- quick info -->
+            <div class="mt-2 text-xs" style="color:#2c2c2c; border-top:2px solid #000; padding-top:0.5rem;">
+                <span id="returnTypeLabel">🔁 retour: nummer</span> ·
+                <span id="emptyLabel">⚠️ leeg-check: aan</span> ·
+                <span id="elseLabel">🔀 else: aan</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---- STATE ----
+        let fields = [
+            { id: 'f1', name: 'status', featureField: 'Status', type: 'text' },
+            { id: 'f2', name: 'score', featureField: 'Score', type: 'number' }
+        ];
+        let conditions = [
+            { id: 'c1', fieldId: 'f1', operator: '==', compareValue: 'Open', returnValue: '1' },
+            { id: 'c2', fieldId: 'f1', operator: '==', compareValue: 'Gesloten', returnValue: '0' }
+        ];
+        let returnType = 'number';
+        let checkEmpty = true;
+        let emptyReturn = '0';
+        let elseReturn = 'Onbekend';
+        let useElse = true;
+
+        // ---- DOM refs ----
+        const fieldsContainer = document.getElementById('fieldsContainer');
+        const conditionsContainer = document.getElementById('conditionsContainer');
+        const codeOutput = document.getElementById('codeOutput');
+        const addFieldBtn = document.getElementById('addFieldBtn');
+        const addConditionBtn = document.getElementById('addConditionBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const returnTypeSelect = document.getElementById('returnTypeSelect');
+        const emptyCheckToggle = document.getElementById('emptyCheckToggle');
+        const emptyReturnVal = document.getElementById('emptyReturnVal');
+        const elseToggle = document.getElementById('elseToggle');
+        const elseReturnVal = document.getElementById('elseReturnVal');
+        const returnTypeLabel = document.getElementById('returnTypeLabel');
+        const emptyLabel = document.getElementById('emptyLabel');
+        const elseLabel = document.getElementById('elseLabel');
+        const presetStatusBtn = document.getElementById('presetStatusBtn');
+        const presetScoreBtn = document.getElementById('presetScoreBtn');
+
+        // ---- helpers ----
+        function getFieldsArray() {
+            return fields;
+        }
+
+        function getConditionsArray() {
+            return conditions;
+        }
+
+        function getFieldById(id) {
+            return fields.find(f => f.id === id);
+        }
+
+        // ---- render fields ----
+        function renderFields() {
+            fieldsContainer.innerHTML = '';
+            if (fields.length === 0) {
+                fieldsContainer.innerHTML = `<div class="text-xs text-center p-2" style="color:#555;">Geen velden. Klik "+ Veld"</div>`;
+                return;
+            }
+            fields.forEach((field, idx) => {
+                const row = document.createElement('div');
+                row.className = 'comic-field-row';
+                row.innerHTML = `
+                    <span class="var-badge">${field.name}</span>
+                    <input type="text" value="${field.featureField}" data-id="${field.id}" data-key="featureField" class="comic-input field-update" style="flex:1 1 80px;" placeholder="ArcGIS veld" />
+                    <select data-id="${field.id}" data-key="type" class="comic-select field-update" style="flex:0 0 70px;">
+                        <option value="text" ${field.type==='text'?'selected':''}>Tekst</option>
+                        <option value="number" ${field.type==='number'?'selected':''}>Num</option>
+                    </select>
+                    <button data-id="${field.id}" class="comic-btn comic-btn-danger comic-btn-small remove-field">✕</button>
+                `;
+                fieldsContainer.appendChild(row);
+            });
+
+            // bind events
+            document.querySelectorAll('.field-update').forEach(el => {
+                el.addEventListener('change', (e) => {
+                    const id = e.target.dataset.id;
+                    const key = e.target.dataset.key;
+                    const val = e.target.value;
+                    const f = fields.find(f => f.id === id);
+                    if (f) { f[key] = val; updateCode(); }
+                });
+                el.addEventListener('input', (e) => {
+                    const id = e.target.dataset.id;
+                    const key = e.target.dataset.key;
+                    const val = e.target.value;
+                    const f = fields.find(f => f.id === id);
+                    if (f) { f[key] = val; updateCode(); }
+                });
+            });
+
+            document.querySelectorAll('.remove-field').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    fields = fields.filter(f => f.id !== id);
+                    conditions = conditions.filter(c => c.fieldId !== id);
+                    renderFields();
+                    renderConditions();
+                    updateCode();
+                });
+            });
+        }
+
+        // ---- render conditions ----
+        function renderConditions() {
+            conditionsContainer.innerHTML = '';
+            if (conditions.length === 0) {
+                conditionsContainer.innerHTML = `<div class="text-xs text-center p-3" style="color:#555;">Geen voorwaarden. Klik "+ Voorwaarde"</div>`;
+                return;
+            }
+            conditions.forEach((cond, idx) => {
+                const div = document.createElement('div');
+                div.className = 'condition-item';
+                const field = getFieldById(cond.fieldId);
+                const fieldName = field ? field.name : '?';
+
+                // field select options
+                const fieldOpts = fields.map(f => `<option value="${f.id}" ${f.id===cond.fieldId?'selected':''}>${f.name}</option>`).join('');
+
+                div.innerHTML = `
+                    <span class="if-label">${idx===0?'IF':'ELSE IF'}</span>
+                    <select data-id="${cond.id}" data-key="fieldId" class="comic-select cond-update" style="flex:1 1 80px;">
+                        ${fieldOpts}
+                    </select>
+                    <select data-id="${cond.id}" data-key="operator" class="comic-select cond-update" style="flex:0 0 70px;">
+                        <option value="==" ${cond.operator==='=='?'selected':''}>==</option>
+                        <option value="!=" ${cond.operator==='!='?'selected':''}>!=</option>
+                        <option value=">" ${cond.operator==='>'?'selected':''}>&gt;</option>
+                        <option value="<" ${cond.operator==='<'?'selected':''}>&lt;</option>
+                        <option value=">=" ${cond.operator==='>='?'selected':''}>&gt;=</option>
+                        <option value="<=" ${cond.operator==='<='?'selected':''}>&lt;=</option>
+                        <option value="CONTAINS" ${cond.operator==='CONTAINS'?'selected':''}>bevat</option>
+                    </select>
+                    <input type="text" value="${cond.compareValue}" data-id="${cond.id}" data-key="compareValue" class="comic-input cond-update" style="flex:1 1 60px;" placeholder="waarde" />
+                    <span style="font-weight:700;font-size:0.7rem;">→</span>
+                    <input type="text" value="${cond.returnValue}" data-id="${cond.id}" data-key="returnValue" class="comic-input cond-update" style="flex:1 1 60px;" placeholder="return" />
+                    <button data-id="${cond.id}" class="comic-btn comic-btn-danger comic-btn-small remove-condition">✕</button>
+                `;
+                conditionsContainer.appendChild(div);
+            });
+
+            // bind
+            document.querySelectorAll('.cond-update').forEach(el => {
+                el.addEventListener('change', (e) => {
+                    const id = e.target.dataset.id;
+                    const key = e.target.dataset.key;
+                    const val = e.target.value;
+                    const c = conditions.find(c => c.id === id);
+                    if (c) { c[key] = val; updateCode(); }
+                });
+                el.addEventListener('input', (e) => {
+                    const id = e.target.dataset.id;
+                    const key = e.target.dataset.key;
+                    const val = e.target.value;
+                    const c = conditions.find(c => c.id === id);
+                    if (c) { c[key] = val; updateCode(); }
+                });
+            });
+
+            document.querySelectorAll('.remove-condition').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    conditions = conditions.filter(c => c.id !== id);
+                    renderConditions();
+                    updateCode();
+                });
+            });
+        }
+
+        // ---- CODE GENERATOR ----
+        function generateArcade() {
+            const fArr = getFieldsArray();
+            const cArr = getConditionsArray();
+            const retType = returnType;
+            const emptyCheck = checkEmpty;
+            const emptyVal = emptyReturn;
+            const elseVal = elseReturn;
+            const hasElse = useElse;
+
+            let code = '// ⚡ Arcade Code (Comic Gen)\n';
+            // vars
+            if (fArr.length > 0) {
+                fArr.forEach(f => {
+                    code += `var ${f.name} = $feature.${f.featureField};\n`;
+                });
+                code += '\n';
+            }
+
+            // empty wrapper
+            let indent = '';
+            if (emptyCheck && fArr.length > 0) {
+                const checks = fArr.map(f => `!IsEmpty(${f.name})`).join(' && ');
+                code += `if (${checks}) {\n`;
+                indent = '    ';
+            }
+
+            // conditions
+            if (cArr.length > 0) {
+                cArr.forEach((cond, idx) => {
+                    const field = getFieldById(cond.fieldId);
+                    if (!field) return;
+                    const prefix = idx === 0 ? 'if' : 'else if';
+                    let condStr = '';
+                    const op = cond.operator;
+                    const comp = cond.compareValue;
+                    const fName = field.name;
+
+                    if (op === 'CONTAINS') {
+                        condStr = `Find("${comp.toLowerCase()}", Lower(${fName})) >= 0`;
+                    } else {
+                        let compVal = comp;
+                        if (field.type === 'text' && compVal !== 'null' && compVal !== 'true' && compVal !== 'false') {
+                            compVal = `"${compVal}"`;
+                        }
+                        condStr = `${fName} ${op} ${compVal}`;
+                    }
+
+                    let retVal = cond.returnValue;
+                    if (retType === 'text' && !retVal.startsWith('"') && !retVal.startsWith("'") && !retVal.includes('(') && !fArr.some(f => f.name === retVal)) {
+                        retVal = `"${retVal}"`;
+                    }
+                    code += `${indent}${prefix} (${condStr}) {\n`;
+                    code += `${indent}    return ${retVal};\n`;
+                    code += `${indent}}\n`;
+                });
+
+                // else
+                if (hasElse) {
+                    let finalElse = elseVal;
+                    if (retType === 'text' && !finalElse.startsWith('"') && !finalElse.startsWith("'") && !finalElse.includes('(') && !fArr.some(f => f.name === finalElse)) {
+                        finalElse = `"${finalElse}"`;
+                    }
+                    code += `${indent}else {\n`;
+                    code += `${indent}    return ${finalElse};\n`;
+                    code += `${indent}}\n`;
+                } else {
+                    // no else: just end
+                }
+            } else {
+                // no conditions: direct return
+                let direct = elseVal;
+                if (retType === 'text' && !direct.startsWith('"') && !direct.startsWith("'") && !direct.includes('(') && !fArr.some(f => f.name === direct)) {
+                    direct = `"${direct}"`;
+                }
+                code += `${indent}return ${direct};\n`;
+            }
+
+            // close empty wrapper
+            if (emptyCheck && fArr.length > 0) {
+                code += `\n}\nelse {\n`;
+                let emptyFallback = emptyVal;
+                if (retType === 'text' && !emptyFallback.startsWith('"') && !emptyFallback.startsWith("'") && !emptyFallback.includes('(') && !fArr.some(f => f.name === emptyFallback)) {
+                    emptyFallback = `"${emptyFallback}"`;
+                }
+                code += `    return ${emptyFallback};\n`;
+                code += `}\n`;
+            }
+
+            return code;
+        }
+
+        function updateCode() {
+            const code = generateArcade();
+            codeOutput.textContent = code;
+            // update labels
+            returnTypeLabel.textContent = `🔁 retour: ${returnType === 'number' ? 'nummer' : 'tekst'}`;
+            emptyLabel.textContent = `⚠️ leeg-check: ${checkEmpty ? 'aan' : 'uit'}`;
+            elseLabel.textContent = `🔀 else: ${useElse ? 'aan' : 'uit'}`;
+        }
+
+        // ---- load preset ----
+        function loadPreset(preset) {
+            fields = preset.fields.map(f => ({ ...f, id: f.id || 'f'+Date.now()+Math.random() }));
+            conditions = preset.conditions.map(c => ({ ...c, id: c.id || 'c'+Date.now()+Math.random() }));
+            returnType = preset.returnType || 'number';
+            checkEmpty = preset.checkEmpty !== undefined ? preset.checkEmpty : true;
+            emptyReturn = preset.emptyReturn || '0';
+            elseReturn = preset.elseReturn || 'Onbekend';
+            useElse = preset.useElse !== undefined ? preset.useElse : true;
+
+            // sync UI
+            returnTypeSelect.value = returnType;
+            emptyCheckToggle.checked = checkEmpty;
+            emptyReturnVal.value = emptyReturn;
+            elseToggle.checked = useElse;
+            elseReturnVal.value = elseReturn;
+
+            renderFields();
+            renderConditions();
+            updateCode();
+        }
+
+        // ---- presets ----
+        const presetStatus = {
+            fields: [{ id: 'f1', name: 'status', featureField: 'Status', type: 'text' }],
+            conditions: [
+                { id: 'c1', fieldId: 'f1', operator: '==', compareValue: 'Open', returnValue: '🟢 Open' },
+                { id: 'c2', fieldId: 'f1', operator: '==', compareValue: 'In behandeling', returnValue: '🟡 In behandeling' },
+                { id: 'c3', fieldId: 'f1', operator: '==', compareValue: 'Afgerond', returnValue: '🔴 Afgerond' }
+            ],
+            returnType: 'text',
+            checkEmpty: true,
+            emptyReturn: 'Geen status',
+            elseReturn: 'Onbekend',
+            useElse: true
+        };
+
+        const presetScore = {
+            fields: [{ id: 'f1', name: 'score', featureField: 'Score', type: 'number' }],
+            conditions: [
+                { id: 'c1', fieldId: 'f1', operator: '>=', compareValue: '90', returnValue: '10' },
+                { id: 'c2', fieldId: 'f1', operator: '>=', compareValue: '75', returnValue: '8' },
+                { id: 'c3', fieldId: 'f1', operator: '>=', compareValue: '60', returnValue: '5' }
+            ],
+            returnType: 'number',
+            checkEmpty: true,
+            emptyReturn: '0',
+            elseReturn: '0',
+            useElse: true
+        };
+
+        // ---- event binding ----
+        addFieldBtn.addEventListener('click', () => {
+            const newId = 'f'+Date.now();
+            fields.push({ id: newId, name: 'veld_'+(fields.length+1), featureField: 'Veld'+(fields.length+1), type: 'text' });
+            renderFields();
+            updateCode();
+        });
+
+        addConditionBtn.addEventListener('click', () => {
+            if (fields.length === 0) {
+                alert('Voeg eerst een veld toe!');
+                return;
+            }
+            const newId = 'c'+Date.now();
+            conditions.push({ id: newId, fieldId: fields[0].id, operator: '==', compareValue: 'waarde', returnValue: returnType==='number'?'1':'resultaat' });
+            renderConditions();
+            updateCode();
+        });
+
+        generateBtn.addEventListener('click', updateCode);
+
+        copyBtn.addEventListener('click', () => {
+            const text = codeOutput.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const orig = copyBtn.textContent;
+                copyBtn.textContent = '✅ Gekopieerd!';
+                setTimeout(() => copyBtn.textContent = orig, 1500);
+            }).catch(() => alert('Kopieer handmatig'));
+        });
+
+        // settings sync
+        returnTypeSelect.addEventListener('change', (e) => {
+            returnType = e.target.value;
+            updateCode();
+        });
+
+        emptyCheckToggle.addEventListener('change', (e) => {
+            checkEmpty = e.target.checked;
+            updateCode();
+        });
+
+        emptyReturnVal.addEventListener('input', (e) => {
+            emptyReturn = e.target.value;
+            updateCode();
+        });
+
+        elseToggle.addEventListener('change', (e) => {
+            useElse = e.target.checked;
+            updateCode();
+        });
+
+        elseReturnVal.addEventListener('input', (e) => {
+            elseReturn = e.target.value;
+            updateCode();
+        });
+
+        presetStatusBtn.addEventListener('click', () => loadPreset(presetStatus));
+        presetScoreBtn.addEventListener('click', () => loadPreset(presetScore));
+
+        // init
+        renderFields();
+        renderConditions();
+        updateCode();
+
+        // also update when conditions change via field updates
+        window.updateCode = updateCode;
+    })();
+</script>
+</body>
+</html>
