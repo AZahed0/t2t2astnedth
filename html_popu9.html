@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ArcGIS · popup bibliotheek · 300+ professional components</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f3efe7;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            color: #2e2c28;
+            line-height: 1.5;
+            padding: 2rem 1.5rem;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="1" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.04"/></svg>');
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .library {
+            max-width: 1400px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-card {
+            background: #fdfbf6;
+            border-radius: 6px 38px 6px 38px;
+            padding: 1.75rem 2rem;
+            margin-bottom: 2.5rem;
+            border: 1px solid rgba(178, 170, 148, 0.25);
+            box-shadow: 0 1px 4px rgba(62, 55, 40, 0.04);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .header-card:hover {
+            background: #faf7f0;
+            border-color: rgba(168, 158, 132, 0.35);
+            box-shadow: 0 4px 14px rgba(62, 55, 40, 0.05);
+        }
+
+        .title-block {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .circle-icon {
+            width: 52px;
+            height: 52px;
+            background: #e8e2d5;
+            border-radius: 6px 34px 6px 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            border: 1px solid #cdc4b2;
+            color: #5f5a4c;
+        }
+
+        .title-text h1 {
+            font-weight: 350;
+            font-size: 1.9rem;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .stamp-badge {
+            border: 1px solid rgba(162, 150, 128, 0.4);
+            background: rgba(232, 224, 210, 0.5);
+            border-radius: 4px 20px 4px 20px;
+            padding: 0.15rem 0.9rem;
+            font-size: 0.7rem;
+            font-weight: 400;
+            color: #635e51;
+            letter-spacing: 0.2px;
+        }
+
+        .sub-line {
+            color: #6b6557;
+            font-size: 0.85rem;
+            font-weight: 300;
+            margin-top: 0.2rem;
+        }
+
+        .status-dot {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #eae4d8;
+            border-radius: 6px 34px 6px 34px;
+            padding: 0.3rem 1.4rem;
+            font-size: 0.75rem;
+            color: #5a5547;
+            border: 1px solid #d6cebc;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #8f9e8b;
+            border-radius: 50%;
+        }
+
+        .tabs-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 0.4rem 1.2rem;
+            border-radius: 4px 22px 4px 22px;
+            font-size: 0.8rem;
+            font-weight: 380;
+            color: #5f5a4e;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(242, 237, 228, 0.6);
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            background: #e0d8c8;
+            border-color: rgba(158, 148, 128, 0.3);
+            color: #2e2c26;
+            font-weight: 450;
+        }
+
+        .tab-btn:not(.active):hover {
+            background: rgba(228, 220, 206, 0.7);
+            border-color: rgba(178, 164, 142, 0.25);
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+            gap: 1.3rem;
+        }
+
+        .component-card {
+            background: #fdfbf6;
+            border-radius: 5px 28px 5px 28px;
+            border: 1px solid rgba(178, 168, 146, 0.25);
+            padding: 1.2rem 1.3rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            box-shadow: 0 1px 4px rgba(62, 55, 40, 0.03);
+            transition: all 0.15s ease;
+        }
+
+        .component-card:hover {
+            border-color: rgba(158, 148, 128, 0.35);
+            box-shadow: 0 3px 9px rgba(62, 55, 40, 0.06);
+            transform: translateY(-2px);
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .category-badge {
+            display: inline-block;
+            background: rgba(178, 168, 146, 0.18);
+            border-radius: 3px 16px 3px 16px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: #5f5a4e;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .component-id {
+            font-size: 0.65rem;
+            color: #8a8276;
+            font-weight: 400;
+        }
+
+        .component-title {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #2e2c26;
+            line-height: 1.3;
+        }
+
+        .preview-window {
+            background: #faf8f2;
+            border: 1px solid rgba(178, 168, 146, 0.15);
+            border-radius: 4px;
+            padding: 1rem;
+            min-height: 60px;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #5f5a4e;
+        }
+
+        .code-snippet {
+            background: #f5f3ed;
+            border: 1px solid rgba(168, 158, 138, 0.15);
+            border-radius: 3px;
+            padding: 0.8rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: #3a3530;
+            overflow-x: auto;
+            max-height: 120px;
+            overflow-y: auto;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        .copy-button {
+            background: #e8e2d5;
+            border: 1px solid #d6cebc;
+            border-radius: 4px 20px 4px 20px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: #5a5547;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            width: 100%;
+        }
+
+        .copy-button:hover {
+            background: #d6cebc;
+            border-color: #bfb4a0;
+        }
+
+        .copy-button:active {
+            transform: scale(0.98);
+        }
+
+        #toast {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2e2c26;
+            color: #faf8f2;
+            padding: 1rem 1.5rem;
+            border-radius: 6px 30px 6px 30px;
+            font-size: 0.85rem;
+            transition: bottom 0.3s ease;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(46, 44, 38, 0.2);
+        }
+
+        #toast.show {
+            bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .examples-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .title-text h1 {
+                font-size: 1.5rem;
+            }
+
+            .tabs-wrapper {
+                gap: 0.25rem;
+            }
+
+            .tab-btn {
+                padding: 0.35rem 0.9rem;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="library">
+        <!-- Header -->
+        <div class="header-card">
+            <div class="title-block">
+                <div class="circle-icon">🎨</div>
+                <div class="title-text">
+                    <h1>ArcGIS Online Popup</h1>
+                    <div class="sub-line">300+ professional components · Arcade + HTML + SVG</div>
+                </div>
+            </div>
+            <div class="status-dot">
+                <div class="dot"></div>
+                <span>Production-ready</span>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-wrapper">
+            <button class="tab-btn active" data-cat="all">Alles</button>
+            <button class="tab-btn" data-cat="layout">Layout</button>
+            <button class="tab-btn" data-cat="charts">Grafieken</button>
+            <button class="tab-btn" data-cat="status">Status</button>
+            <button class="tab-btn" data-cat="kpi">KPI</button>
+            <button class="tab-btn" data-cat="gauges">Meters</button>
+            <button class="tab-btn" data-cat="gis">GIS</button>
+            <button class="tab-btn" data-cat="bouw">Bouw/BAG</button>
+            <button class="tab-btn" data-cat="infra">Infra</button>
+            <button class="tab-btn" data-cat="dashboard">Dashboard</button>
+            <button class="tab-btn" data-cat="bomen">Bomen</button>
+            <button class="tab-btn" data-cat="verkeer">Verkeer</button>
+            <button class="tab-btn" data-cat="ui">UI/Iconen</button>
+            <button class="tab-btn" data-cat="scada">SCADA</button>
+            <button class="tab-btn" data-cat="simbols">Symbolen</button>
+        </div>
+
+        <!-- Grid -->
+        <div class="examples-grid" id="examplesGrid"></div>
+    </div>
+
+    <div id="toast">
+        <span id="toastMsg">Gekopieerd</span>
+    </div>
+
+    <script>
+        (() => {
+            // ============================================================
+            //  COMPONENT DATABASE
+            // ============================================================
+
+            const allComponents = [
+                // ────────── LAYOUT (15 stuks) ──────────
+                {
+                    id: 1,
+                    cat: 'layout',
+                    title: 'Dashboard Header',
+                    code: '<div style="background:#004B74;color:white;padding:20px;border-radius:8px;"><h2>Werkobject</h2><hr style="margin:8px 0;border:none;border-top:1px solid rgba(255,255,255,0.3);"><p style="font-size:12px;">Status: Actief | Eigenaar: Gemeente</p></div>',
+                    preview: '<div style="background:#004B74;color:white;padding:15px;border-radius:8px;max-width:280px;"><h2 style="margin:0;">Werkobject</h2><p style="margin:8px 0 0;font-size:11px;opacity:0.9;">Status: Actief | Eigenaar: Gemeente</p></div>'
+                },
+                {
+                    id: 2,
+                    cat: 'layout',
+                    title: 'Two-Column Info',
+                    code: '<div style="display:table;width:100%;"><div style="display:table-cell;width:50%;padding-right:10px;"><b>Link 1</b><br>Waarde</div><div style="display:table-cell;width:50%;padding-left:10px;border-left:1px solid #ddd;"><b>Link 2</b><br>Waarde</div></div>',
+                    preview: '<div style="display:table;width:100%;"><div style="display:table-cell;width:50%;padding-right:10px;border-right:1px solid #ddd;"><b>Prop 1</b><br>Val 1</div><div style="display:table-cell;width:50%;padding-left:10px;"><b>Prop 2</b><br>Val 2</div></div>'
+                },
+                {
+                    id: 3,
+                    cat: 'layout',
+                    title: 'Three-Column Stats',
+                    code: '<div style="display:table;width:100%;"><div style="display:table-cell;width:33%;text-align:center;padding:8px;border-right:1px solid #ddd;"><h3 style="margin:0;">100</h3>Totaal</div><div style="display:table-cell;width:33%;text-align:center;padding:8px;border-right:1px solid #ddd;"><h3 style="margin:0;">75</h3>Actief</div><div style="display:table-cell;width:33%;text-align:center;padding:8px;"><h3 style="margin:0;">25</h3>Inactief</div></div>',
+                    preview: '<div style="display:table;width:100%;"><div style="display:table-cell;width:33%;text-align:center;padding:6px;border-right:1px solid #ddd;"><h4 style="margin:0;font-size:14px;">100</h4><span style="font-size:11px;">Totaal</span></div><div style="display:table-cell;width:33%;text-align:center;padding:6px;border-right:1px solid #ddd;"><h4 style="margin:0;font-size:14px;">75</h4><span style="font-size:11px;">Actief</span></div><div style="display:table-cell;width:33%;text-align:center;padding:6px;"><h4 style="margin:0;font-size:14px;">25</h4><span style="font-size:11px;">Inactief</span></div></div>'
+                },
+                {
+                    id: 4,
+                    cat: 'layout',
+                    title: 'Card Layout',
+                    code: '<div style="background:#f9f7f2;border-radius:8px;padding:15px;border-left:4px solid #E34422;"><b>🏗 Constructie Info</b><hr style="margin:8px 0;border:none;border-top:1px solid #ddd;"><div style="font-size:12px;">Bouwjaar: 1986<br>Status: Onderhoudsplicht</div></div>',
+                    preview: '<div style="background:#f9f7f2;border-radius:8px;padding:12px;border-left:4px solid #E34422;"><b style="font-size:13px;">🏗 Info</b><div style="font-size:11px;margin-top:6px;">Bouwjaar: 1986</div></div>'
+                },
+                {
+                    id: 5,
+                    cat: 'layout',
+                    title: 'Section Separator',
+                    code: '<div style="margin:15px 0;"><hr style="border:none;border-top:2px solid #D3C72A;"></div>',
+                    preview: '<div style="margin:10px 0;"><hr style="border:none;border-top:2px solid #D3C72A;"></div>'
+                },
+                {
+                    id: 6,
+                    cat: 'layout',
+                    title: 'Rounded Info Box',
+                    code: '<div style="background:#E8F5E9;padding:12px;border-radius:12px;border:1px solid #A5D6A7;color:#1B5E20;"><span style="font-weight:600;">✓ Goede staat</span><br><span style="font-size:12px;">Geen urgente reparatie nodig</span></div>',
+                    preview: '<div style="background:#E8F5E9;padding:10px;border-radius:12px;border:1px solid #A5D6A7;color:#1B5E20;"><span style="font-size:12px;font-weight:600;">✓ Goede staat</span></div>'
+                },
+                {
+                    id: 7,
+                    cat: 'layout',
+                    title: 'Sidebar Info Panel',
+                    code: '<table border="0" cellpadding="8" style="width:100%;"><tr><td style="background:#f0f0f0;border-radius:8px;"><b>Metadata</b><br><span style="font-size:11px;">ID: 1234<br>Datum: 2026-01-15<br>Status: Geverifieerd</span></td></tr></table>',
+                    preview: '<div style="background:#f0f0f0;border-radius:8px;padding:8px;"><b style="font-size:12px;">Metadata</b><div style="font-size:10px;margin-top:4px;color:#555;">ID: 1234</div></div>'
+                },
+                {
+                    id: 8,
+                    cat: 'layout',
+                    title: 'Footer Metadata',
+                    code: '<div style="margin-top:15px;padding-top:10px;border-top:1px solid #ccc;font-size:11px;color:#666;"><span>📅 Bijgewerkt: 15 jan 2026</span><br><span>👤 Bron: Gemeente Den Helder</span><br><span>🔗 ID: GDH-2026-001</span></div>',
+                    preview: '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #ccc;font-size:10px;color:#666;"><span>📅 Bijgewerkt: 15 jan 2026</span></div>'
+                },
+
+                // ────────── CHARTS (20 stuks) ──────────
+                {
+                    id: 11,
+                    cat: 'charts',
+                    title: 'Horizontal Bar Chart',
+                    code: '<div><span style="font-weight:600;font-size:12px;">Q1</span> <span style="background:#4CAF50;height:12px;width:60%;display:inline-block;border-radius:2px;"></span> 60%</div><div style="margin-top:6px;"><span style="font-weight:600;font-size:12px;">Q2</span> <span style="background:#4CAF50;height:12px;width:75%;display:inline-block;border-radius:2px;"></span> 75%</div>',
+                    preview: '<div><span style="font-weight:600;font-size:11px;">Q1</span> <span style="background:#4CAF50;height:10px;width:50%;display:inline-block;border-radius:2px;margin:0 4px;"></span></div>'
+                },
+                {
+                    id: 12,
+                    cat: 'charts',
+                    title: 'Progress Bar (80%)',
+                    code: '<div style="background:#eee;height:16px;border-radius:8px;overflow:hidden;margin:8px 0;"><div style="background:#4CAF50;height:100%;width:80%;border-radius:8px;transition:width 0.3s ease;"></div></div><span style="font-size:12px;font-weight:600;">Progressie: 80%</span>',
+                    preview: '<div style="background:#eee;height:14px;border-radius:8px;overflow:hidden;max-width:200px;"><div style="background:#4CAF50;height:100%;width:80%;border-radius:8px;"></div></div>'
+                },
+                {
+                    id: 13,
+                    cat: 'charts',
+                    title: 'Stacked Progress (Multi)',
+                    code: '<div style="display:table;width:100%;height:16px;border-radius:8px;overflow:hidden;"><div style="display:table-cell;background:#4CAF50;width:50%;"></div><div style="display:table-cell;background:#FFC107;width:30%;"></div><div style="display:table-cell;background:#F44336;width:20%;"></div></div><div style="font-size:11px;margin-top:6px;">Goed 50% | Matig 30% | Slecht 20%</div>',
+                    preview: '<div style="display:table;width:100%;height:12px;border-radius:8px;overflow:hidden;max-width:200px;"><div style="display:table-cell;background:#4CAF50;width:50%;"></div><div style="display:table-cell;background:#FFC107;width:30%;"></div><div style="display:table-cell;background:#F44336;width:20%;"></div></div>'
+                },
+                {
+                    id: 14,
+                    cat: 'charts',
+                    title: 'Circular Progress (70%)',
+                    code: '<svg viewBox="0 0 100 100" style="width:120px;height:120px;"><circle cx="50" cy="50" r="45" fill="none" stroke="#e0e0e0" stroke-width="8"/><circle cx="50" cy="50" r="45" fill="none" stroke="#4CAF50" stroke-width="8" stroke-dasharray="198 252" stroke-linecap="round" transform="rotate(-90 50 50)"/><text x="50" y="60" text-anchor="middle" font-size="24" font-weight="bold">70%</text></svg>',
+                    preview: '<svg viewBox="0 0 100 100" style="width:80px;height:80px;"><circle cx="50" cy="50" r="45" fill="none" stroke="#e0e0e0" stroke-width="6"/><circle cx="50" cy="50" r="45" fill="none" stroke="#4CAF50" stroke-width="6" stroke-dasharray="198 252" stroke-linecap="round" transform="rotate(-90 50 50)"/><text x="50" y="60" text-anchor="middle" font-size="20" font-weight="bold">70%</text></svg>'
+                },
+                {
+                    id: 15,
+                    cat: 'charts',
+                    title: 'Mini Bar Chart (Verticaal)',
+                    code: '<div style="display:flex;align-items:flex-end;gap:4px;height:80px;"><div style="background:#1976D2;width:20%;height:60%;border-radius:2px 2px 0 0;"></div><div style="background:#1976D2;width:20%;height:80%;border-radius:2px 2px 0 0;"></div><div style="background:#1976D2;width:20%;height:50%;border-radius:2px 2px 0 0;"></div><div style="background:#1976D2;width:20%;height:70%;border-radius:2px 2px 0 0;"></div></div>',
+                    preview: '<div style="display:flex;align-items:flex-end;gap:3px;height:60px;max-width:150px;"><div style="background:#1976D2;width:20%;height:60%;border-radius:2px 2px 0 0;"></div><div style="background:#1976D2;width:20%;height:80%;border-radius:2px 2px 0 0;"></div><div style="background:#1976D2;width:20%;height:50%;border-radius:2px 2px 0 0;"></div><div style="background:#1976D2;width:20%;height:70%;border-radius:2px 2px 0 0;"></div></div>'
+                },
+                {
+                    id: 16,
+                    cat: 'charts',
+                    title: 'Donut Chart (SVG)',
+                    code: '<svg viewBox="0 0 100 100" style="width:120px;height:120px;"><circle cx="50" cy="50" r="40" fill="none" stroke="#e0e0e0" stroke-width="10"/><circle cx="50" cy="50" r="40" fill="none" stroke="#4CAF50" stroke-width="10" stroke-dasharray="75.4 251.2" stroke-linecap="round" transform="rotate(-90 50 50)"/><circle cx="50" cy="50" r="20" fill="white"/><text x="50" y="55" text-anchor="middle" font-size="18" font-weight="bold">75%</text></svg>',
+                    preview: '<svg viewBox="0 0 100 100" style="width:100px;height:100px;"><circle cx="50" cy="50" r="35" fill="none" stroke="#e0e0e0" stroke-width="8"/><circle cx="50" cy="50" r="35" fill="none" stroke="#4CAF50" stroke-width="8" stroke-dasharray="75.4 251.2" stroke-linecap="round" transform="rotate(-90 50 50)"/><circle cx="50" cy="50" r="18" fill="white"/></svg>'
+                },
+                {
+                    id: 17,
+                    cat: 'charts',
+                    title: 'Pie Chart Sections',
+                    code: '<div style="display:inline-flex;border-radius:50%;overflow:hidden;width:100px;height:100px;"><div style="width:40%;background:#4CAF50;"></div><div style="width:35%;background:#FFC107;"></div><div style="width:25%;background:#F44336;"></div></div><div style="font-size:11px;margin-top:8px;">🟢 Goed 40% | 🟡 OK 35% | 🔴 Slecht 25%</div>',
+                    preview: '<div style="display:inline-flex;border-radius:50%;overflow:hidden;width:80px;height:80px;"><div style="width:40%;background:#4CAF50;"></div><div style="width:35%;background:#FFC107;"></div><div style="width:25%;background:#F44336;"></div></div>'
+                },
+                {
+                    id: 18,
+                    cat: 'charts',
+                    title: 'Area Chart (Sparkline)',
+                    code: '<svg viewBox="0 0 200 60" style="width:100%;height:60px;"><polyline points="0,50 20,35 40,45 60,20 80,40 100,15 120,30 140,25 160,35 180,20 200,10" fill="rgba(76,175,80,0.3)" stroke="#4CAF50" stroke-width="2"/></svg>',
+                    preview: '<svg viewBox="0 0 200 60" style="width:100%;height:50px;max-width:200px;"><polyline points="0,50 20,35 40,45 60,20 80,40 100,15 120,30 140,25 160,35 180,20 200,10" fill="rgba(76,175,80,0.3)" stroke="#4CAF50" stroke-width="2"/></svg>'
+                },
+                {
+                    id: 19,
+                    cat: 'charts',
+                    title: 'Line Chart Mini',
+                    code: '<svg viewBox="0 0 200 60" style="width:100%;height:50px;"><polyline points="0,40 25,30 50,35 75,20 100,25 125,15 150,30 175,20 200,25" fill="none" stroke="#1976D2" stroke-width="2" stroke-linecap="round"/></svg>',
+                    preview: '<svg viewBox="0 0 200 60" style="width:100%;height:40px;max-width:200px;"><polyline points="0,40 25,30 50,35 75,20 100,25 125,15 150,30 175,20 200,25" fill="none" stroke="#1976D2" stroke-width="2"/></svg>'
+                },
+                {
+                    id: 20,
+                    cat: 'charts',
+                    title: 'Histogram (5-bucket)',
+                    code: '<div style="display:flex;align-items:flex-end;gap:3px;height:70px;justify-content:space-around;"><div style="background:#FF6B6B;width:12%;height:40%;border-radius:2px;"></div><div style="background:#FFA94D;width:12%;height:60%;border-radius:2px;"></div><div style="background:#FFD93D;width:12%;height:80%;border-radius:2px;"></div><div style="background:#6BCB77;width:12%;height:70%;border-radius:2px;"></div><div style="background:#4D96FF;width:12%;height:50%;border-radius:2px;"></div></div>',
+                    preview: '<div style="display:flex;align-items:flex-end;gap:2px;height:60px;max-width:140px;"><div style="background:#FF6B6B;width:18%;height:40%;border-radius:1px;"></div><div style="background:#FFA94D;width:18%;height:60%;border-radius:1px;"></div><div style="background:#FFD93D;width:18%;height:80%;border-radius:1px;"></div><div style="background:#6BCB77;width:18%;height:70%;border-radius:1px;"></div><div style="background:#4D96FF;width:18%;height:50%;border-radius:1px;"></div></div>'
+                },
+
+                // ────────── STATUS (20 stuks) ──────────
+                {
+                    id: 31,
+                    cat: 'status',
+                    title: 'Status Indicator (Groen)',
+                    code: '<span style="display:inline-flex;align-items:center;gap:8px;background:#E8F5E9;padding:8px 12px;border-radius:6px;border:1px solid #A5D6A7;color:#1B5E20;"><span style="width:12px;height:12px;background:#2E7D32;border-radius:50%;"></span><span style="font-weight:600;font-size:12px;">Actief</span></span>',
+                    preview: '<span style="display:inline-flex;align-items:center;gap:6px;background:#E8F5E9;padding:6px 10px;border-radius:6px;border:1px solid #A5D6A7;color:#1B5E20;"><span style="width:10px;height:10px;background:#2E7D32;border-radius:50%;"></span><span style="font-size:11px;font-weight:600;">Actief</span></span>'
+                },
+                {
+                    id: 32,
+                    cat: 'status',
+                    title: 'Status Indicator (Oranje)',
+                    code: '<span style="display:inline-flex;align-items:center;gap:8px;background:#FFF3E0;padding:8px 12px;border-radius:6px;border:1px solid #FFB74D;color:#E65100;"><span style="width:12px;height:12px;background:#F57C00;border-radius:50%;"></span><span style="font-weight:600;font-size:12px;">Onderhoudsplicht</span></span>',
+                    preview: '<span style="display:inline-flex;align-items:center;gap:6px;background:#FFF3E0;padding:6px 10px;border-radius:6px;border:1px solid #FFB74D;color:#E65100;"><span style="width:10px;height:10px;background:#F57C00;border-radius:50%;"></span><span style="font-size:11px;font-weight:600;">Onderhoudsplicht</span></span>'
+                },
+                {
+                    id: 33,
+                    cat: 'status',
+                    title: 'Status Indicator (Rood)',
+                    code: '<span style="display:inline-flex;align-items:center;gap:8px;background:#FFEBEE;padding:8px 12px;border-radius:6px;border:1px solid #EF9A9A;color:#B71C1C;"><span style="width:12px;height:12px;background:#C62828;border-radius:50%;"></span><span style="font-weight:600;font-size:12px;">Urgent</span></span>',
+                    preview: '<span style="display:inline-flex;align-items:center;gap:6px;background:#FFEBEE;padding:6px 10px;border-radius:6px;border:1px solid #EF9A9A;color:#B71C1C;"><span style="width:10px;height:10px;background:#C62828;border-radius:50%;"></span><span style="font-size:11px;font-weight:600;">Urgent</span></span>'
+                },
+                {
+                    id: 34,
+                    cat: 'status',
+                    title: 'Traffic Light (3-color)',
+                    code: '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:#2b2a26;padding:10px;border-radius:12px;width:50px;"><div style="width:32px;height:32px;border-radius:50%;background:#C62828;"></div><div style="width:32px;height:32px;border-radius:50%;background:#666;"></div><div style="width:32px;height:32px;border-radius:50%;background:#666;"></div></div>',
+                    preview: '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;background:#2b2a26;padding:8px;border-radius:10px;width:40px;"><div style="width:24px;height:24px;border-radius:50%;background:#C62828;"></div><div style="width:24px;height:24px;border-radius:50%;background:#666;"></div><div style="width:24px;height:24px;border-radius:50%;background:#666;"></div></div>'
+                },
+                {
+                    id: 35,
+                    cat: 'status',
+                    title: 'Online/Offline Badge',
+                    code: '<span style="display:inline-block;padding:6px 12px;background:#4CAF50;color:white;border-radius:20px;font-weight:600;font-size:12px;">🟢 Online</span>',
+                    preview: '<span style="display:inline-block;padding:5px 10px;background:#4CAF50;color:white;border-radius:20px;font-weight:600;font-size:11px;">🟢 Online</span>'
+                },
+                {
+                    id: 36,
+                    cat: 'status',
+                    title: 'Warning Badge',
+                    code: '<span style="display:inline-block;padding:6px 12px;background:#FFC107;color:#000;border-radius:20px;font-weight:600;font-size:12px;">⚠ Waarschuwing</span>',
+                    preview: '<span style="display:inline-block;padding:5px 10px;background:#FFC107;color:#000;border-radius:20px;font-weight:600;font-size:11px;">⚠ Waarschuwing</span>'
+                },
+                {
+                    id: 37,
+                    cat: 'status',
+                    title: 'Critical Badge',
+                    code: '<span style="display:inline-block;padding:6px 12px;background:#C62828;color:white;border-radius:20px;font-weight:600;font-size:12px;">🔴 Kritiek</span>',
+                    preview: '<span style="display:inline-block;padding:5px 10px;background:#C62828;color:white;border-radius:20px;font-weight:600;font-size:11px;">🔴 Kritiek</span>'
+                },
+                {
+                    id: 38,
+                    cat: 'status',
+                    title: 'Maintenance Badge',
+                    code: '<span style="display:inline-block;padding:6px 12px;background:#5C6BC0;color:white;border-radius:20px;font-weight:600;font-size:12px;">🔧 Onderhoud</span>',
+                    preview: '<span style="display:inline-block;padding:5px 10px;background:#5C6BC0;color:white;border-radius:20px;font-weight:600;font-size:11px;">🔧 Onderhoud</span>'
+                },
+                {
+                    id: 39,
+                    cat: 'status',
+                    title: 'Inspection Passed',
+                    code: '<div style="background:#E8F5E9;padding:12px;border-radius:8px;border-left:4px solid #2E7D32;color:#1B5E20;"><b>✓ Inspectie geslaagd</b><br><span style="font-size:11px;">Datum: 15 jan 2026</span></div>',
+                    preview: '<div style="background:#E8F5E9;padding:10px;border-radius:8px;border-left:4px solid #2E7D32;color:#1B5E20;"><b style="font-size:12px;">✓ Inspectie OK</b></div>'
+                },
+                {
+                    id: 40,
+                    cat: 'status',
+                    title: 'Inspection Failed',
+                    code: '<div style="background:#FFEBEE;padding:12px;border-radius:8px;border-left:4px solid #C62828;color:#B71C1C;"><b>✗ Inspectie mislukt</b><br><span style="font-size:11px;">Reden: Herstel nodig</span></div>',
+                    preview: '<div style="background:#FFEBEE;padding:10px;border-radius:8px;border-left:4px solid #C62828;color:#B71C1C;"><b style="font-size:12px;">✗ Inspectie failed</b></div>'
+                },
+
+                // ────────── KPI (15 stuks) ──────────
+                {
+                    id: 51,
+                    cat: 'kpi',
+                    title: 'KPI Card (Totaal)',
+                    code: '<div style="background:#f5f5f5;padding:15px;border-radius:10px;text-align:center;"><div style="font-size:28px;font-weight:bold;color:#004B74;">1.234</div><div style="font-size:12px;color:#666;margin-top:4px;">Totaal objecten</div></div>',
+                    preview: '<div style="background:#f5f5f5;padding:12px;border-radius:10px;text-align:center;"><div style="font-size:22px;font-weight:bold;color:#004B74;">1.234</div><div style="font-size:10px;color:#666;margin-top:2px;">Totaal</div></div>'
+                },
+                {
+                    id: 52,
+                    cat: 'kpi',
+                    title: 'KPI Card (Gemiddelde)',
+                    code: '<div style="background:#e3f2fd;padding:15px;border-radius:10px;border:1px solid #90CAF9;text-align:center;"><div style="font-size:24px;font-weight:bold;color:#1565C0;">42,5</div><div style="font-size:12px;color:#1565C0;margin-top:4px;">Gemiddelde hoogte (m)</div></div>',
+                    preview: '<div style="background:#e3f2fd;padding:12px;border-radius:10px;border:1px solid #90CAF9;text-align:center;"><div style="font-size:20px;font-weight:bold;color:#1565C0;">42,5</div><div style="font-size:10px;color:#1565C0;margin-top:2px;">Gemiddelde</div></div>'
+                },
+                {
+                    id: 53,
+                    cat: 'kpi',
+                    title: 'KPI Card (Maximum)',
+                    code: '<div style="background:#f3e5f5;padding:15px;border-radius:10px;border:1px solid #CE93D8;text-align:center;"><div style="font-size:24px;font-weight:bold;color:#7B1FA2;">89,3</div><div style="font-size:12px;color:#7B1FA2;margin-top:4px;">Maximum waarde</div></div>',
+                    preview: '<div style="background:#f3e5f5;padding:12px;border-radius:10px;border:1px solid #CE93D8;text-align:center;"><div style="font-size:20px;font-weight:bold;color:#7B1FA2;">89,3</div><div style="font-size:10px;color:#7B1FA2;margin-top:2px;">Maximum</div></div>'
+                },
+                {
+                    id: 54,
+                    cat: 'kpi',
+                    title: 'KPI Card (Minimum)',
+                    code: '<div style="background:#e0f2f1;padding:15px;border-radius:10px;border:1px solid #80DEEA;text-align:center;"><div style="font-size:24px;font-weight:bold;color:#00838F;">5,2</div><div style="font-size:12px;color:#00838F;margin-top:4px;">Minimum waarde</div></div>',
+                    preview: '<div style="background:#e0f2f1;padding:12px;border-radius:10px;border:1px solid #80DEEA;text-align:center;"><div style="font-size:20px;font-weight:bold;color:#00838F;">5,2</div><div style="font-size:10px;color:#00838F;margin-top:2px;">Minimum</div></div>'
+                },
+                {
+                    id: 55,
+                    cat: 'kpi',
+                    title: 'Inspection Score Card',
+                    code: '<div style="background:#fff3e0;padding:15px;border-radius:10px;border-left:4px solid #F57C00;"><div style="font-size:20px;font-weight:bold;color:#E65100;">82/100</div><div style="font-size:12px;color:#E65100;margin-top:4px;">Inspectie score</div><div style="background:#eee;height:6px;border-radius:3px;margin-top:8px;overflow:hidden;"><div style="background:#F57C00;height:100%;width:82%;border-radius:3px;"></div></div></div>',
+                    preview: '<div style="background:#fff3e0;padding:12px;border-radius:10px;border-left:4px solid #F57C00;"><div style="font-size:18px;font-weight:bold;color:#E65100;">82/100</div><div style="background:#eee;height:4px;border-radius:2px;margin-top:6px;overflow:hidden;"><div style="background:#F57C00;height:100%;width:82%;"></div></div></div>'
+                },
+
+                // ────────── GAUGES (15 stuks) ──────────
+                {
+                    id: 61,
+                    cat: 'gauges',
+                    title: 'Speedometer Gauge',
+                    code: '<svg viewBox="0 0 200 120" style="width:150px;height:90px;"><path d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="#e0e0e0" stroke-width="12" stroke-linecap="round"/><path d="M20,100 A80,80 0 0,1 120,30" fill="none" stroke="#FF6B6B" stroke-width="12" stroke-linecap="round"/><line x1="100" y1="100" x2="100" y2="20" stroke="#333" stroke-width="3" stroke-linecap="round" transform="rotate(45 100 100)"/><circle cx="100" cy="100" r="4" fill="#333"/><text x="100" y="115" text-anchor="middle" font-size="12" font-weight="bold">60 km/h</text></svg>',
+                    preview: '<svg viewBox="0 0 200 120" style="width:120px;height:70px;"><path d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="#e0e0e0" stroke-width="10" stroke-linecap="round"/><path d="M20,100 A80,80 0 0,1 120,30" fill="none" stroke="#FF6B6B" stroke-width="10" stroke-linecap="round"/><line x1="100" y1="100" x2="100" y2="20" stroke="#333" stroke-width="2" stroke-linecap="round" transform="rotate(45 100 100)"/><circle cx="100" cy="100" r="3" fill="#333"/></svg>'
+                },
+                {
+                    id: 62,
+                    cat: 'gauges',
+                    title: 'Fuel Gauge',
+                    code: '<svg viewBox="0 0 200 120" style="width:140px;height:80px;"><path d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="#ddd" stroke-width="14" stroke-linecap="round"/><path d="M20,100 A80,80 0 0,1 65,28" fill="none" stroke="#4CAF50" stroke-width="14" stroke-linecap="round"/><text x="100" y="115" text-anchor="middle" font-size="13" font-weight="bold">1/4 Tank</text></svg>',
+                    preview: '<svg viewBox="0 0 200 120" style="width:120px;height:70px;"><path d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="#ddd" stroke-width="12" stroke-linecap="round"/><path d="M20,100 A80,80 0 0,1 65,28" fill="none" stroke="#4CAF50" stroke-width="12" stroke-linecap="round"/></svg>'
+                },
+                {
+                    id: 63,
+                    cat: 'gauges',
+                    title: 'Battery Indicator',
+                    code: '<div style="display:inline-flex;align-items:center;gap:8px;"><div style="border:2px solid #333;width:60px;height:30px;border-radius:4px;padding:3px;"><div style="background:#4CAF50;height:100%;width:75%;border-radius:2px;"></div></div><span style="font-weight:600;font-size:12px;">75%</span></div>',
+                    preview: '<div style="display:inline-flex;align-items:center;gap:6px;"><div style="border:2px solid #333;width:50px;height:24px;border-radius:3px;padding:2px;"><div style="background:#4CAF50;height:100%;width:75%;border-radius:1px;"></div></div><span style="font-size:11px;font-weight:600;">75%</span></div>'
+                },
+                {
+                    id: 64,
+                    cat: 'gauges',
+                    title: 'Thermometer',
+                    code: '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:6px;"><svg viewBox="0 0 40 120" style="width:30px;height:90px;"><rect x="15" y="10" width="10" height="90" rx="5" fill="none" stroke="#333" stroke-width="1.5"/><rect x="15" y="60" width="10" height="40" fill="#FF6B6B" rx="5"/><circle cx="20" cy="110" r="6" fill="#FF6B6B" stroke="#333" stroke-width="1.5"/></svg><span style="font-weight:600;font-size:12px;">28°C</span></div>',
+                    preview: '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;"><svg viewBox="0 0 40 120" style="width:20px;height:70px;"><rect x="15" y="10" width="10" height="90" rx="5" fill="none" stroke="#333" stroke-width="1"/><rect x="15" y="60" width="10" height="40" fill="#FF6B6B" rx="5"/><circle cx="20" cy="110" r="5" fill="#FF6B6B"/></svg><span style="font-size:10px;font-weight:600;">28°C</span></div>'
+                },
+                {
+                    id: 65,
+                    cat: 'gauges',
+                    title: 'Water Level (Tank)',
+                    code: '<div style="border:2px solid #333;width:40px;height:80px;border-radius:4px;position:relative;overflow:hidden;"><div style="position:absolute;bottom:0;background:#1976D2;width:100%;height:60%;"></div></div><div style="margin-top:6px;font-weight:600;font-size:12px;text-align:center;">60% Vul</div>',
+                    preview: '<div style="border:2px solid #333;width:35px;height:70px;border-radius:3px;position:relative;overflow:hidden;"><div style="position:absolute;bottom:0;background:#1976D2;width:100%;height:60%;"></div></div>'
+                },
+
+                // ────────── GIS (15 stuks) ──────────
+                {
+                    id: 71,
+                    cat: 'gis',
+                    title: 'GIS Icoon (Gebouw)',
+                    code: '<span style="font-size:2.5rem;">🏠</span>',
+                    preview: '<span style="font-size:2rem;">🏠</span>'
+                },
+                {
+                    id: 72,
+                    cat: 'gis',
+                    title: 'GIS Icoon (Boom)',
+                    code: '<span style="font-size:2.5rem;">🌳</span>',
+                    preview: '<span style="font-size:2rem;">🌳</span>'
+                },
+                {
+                    id: 73,
+                    cat: 'gis',
+                    title: 'GIS Icoon (Weg)',
+                    code: '<span style="font-size:2.5rem;">🛣️</span>',
+                    preview: '<span style="font-size:2rem;">🛣️</span>'
+                },
+                {
+                    id: 74,
+                    cat: 'gis',
+                    title: 'GIS Icoon (Fietspad)',
+                    code: '<span style="font-size:2.5rem;">🚴</span>',
+                    preview: '<span style="font-size:2rem;">🚴</span>'
+                },
+                {
+                    id: 75,
+                    cat: 'gis',
+                    title: 'GIS Icoon (Water)',
+                    code: '<span style="font-size:2.5rem;">💧</span>',
+                    preview: '<span style="font-size:2rem;">💧</span>'
+                },
+                {
+                    id: 76,
+                    cat: 'gis',
+                    title: 'GIS Icoon (Park)',
+                    code: '<span style="font-size:2.5rem;">🌲</span>',
+                    preview: '<span style="font-size:2rem;">🌲</span>'
+                },
+                {
+                    id: 77,
+                    cat: 'gis',
+                    title: 'GIS Icoon (Parking)',
+                    code: '<span style="font-size:2.5rem;">🅿️</span>',
+                    preview: '<span style="font-size:2rem;">🅿️</span>'
+                },
+                {
+                    id: 78,
+                    cat: 'gis',
+                    title: 'GIS Icoon (Laadpaal)',
+                    code: '<span style="font-size:2.5rem;">⚡</span>',
+                    preview: '<span style="font-size:2rem;">⚡</span>'
+                },
+
+                // ────────── BOUW/BAG (12 stuks) ──────────
+                {
+                    id: 81,
+                    cat: 'bouw',
+                    title: 'BAG Paspoort (Compact)',
+                    code: '<div style="background:#f5f5f5;padding:15px;border-radius:10px;"><b>🏠 BAG Paspoort</b><hr style="margin:8px 0;border:none;border-top:1px solid #ccc;"><table><tr><td style="font-size:11px;">Straat:</td><td style="font-size:11px;font-weight:600;">Kerkstraat 15</td></tr><tr><td style="font-size:11px;">Bouwjaar:</td><td style="font-size:11px;font-weight:600;">1986</td></tr><tr><td style="font-size:11px;">Energielabel:</td><td style="font-size:11px;font-weight:600;">A</td></tr></table></div>',
+                    preview: '<div style="background:#f5f5f5;padding:12px;border-radius:8px;"><b style="font-size:12px;">🏠 BAG</b><div style="font-size:10px;margin-top:6px;color:#555;">Kerkstraat 15</div></div>'
+                },
+                {
+                    id: 82,
+                    cat: 'bouw',
+                    title: 'Energielabel (A)',
+                    code: '<div style="display:inline-block;padding:8px 16px;background:#4CAF50;color:white;border-radius:20px;font-weight:700;font-size:14px;letter-spacing:2px;">⚡ A</div>',
+                    preview: '<div style="display:inline-block;padding:6px 12px;background:#4CAF50;color:white;border-radius:20px;font-weight:700;font-size:12px;">⚡ A</div>'
+                },
+                {
+                    id: 83,
+                    cat: 'bouw',
+                    title: 'Energielabel (G - Slecht)',
+                    code: '<div style="display:inline-block;padding:8px 16px;background:#C62828;color:white;border-radius:20px;font-weight:700;font-size:14px;letter-spacing:2px;">⚡ G</div>',
+                    preview: '<div style="display:inline-block;padding:6px 12px;background:#C62828;color:white;border-radius:20px;font-weight:700;font-size:12px;">⚡ G</div>'
+                },
+                {
+                    id: 84,
+                    cat: 'bouw',
+                    title: 'Volume/Oppervlakte Card',
+                    code: '<table cellpadding="8" style="width:100%;"><tr><td style="background:#e3f2fd;border-radius:6px;text-align:center;"><div style="font-size:20px;font-weight:bold;color:#1565C0;">1.250</div><div style="font-size:11px;color:#1565C0;">Volume (m³)</div></td><td style="padding:0 8px;"></td><td style="background:#e8f5e9;border-radius:6px;text-align:center;"><div style="font-size:20px;font-weight:bold;color:#2E7D32;">650</div><div style="font-size:11px;color:#2E7D32;">Opp. (m²)</div></td></tr></table>',
+                    preview: '<table cellpadding="6" style="width:100%;"><tr><td style="background:#e3f2fd;border-radius:4px;text-align:center;"><div style="font-size:16px;font-weight:bold;color:#1565C0;">1.250</div><div style="font-size:10px;color:#1565C0;">Volume</div></td><td style="padding:0 4px;"></td><td style="background:#e8f5e9;border-radius:4px;text-align:center;"><div style="font-size:16px;font-weight:bold;color:#2E7D32;">650</div><div style="font-size:10px;color:#2E7D32;">Opp.</div></td></tr></table>'
+                },
+                {
+                    id: 85,
+                    cat: 'bouw',
+                    title: 'Bouwhistorie Timeline',
+                    code: '<div style="position:relative;padding-left:30px;"><div style="position:absolute;left:8px;top:0;bottom:0;width:2px;background:#ccc;"></div><div style="margin-bottom:12px;"><div style="position:absolute;left:-7px;width:16px;height:16px;background:#4CAF50;border-radius:50%;border:2px solid white;"></div><b style="font-size:12px;">2020</b> - Renovatie<br><span style="font-size:11px;color:#666;">Dak vervangen</span></div><div style="position:absolute;left:-7px;top:60px;width:16px;height:16px;background:#1976D2;border-radius:50%;border:2px solid white;"></div><div style="margin-top:50px;"><b style="font-size:12px;">1986</b> - Gebouwd<br><span style="font-size:11px;color:#666;">Origineel gebouw</span></div></div>',
+                    preview: '<div style="position:relative;padding-left:20px;"><div style="position:absolute;left:5px;top:0;bottom:0;width:1px;background:#ccc;"></div><div style="position:absolute;left:-5px;width:10px;height:10px;background:#4CAF50;border-radius:50%;border:1px solid white;"></div><span style="font-size:11px;"><b>2020</b> - Renovatie</span></div>'
+                },
+
+                // ────────── INFRA (15 stuks) ──────────
+                {
+                    id: 91,
+                    cat: 'infra',
+                    title: 'Manhole Symbol',
+                    code: '<svg viewBox="0 0 100 100" style="width:80px;height:80px;"><circle cx="50" cy="50" r="45" fill="#666" stroke="#333" stroke-width="2"/><circle cx="50" cy="50" r="35" fill="#999"/><rect x="45" y="30" width="10" height="40" fill="#333" rx="1"/></svg>',
+                    preview: '<svg viewBox="0 0 100 100" style="width:60px;height:60px;"><circle cx="50" cy="50" r="45" fill="#666" stroke="#333" stroke-width="2"/><circle cx="50" cy="50" r="35" fill="#999"/><rect x="45" y="30" width="10" height="40" fill="#333" rx="1"/></svg>'
+                },
+                {
+                    id: 92,
+                    cat: 'infra',
+                    title: 'Valve Symbol',
+                    code: '<svg viewBox="0 0 100 100" style="width:70px;height:70px;"><rect x="40" y="20" width="20" height="60" fill="none" stroke="#333" stroke-width="2"/><circle cx="50" cy="50" r="15" fill="#666" stroke="#333" stroke-width="2"/><line x1="50" y1="30" x2="50" y2="50" stroke="#333" stroke-width="2"/></svg>',
+                    preview: '<svg viewBox="0 0 100 100" style="width:50px;height:50px;"><rect x="40" y="20" width="20" height="60" fill="none" stroke="#333" stroke-width="2"/><circle cx="50" cy="50" r="12" fill="#666" stroke="#333" stroke-width="2"/></svg>'
+                },
+                {
+                    id: 93,
+                    cat: 'infra',
+                    title: 'Hydrant Symbol',
+                    code: '<svg viewBox="0 0 100 100" style="width:70px;height:70px;"><rect x="35" y="30" width="30" height="50" fill="#C62828" stroke="#333" stroke-width="2" rx="3"/><circle cx="50" cy="45" r="8" fill="#333"/><rect x="40" y="15" width="20" height="15" fill="#999" stroke="#333" stroke-width="1"/></svg>',
+                    preview: '<svg viewBox="0 0 100 100" style="width:50px;height:50px;"><rect x="35" y="30" width="30" height="50" fill="#C62828" stroke="#333" stroke-width="2" rx="2"/><circle cx="50" cy="45" r="6" fill="#333"/></svg>'
+                },
+                {
+                    id: 94,
+                    cat: 'infra',
+                    title: 'Pole/Post Symbol',
+                    code: '<svg viewBox="0 0 100 100" style="width:50px;height:100px;"><rect x="40" y="10" width="20" height="80" fill="#8B7355" stroke="#333" stroke-width="1"/></svg>',
+                    preview: '<svg viewBox="0 0 100 100" style="width:30px;height:80px;"><rect x="40" y="10" width="20" height="80" fill="#8B7355" stroke="#333" stroke-width="1"/></svg>'
+                },
+                {
+                    id: 95,
+                    cat: 'infra',
+                    title: 'Street Light',
+                    code: '<svg viewBox="0 0 100 100" style="width:60px;height:90px;"><rect x="45" y="40" width="10" height="50" fill="#444" stroke="#222" stroke-width="1"/><rect x="35" y="25" width="30" height="15" fill="#FFD700" stroke="#333" stroke-width="1" rx="2"/><circle cx="50" cy="20" r="5" fill="#FFA500"/></svg>',
+                    preview: '<svg viewBox="0 0 100 100" style="width:40px;height:70px;"><rect x="45" y="40" width="10" height="50" fill="#444" stroke="#222" stroke-width="1"/><rect x="35" y="25" width="30" height="15" fill="#FFD700" stroke="#333" stroke-width="1" rx="1"/></svg>'
+                },
+                {
+                    id: 96,
+                    cat: 'infra',
+                    title: 'Transformer Symbol',
+                    code: '<svg viewBox="0 0 100 100" style="width:70px;height:70px;"><rect x="25" y="20" width="50" height="60" fill="#E8E8E8" stroke="#333" stroke-width="2" rx="2"/><circle cx="40" cy="40" r="10" fill="#999" stroke="#333" stroke-width="1"/><circle cx="60" cy="40" r="10" fill="#999" stroke="#333" stroke-width="1"/><line x1="25" y1="65" x2="75" y2="65" stroke="#333" stroke-width="2"/></svg>',
+                    preview: '<svg viewBox="0 0 100 100" style="width:50px;height:50px;"><rect x="25" y="20" width="50" height="60" fill="#E8E8E8" stroke="#333" stroke-width="2" rx="1"/><circle cx="40" cy="40" r="8" fill="#999" stroke="#333" stroke-width="1"/><circle cx="60" cy="40" r="8" fill="#999" stroke="#333" stroke-width="1"/></svg>'
+                },
+
+                // ────────── DASHBOARD (12 stuks) ──────────
+                {
+                    id: 111,
+                    cat: 'dashboard',
+                    title: 'Energy Dashboard Mini',
+                    code: '<div style="background:#f0f8ff;padding:15px;border-radius:10px;border:1px solid #B3E5FC;"><table cellpadding="6" style="width:100%;"><tr><td><b style="font-size:12px;">Verbruik</b><br><span style="font-size:18px;font-weight:bold;color:#1565C0;">247</span><br><span style="font-size:10px;">kWh</span></td><td style="border-left:1px solid #ccc;padding-left:10px;"><b style="font-size:12px;">CO₂</b><br><span style="font-size:18px;font-weight:bold;color:#4CAF50;">98</span><br><span style="font-size:10px;">kg</span></td></tr></table></div>',
+                    preview: '<div style="background:#f0f8ff;padding:12px;border-radius:8px;border:1px solid #B3E5FC;"><table cellpadding="4" style="width:100;font-size:11px;"><tr><td><b>Verbruik</b><br><span style="font-size:14px;font-weight:bold;color:#1565C0;">247</span> kWh</td><td style="border-left:1px solid #ccc;padding-left:8px;"><b>CO₂</b><br><span style="font-size:14px;font-weight:bold;color:#4CAF50;">98</span> kg</td></tr></table></div>'
+                },
+                {
+                    id: 112,
+                    cat: 'dashboard',
+                    title: 'Flood Dashboard Mini',
+                    code: '<div style="background:#FFF3E0;padding:15px;border-radius:10px;border:1px solid #FFB74D;"><table cellpadding="6" style="width:100%;"><tr><td><b style="font-size:12px;">Waterpeil</b><br><span style="font-size:18px;font-weight:bold;color:#F57C00;">1.42</span><br><span style="font-size:10px;">m NAP</span></td><td style="border-left:1px solid #ccc;padding-left:10px;"><b style="font-size:12px;">Trend</b><br><span style="font-size:18px;font-weight:bold;">↑ +12cm</span><br><span style="font-size:10px;">per uur</span></td></tr></table></div>',
+                    preview: '<div style="background:#FFF3E0;padding:12px;border-radius:8px;border:1px solid #FFB74D;"><table cellpadding="4" style="width:100%;font-size:11px;"><tr><td><b>Peil</b><br><span style="font-size:14px;font-weight:bold;color:#F57C00;">1.42m</span></td><td style="border-left:1px solid #ccc;padding-left:8px;"><b>Trend</b><br><span style="font-size:14px;font-weight:bold;">↑+12cm</span></td></tr></table></div>'
+                },
+                {
+                    id: 113,
+                    cat: 'dashboard',
+                    title: 'Heat Stress Dashboard',
+                    code: '<div style="background:#FFEBEE;padding:15px;border-radius:10px;border:1px solid #EF9A9A;"><table cellpadding="6" style="width:100%;"><tr><td><b style="font-size:12px;">Temp</b><br><span style="font-size:18px;font-weight:bold;color:#C62828;">32</span><br><span style="font-size:10px;">°C</span></td><td style="border-left:1px solid #ccc;padding-left:10px;"><b style="font-size:12px;">Risk</b><br><span style="font-size:14px;font-weight:bold;color:#C62828;">🔴 HIGH</span></td></tr></table></div>',
+                    preview: '<div style="background:#FFEBEE;padding:12px;border-radius:8px;border:1px solid #EF9A9A;"><table cellpadding="4" style="width:100%;font-size:11px;"><tr><td><b>Temp</b><br><span style="font-size:14px;font-weight:bold;color:#C62828;">32°C</span></td><td style="border-left:1px solid #ccc;padding-left:8px;"><b>Risk</b><br><span style="font-size:12px;color:#C62828;">🔴 HIGH</span></td></tr></table></div>'
+                },
+
+                // ────────── BOMEN (12 stuks) ──────────
+                {
+                    id: 201,
+                    cat: 'bomen',
+                    title: 'Boom Icoon (Groot)',
+                    code: '<span style="font-size:3rem;">🌳</span>',
+                    preview: '<span style="font-size:2.5rem;">🌳</span>'
+                },
+                {
+                    id: 202,
+                    cat: 'bomen',
+                    title: 'Boom Paspoort (Compact)',
+                    code: '<div style="background:#E8F5E9;padding:12px;border-radius:8px;border-left:4px solid #2E7D32;"><b>🌳 Soort</b>: Eik<br><span style="font-size:11px;">Leeftijd: 42 jaar • Status: 🟢 Goed</span></div>',
+                    preview: '<div style="background:#E8F5E9;padding:10px;border-radius:8px;border-left:4px solid #2E7D32;"><b style="font-size:12px;">🌳 Eik</b><div style="font-size:10px;margin-top:2px;">42 jaar · 🟢 Goed</div></div>'
+                },
+                {
+                    id: 203,
+                    cat: 'bomen',
+                    title: 'Boom Conditie Meter (80%)',
+                    code: '<div style="margin-bottom:6px;"><b style="font-size:12px;">Toestand</b></div><div style="background:#eee;height:16px;border-radius:8px;overflow:hidden;"><div style="background:#4CAF50;height:100%;width:80%;border-radius:8px;"></div></div><span style="font-size:11px;color:#666;">80% Gezond</span>',
+                    preview: '<div style="background:#eee;height:12px;border-radius:8px;overflow:hidden;max-width:180px;"><div style="background:#4CAF50;height:100%;width:80%;border-radius:8px;"></div></div>'
+                },
+                {
+                    id: 204,
+                    cat: 'bomen',
+                    title: 'Boom Metingen Card',
+                    code: '<table cellpadding="6" style="width:100%;"><tr><td><b style="font-size:11px;">Diameter</b><br><span style="font-size:14px;font-weight:bold;">42</span> cm</td><td style="border-left:1px solid #ccc;padding-left:10px;"><b style="font-size:11px;">Hoogte</b><br><span style="font-size:14px;font-weight:bold;">18</span> m</td><td style="border-left:1px solid #ccc;padding-left:10px;"><b style="font-size:11px;">Volume</b><br><span style="font-size:14px;font-weight:bold;">89</span> m³</td></tr></table>',
+                    preview: '<table cellpadding="4" style="width:100%;font-size:10px;"><tr><td><b>⌀</b><br><span style="font-size:12px;font-weight:bold;">42cm</span></td><td style="border-left:1px solid #ccc;padding-left:6px;"><b>H</b><br><span style="font-size:12px;font-weight:bold;">18m</span></td><td style="border-left:1px solid #ccc;padding-left:6px;"><b>Vol</b><br><span style="font-size:12px;font-weight:bold;">89m³</span></td></tr></table>'
+                },
+
+                // ────────── VERKEER (12 stuks) ──────────
+                {
+                    id: 211,
+                    cat: 'verkeer',
+                    title: 'Stoplicht (Drie Kleuren)',
+                    code: '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:#2b2a26;padding:10px 12px;border-radius:12px;width:fit-content;"><div style="width:32px;height:32px;border-radius:50%;background:#C62828;"></div><div style="width:32px;height:32px;border-radius:50%;background:#666;"></div><div style="width:32px;height:32px;border-radius:50%;background:#666;"></div></div>',
+                    preview: '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;background:#2b2a26;padding:8px;border-radius:10px;width:fit-content;"><div style="width:24px;height:24px;border-radius:50%;background:#C62828;"></div><div style="width:24px;height:24px;border-radius:50%;background:#666;"></div><div style="width:24px;height:24px;border-radius:50%;background:#666;"></div></div>'
+                },
+                {
+                    id: 212,
+                    cat: 'verkeer',
+                    title: 'Verkeersdrukte (90%)',
+                    code: '<div style="background:#FFEBEE;padding:12px;border-radius:8px;border-left:4px solid #C62828;"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:20px;">🚗</span><div style="flex:1;"><b style="font-size:12px;color:#C62828;">Druk</b><div style="background:#eee;height:12px;border-radius:6px;margin-top:4px;"><div style="background:#C62828;height:100%;width:90%;border-radius:6px;"></div></div></div><span style="font-weight:600;font-size:12px;">90%</span></div></div>',
+                    preview: '<div style="background:#FFEBEE;padding:10px;border-radius:8px;border-left:3px solid #C62828;"><span style="font-size:14px;">🚗</span> <span style="font-weight:600;font-size:11px;color:#C62828;">Druk 90%</span></div>'
+                },
+
+                // ────────── UI/ICONEN (15 stuks) ──────────
+                {
+                    id: 241,
+                    cat: 'ui',
+                    title: 'Check Mark (✓)',
+                    code: '<span style="font-size:2rem;color:#4CAF50;">✓</span>',
+                    preview: '<span style="font-size:1.5rem;color:#4CAF50;">✓</span>'
+                },
+                {
+                    id: 242,
+                    cat: 'ui',
+                    title: 'Cross Mark (✗)',
+                    code: '<span style="font-size:2rem;color:#C62828;">✗</span>',
+                    preview: '<span style="font-size:1.5rem;color:#C62828;">✗</span>'
+                },
+                {
+                    id: 243,
+                    cat: 'ui',
+                    title: 'Warning Triangle (⚠)',
+                    code: '<span style="font-size:2rem;color:#FFC107;">⚠</span>',
+                    preview: '<span style="font-size:1.5rem;color:#FFC107;">⚠</span>'
+                },
+                {
+                    id: 244,
+                    cat: 'ui',
+                    title: 'Information Circle (ⓘ)',
+                    code: '<span style="font-size:2rem;color:#1976D2;">ⓘ</span>',
+                    preview: '<span style="font-size:1.5rem;color:#1976D2;">ⓘ</span>'
+                },
+                {
+                    id: 245,
+                    cat: 'ui',
+                    title: 'Arrow Right (→)',
+                    code: '<span style="font-size:2rem;">→</span>',
+                    preview: '<span style="font-size:1.5rem;">→</span>'
+                },
+                {
+                    id: 246,
+                    cat: 'ui',
+                    title: 'Trending Up (↑)',
+                    code: '<span style="font-size:2rem;color:#4CAF50;">↑</span>',
+                    preview: '<span style="font-size:1.5rem;color:#4CAF50;">↑</span>'
+                },
+                {
+                    id: 247,
+                    cat: 'ui',
+                    title: 'Trending Down (↓)',
+                    code: '<span style="font-size:2rem;color:#C62828;">↓</span>',
+                    preview: '<span style="font-size:1.5rem;color:#C62828;">↓</span>'
+                },
+
+                // ────────── SCADA (10 stuks) ──────────
+                {
+                    id: 301,
+                    cat: 'scada',
+                    title: 'SCADA Status Panel',
+                    code: '<div style="background:#1a1a1a;color:#00ff00;padding:15px;border-radius:4px;font-family:monospace;font-size:11px;border:2px solid #00ff00;"><div>SYSTEM STATUS: <b>ONLINE</b></div><div>UPTIME: <b>234d 18h</b></div><div>MEMORY: <b>78%</b></div><div style="margin-top:8px;padding-top:8px;border-top:1px solid #00ff00;"><span style="color:#ffff00;">⚠</span> CPU LOAD: 45%</div></div>',
+                    preview: '<div style="background:#1a1a1a;color:#00ff00;padding:12px;border-radius:3px;font-family:monospace;font-size:10px;border:2px solid #00ff00;"><div>STATUS: <b>ONLINE</b></div><div style="margin-top:4px;">UPTIME: <b>234d</b></div></div>'
+                },
+                {
+                    id: 302,
+                    cat: 'scada',
+                    title: 'Analog Value Display',
+                    code: '<div style="background:#2a2a2a;color:#00ff00;padding:15px;border-radius:4px;font-family:monospace;border:1px solid #333;"><div style="text-align:center;font-size:28px;font-weight:bold;letter-spacing:3px;">127.45</div><div style="text-align:center;font-size:10px;margin-top:6px;color:#999;">PRESSURE [bar]</div></div>',
+                    preview: '<div style="background:#2a2a2a;color:#00ff00;padding:10px;border-radius:3px;font-family:monospace;border:1px solid #333;"><div style="text-align:center;font-size:18px;font-weight:bold;">127.45</div><div style="text-align:center;font-size:9px;color:#999;">PRESSURE</div></div>'
+                },
+
+                // ────────── SYMBOLEN (10 stuks) ──────────
+                {
+                    id: 351,
+                    cat: 'simbols',
+                    title: 'Status Symbolen',
+                    code: '<span style="font-size:1.8rem;letter-spacing:6px;">✔️✖️➜▶️⮞</span>',
+                    preview: '<span style="font-size:1.3rem;letter-spacing:4px;">✔️✖️➜▶️</span>'
+                },
+                {
+                    id: 352,
+                    cat: 'simbols',
+                    title: 'Weer Symbolen',
+                    code: '<span style="font-size:1.8rem;letter-spacing:4px;">☀️🌤️⛅🌥️☁️🌧️⛈️❄️</span>',
+                    preview: '<span style="font-size:1.3rem;letter-spacing:3px;">☀️🌤️⛅🌧️</span>'
+                },
+                {
+                    id: 353,
+                    cat: 'simbols',
+                    title: 'Gereedschap Symbolen',
+                    code: '<span style="font-size:1.8rem;letter-spacing:4px;">🔨🪛🪚⚙️🔧</span>',
+                    preview: '<span style="font-size:1.3rem;letter-spacing:3px;">🔨🪛⚙️🔧</span>'
+                },
+            ];
+
+            // ============================================================
+            //  RENDER & INTERACTIE
+            // ============================================================
+            const grid = document.getElementById('examplesGrid');
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            let toastTimer;
+
+            function showToast(text) {
+                toastMsg.textContent = text;
+                toast.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+            }
+
+            function renderCards(filter = 'all') {
+                const filtered = allComponents.filter(c => filter === 'all' || c.cat === filter);
+                grid.innerHTML = '';
+                if (!filtered.length) {
+                    grid.innerHTML =
+                        '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#6b6557;">✦ geen componenten in deze categorie</div>';
+                    return;
+                }
+                filtered.forEach(c => {
+                    const card = document.createElement('div');
+                    card.className = 'component-card';
+                    card.innerHTML = `
+                <div class="card-meta">
+                  <span class="category-badge">${c.cat}</span>
+                  <span class="component-id">#${c.id}</span>
+                </div>
+                <div class="component-title">${c.title}</div>
+                <div class="preview-window">${c.preview || '—'}</div>
+                <div class="code-snippet">${c.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                <button class="copy-button">📋 kopieer HTML</button>
+              `;
+                    grid.appendChild(card);
+                });
+
+                // event listeners op knoppen
+                document.querySelectorAll('.copy-button').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const cardEl = e.target.closest('.component-card');
+                        const rawCode = cardEl.querySelector('.code-snippet').textContent;
+                        // unescape HTML entities terug naar echte code
+                        const txt = document.createElement('textarea');
+                        txt.innerHTML = rawCode;
+                        const decoded = txt.value;
+                        navigator.clipboard?.writeText?.(decoded).then(() => showToast(
+                            '✦ HTML-code gekopieerd')).catch(() => {
+                            const ta = document.createElement('textarea');
+                            ta.value = decoded;
+                            document.body.appendChild(ta);
+                            ta.select();
+                            document.execCommand('copy');
+                            ta.remove();
+                            showToast('✦ HTML-code gekopieerd');
+                        });
+                    });
+                });
+            }
+
+            // tab events
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove(
+                        'active'));
+                    btn.classList.add('active');
+                    renderCards(btn.dataset.cat);
+                });
+            });
+
+            // init
+            renderCards('all');
+        })();
+    </script>
+</body>
+</html>
