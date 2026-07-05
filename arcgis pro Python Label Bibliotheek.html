@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArcGIS Pro • Python Label Bibliotheek</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #faf7f2;
+            --warm-white: #fefdfb;
+            --ink: #1a1a1a;
+            --ink-light: #2c2c2c;
+            --gray: #6b6b6b;
+            --gray-light: #b0b0b0;
+            --accent: #c75b39;
+            --accent-blue: #2c5f8a;
+            --accent-green: #3d6b4f;
+            --border: #e5e0d8;
+            --border-light: #f0ece5;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.10);
+            --font-display: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'Source Serif 4', 'Lora', Georgia, serif;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: var(--cream);
+            color: var(--ink);
+            font-family: var(--font-body);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+        .masthead {
+            background: rgba(254, 253, 251, 0.94);
+            border-bottom: 1px solid var(--border);
+            padding: 2.2rem 2rem 1.6rem;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        .masthead .issue {
+            font-family: var(--font-sans);
+            font-size: 0.68rem;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+            font-weight: 400;
+        }
+        .masthead h1 {
+            font-family: var(--font-display);
+            font-size: 3.2rem;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            color: var(--ink);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+        .masthead .subtitle {
+            font-family: var(--font-body);
+            font-style: italic;
+            font-size: 1.05rem;
+            color: var(--gray);
+            font-weight: 400;
+        }
+        .masthead .decorative-rule {
+            width: 50px;
+            height: 2px;
+            background: var(--accent);
+            margin: 0.9rem auto 0;
+        }
+        /* MODE TOGGLE */
+        .mode-toggle-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.8rem;
+            background: #f5f1ea;
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 118px;
+            z-index: 98;
+            font-family: var(--font-sans);
+            font-size: 0.72rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--gray);
+        }
+        .mode-toggle {
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: 0;
+            overflow: hidden;
+            background: var(--warm-white);
+        }
+        .mode-toggle button {
+            font-family: var(--font-sans);
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 0.5rem 1.4rem;
+            border: none;
+            background: transparent;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .mode-toggle button.active-mode {
+            background: var(--ink);
+            color: var(--warm-white);
+        }
+        .mode-badge {
+            font-family: var(--font-sans);
+            font-size: 0.6rem;
+            padding: 0.2rem 0.7rem;
+            border-radius: 0;
+            background: var(--accent-green);
+            color: #fff;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+        .category-nav {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 1rem 2rem;
+            background: var(--warm-white);
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 160px;
+            z-index: 97;
+        }
+        .cat-btn {
+            font-family: var(--font-sans);
+            font-size: 0.68rem;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            padding: 0.45rem 1.1rem;
+            border: 1px solid var(--border);
+            background: var(--warm-white);
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .cat-btn:hover {
+            border-color: var(--ink);
+            color: var(--ink);
+        }
+        .cat-btn.active {
+            background: var(--ink);
+            color: var(--warm-white);
+            border-color: var(--ink);
+        }
+        .main-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2.5rem 2.5rem 5rem;
+        }
+        .section-header {
+            margin: 3.5rem 0 2rem;
+            text-align: center;
+        }
+        .section-header:first-child {
+            margin-top: 0.5rem;
+        }
+        .section-header .section-number {
+            font-family: var(--font-sans);
+            font-size: 0.62rem;
+            letter-spacing: 0.32em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+        }
+        .section-header h2 {
+            font-family: var(--font-display);
+            font-size: 2.3rem;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+            margin-bottom: 0.25rem;
+        }
+        .section-header .section-desc {
+            font-family: var(--font-body);
+            font-style: italic;
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+        .section-header .ornament {
+            color: var(--accent);
+            font-size: 1.1rem;
+            letter-spacing: 0.3em;
+            margin-top: 0.3rem;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 860px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+            .masthead h1 {
+                font-size: 2rem;
+            }
+            .main-content {
+                padding: 1.5rem 1rem 3rem;
+            }
+        }
+        .card {
+            background: var(--warm-white);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow);
+            transition: all 0.25s;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: var(--border);
+            transform: translateY(-2px);
+        }
+        .card-header {
+            padding: 1.5rem 1.8rem 0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .card-header .card-num {
+            font-family: var(--font-display);
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: var(--border);
+            line-height: 0.8;
+            flex-shrink: 0;
+        }
+        .card-header .card-info h3 {
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 0.15rem;
+            letter-spacing: -0.01em;
+        }
+        .card-header .card-info .card-desc {
+            font-family: var(--font-sans);
+            font-size: 0.68rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 400;
+        }
+        .card-code {
+            margin: 1rem 1.8rem;
+            padding: 1.2rem 1.4rem;
+            background: #f9f7f3;
+            border: 1px solid var(--border-light);
+            font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+            font-size: 0.7rem;
+            line-height: 1.7;
+            color: var(--ink-light);
+            white-space: pre-wrap;
+            word-break: break-word;
+            border-left: 3px solid var(--accent-blue);
+            overflow-x: auto;
+        }
+        .card-code .py-keyword {
+            color: #8b4513;
+            font-weight: 600;
+        }
+        .card-code .py-string {
+            color: #2c5f8a;
+        }
+        .card-code .py-tag {
+            color: #8b2500;
+        }
+        .card-code .py-func {
+            color: #6b3fa0;
+        }
+        .card-code .py-field {
+            color: #c75b39;
+            font-weight: 600;
+        }
+        .card-result {
+            margin: 0 1.8rem 1rem;
+            padding: 1rem 1.4rem;
+            background: #fcfbf8;
+            border: 1px solid var(--border-light);
+            border-left: 3px solid var(--accent-green);
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            line-height: 1.6;
+            min-height: 2.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+        }
+        .card-result .result-label {
+            font-family: var(--font-sans);
+            font-size: 0.58rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--gray-light);
+            flex-shrink: 0;
+            margin-top: 0.15rem;
+        }
+        .card-result .result-value {
+            font-weight: 500;
+            color: var(--ink);
+            white-space: pre-line;
+            word-break: break-word;
+        }
+        .card-result .result-value .result-bold {
+            font-weight: 700;
+        }
+        .card-result .result-value .result-italic {
+            font-style: italic;
+        }
+        .card-result .result-value .result-underline {
+            text-decoration: underline;
+        }
+        .card-result .result-value .result-blue {
+            color: #1a5fcc;
+        }
+        .card-result .result-value .result-red {
+            color: #cc1a1a;
+        }
+        .card-result .result-value .result-green {
+            color: #1a7a3a;
+        }
+        .card-result .result-value .result-large {
+            font-size: 1.3em;
+        }
+        .card-result .result-value .result-arial {
+            font-family: Arial, sans-serif;
+        }
+        .card-actions {
+            padding: 0.8rem 1.8rem 1.5rem;
+            display: flex;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            font-family: var(--font-sans);
+            font-size: 0.66rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 0.5rem 1.1rem;
+            border: 1px solid var(--border);
+            background: var(--warm-white);
+            color: var(--ink);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .btn:hover {
+            background: var(--ink);
+            color: var(--warm-white);
+            border-color: var(--ink);
+        }
+        .btn.copy-btn {
+            background: var(--ink);
+            color: var(--warm-white);
+            border-color: var(--ink);
+        }
+        .btn.copy-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        .btn.copy-btn.copied {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+        .btn.export-btn {
+            background: transparent;
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+        .btn.export-btn:hover {
+            background: var(--accent-blue);
+            color: #fff;
+        }
+        .page-footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--border);
+            margin-top: 3rem;
+        }
+        .page-footer .footer-rule {
+            width: 40px;
+            height: 1px;
+            background: var(--accent);
+            margin: 0 auto 1rem;
+        }
+        .page-footer p {
+            font-family: var(--font-sans);
+            font-size: 0.68rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--gray-light);
+        }
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            z-index: 200;
+            transition: width 0.15s;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+
+    <header class="masthead">
+        <div class="issue">Vol. 2 • 2026 • ArcGIS Pro Editie</div>
+        <h1>Python Label Bibliotheek</h1>
+        <p class="subtitle">55 voorbeelden — correcte ArcGIS Pro syntax met werkende preview</p>
+        <div class="decorative-rule"></div>
+    </header>
+
+    <!-- MODE TOGGLE -->
+    <div class="mode-toggle-bar">
+        <span>🏷 Weergave:</span>
+        <div class="mode-toggle" id="modeToggle">
+            <button class="active-mode" data-mode="ui">UI Mode [VELD]</button>
+            <button data-mode="arcgis">ArcGIS Mode !VELD!</button>
+        </div>
+        <span class="mode-badge" id="modeBadge">UI</span>
+    </div>
+
+    <nav class="category-nav" id="categoryNav">
+        <button class="cat-btn active" data-cat="all">Alles</button>
+        <button class="cat-btn" data-cat="basis">Basis</button>
+        <button class="cat-btn" data-cat="opmaak">Opmaak</button>
+        <button class="cat-btn" data-cat="tekst">Tekst</button>
+        <button class="cat-btn" data-cat="getallen">Getallen</button>
+        <button class="cat-btn" data-cat="logica">Logica</button>
+        <button class="cat-btn" data-cat="symbolen">Symbolen</button>
+        <button class="cat-btn" data-cat="templates">Templates</button>
+    </nav>
+
+    <main class="main-content" id="mainContent"></main>
+
+    <footer class="page-footer">
+        <div class="footer-rule"></div>
+        <p>ArcGIS Pro Label Bibliotheek • Correcte Python parser syntax • <span style="color:var(--accent);">!VELD!</span> formaat</p>
+    </footer>
+
+    <script>
+        (function() {
+            const progressBar = document.getElementById('progressBar');
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+                progressBar.style.width = progress + '%';
+            });
+
+            // ========== STATE ==========
+            let currentMode = 'ui'; // 'ui' of 'arcgis'
+            let currentCat = 'all';
+
+            // ========== ALLE VOORBEELDEN (correcte ArcGIS syntax) ==========
+            const examples = [{
+                id: 1,
+                cat: 'basis',
+                title: 'Eén veld',
+                desc: 'Toon één veld als label',
+                codeUI: 'def FindLabel(NAME):\n    return NAME',
+                codeArcGIS: 'def FindLabel(!NAME!):\n    return !NAME!',
+                resultHTML: 'Amsterdam'
+            }, {
+                id: 2,
+                cat: 'basis',
+                title: 'Twee velden',
+                desc: 'Combineer twee velden met nieuwe regel',
+                codeUI: 'def FindLabel(NAME, TYPE):\n    return NAME + "\\n" + TYPE',
+                codeArcGIS: 'def FindLabel(!NAME!, !TYPE!):\n    return !NAME! + "\\n" + !TYPE!',
+                resultHTML: 'Amsterdam<br>Hoofdstad'
+            }, {
+                id: 3,
+                cat: 'basis',
+                title: 'Drie regels',
+                desc: 'Drie velden onder elkaar',
+                codeUI: 'def FindLabel(NAME, STATUS, POP):\n    return NAME + "\\n" + STATUS + "\\n" + POP',
+                codeArcGIS: 'def FindLabel(!NAME!, !STATUS!, !POP!):\n    return !NAME! + "\\n" + !STATUS! + "\\n" + !POP!',
+                resultHTML: 'Amsterdam<br>Hoofdstad<br>872000'
+            }, {
+                id: 4,
+                cat: 'basis',
+                title: 'Lege regel tussen velden',
+                desc: 'Dubbele nieuwe regel voor witruimte',
+                codeUI: 'def FindLabel(NAME, TYPE):\n    return NAME + "\\n\\n" + TYPE',
+                codeArcGIS: 'def FindLabel(!NAME!, !TYPE!):\n    return !NAME! + "\\n\\n" + !TYPE!',
+                resultHTML: 'Amsterdam<br><br>Hoofdstad'
+            }, {
+                id: 5,
+                cat: 'basis',
+                title: 'Prefix toevoegen',
+                desc: 'Voeg een vast voorvoegsel toe',
+                codeUI: 'def FindLabel(PRICE):\n    return "€ " + PRICE',
+                codeArcGIS: 'def FindLabel(!PRICE!):\n    return "€ " + !PRICE!',
+                resultHTML: '€ 250'
+            }, {
+                id: 6,
+                cat: 'basis',
+                title: 'Suffix toevoegen',
+                desc: 'Voeg een vaste tekst achter het veld',
+                codeUI: 'def FindLabel(POP):\n    return POP + " inwoners"',
+                codeArcGIS: 'def FindLabel(!POP!):\n    return !POP! + " inwoners"',
+                resultHTML: '872000 inwoners'
+            }, {
+                id: 7,
+                cat: 'opmaak',
+                title: 'Vet (Bold)',
+                desc: 'Maak tekst vet met ArcGIS tags',
+                codeUI: 'def FindLabel(NAME):\n    return "<BOL>" + NAME + "</BOL>"',
+                codeArcGIS: 'def FindLabel(!NAME!):\n    return "<BOL>" + !NAME! + "</BOL>"',
+                resultHTML: '<span class="result-bold">Amsterdam</span>'
+            }, {
+                id: 8,
+                cat: 'opmaak',
+                title: 'Cursief (Italic)',
+                desc: 'Maak tekst cursief',
+                codeUI: 'def FindLabel(TYPE):\n    return "<ITA>" + TYPE + "</ITA>"',
+                codeArcGIS: 'def FindLabel(!TYPE!):\n    return "<ITA>" + !TYPE! + "</ITA>"',
+                resultHTML: '<span class="result-italic">Hoofdstad</span>'
+            }, {
+                id: 9,
+                cat: 'opmaak',
+                title: 'Onderstrepen',
+                desc: 'Onderstreep de tekst',
+                codeUI: 'def FindLabel(POP):\n    return "<UND>" + POP + "</UND>"',
+                codeArcGIS: 'def FindLabel(!POP!):\n    return "<UND>" + !POP! + "</UND>"',
+                resultHTML: '<span class="result-underline">872000</span>'
+            }, {
+                id: 10,
+                cat: 'opmaak',
+                title: 'Blauwe tekst',
+                desc: 'Kleur de tekst blauw met RGB',
+                codeUI: "def FindLabel(NAME):\n    return \"<CLR RED='0' GREEN='80' BLUE='200'>\" + NAME + \"</CLR>\"",
+                codeArcGIS: "def FindLabel(!NAME!):\n    return \"<CLR RED='0' GREEN='80' BLUE='200'>\" + !NAME! + \"</CLR>\"",
+                resultHTML: '<span class="result-blue">Amsterdam</span>'
+            }, {
+                id: 11,
+                cat: 'opmaak',
+                title: 'Rode tekst',
+                desc: 'Kleur de tekst rood',
+                codeUI: "def FindLabel(NAME):\n    return \"<CLR RED='255' GREEN='0' BLUE='0'>\" + NAME + \"</CLR>\"",
+                codeArcGIS: "def FindLabel(!NAME!):\n    return \"<CLR RED='255' GREEN='0' BLUE='0'>\" + !NAME! + \"</CLR>\"",
+                resultHTML: '<span class="result-red">Amsterdam</span>'
+            }, {
+                id: 12,
+                cat: 'opmaak',
+                title: 'Groene tekst',
+                desc: 'Kleur de tekst groen',
+                codeUI: "def FindLabel(NAME):\n    return \"<CLR RED='0' GREEN='150' BLUE='0'>\" + NAME + \"</CLR>\"",
+                codeArcGIS: "def FindLabel(!NAME!):\n    return \"<CLR RED='0' GREEN='150' BLUE='0'>\" + !NAME! + \"</CLR>\"",
+                resultHTML: '<span class="result-green">Amsterdam</span>'
+            }, {
+                id: 13,
+                cat: 'opmaak',
+                title: 'Vet + Blauw',
+                desc: 'Combineer meerdere opmaaktags',
+                codeUI: "def FindLabel(NAME):\n    return \"<BOL><CLR RED='0' GREEN='90' BLUE='255'>\" + NAME + \"</CLR></BOL>\"",
+                codeArcGIS: "def FindLabel(!NAME!):\n    return \"<BOL><CLR RED='0' GREEN='90' BLUE='255'>\" + !NAME! + \"</CLR></BOL>\"",
+                resultHTML: '<span class="result-bold result-blue">Amsterdam</span>'
+            }, {
+                id: 14,
+                cat: 'opmaak',
+                title: 'Groot lettertype',
+                desc: 'Vergroot het lettertype naar 18',
+                codeUI: "def FindLabel(NAME):\n    return \"<FNT size='18'>\" + NAME + \"</FNT>\"",
+                codeArcGIS: "def FindLabel(!NAME!):\n    return \"<FNT size='18'>\" + !NAME! + \"</FNT>\"",
+                resultHTML: '<span class="result-large">Amsterdam</span>'
+            }, {
+                id: 15,
+                cat: 'opmaak',
+                title: 'Ander lettertype',
+                desc: 'Verander het lettertype naar Arial',
+                codeUI: "def FindLabel(NAME):\n    return \"<FNT name='Arial'>\" + NAME + \"</FNT>\"",
+                codeArcGIS: "def FindLabel(!NAME!):\n    return \"<FNT name='Arial'>\" + !NAME! + \"</FNT>\"",
+                resultHTML: '<span class="result-arial">Amsterdam</span>'
+            }, {
+                id: 16,
+                cat: 'tekst',
+                title: 'UPPERCASE',
+                desc: 'Alles in hoofdletters',
+                codeUI: 'def FindLabel(CITY):\n    return CITY.upper()',
+                codeArcGIS: 'def FindLabel(!CITY!):\n    return !CITY!.upper()',
+                resultHTML: 'AMSTERDAM'
+            }, {
+                id: 17,
+                cat: 'tekst',
+                title: 'lowercase',
+                desc: 'Alles in kleine letters',
+                codeUI: 'def FindLabel(CITY):\n    return CITY.lower()',
+                codeArcGIS: 'def FindLabel(!CITY!):\n    return !CITY!.lower()',
+                resultHTML: 'amsterdam'
+            }, {
+                id: 18,
+                cat: 'tekst',
+                title: 'Title Case',
+                desc: 'Elk woord begint met hoofdletter',
+                codeUI: 'def FindLabel(CITY):\n    return CITY.title()',
+                codeArcGIS: 'def FindLabel(!CITY!):\n    return !CITY!.title()',
+                resultHTML: 'Den Helder'
+            }, {
+                id: 19,
+                cat: 'tekst',
+                title: 'Split — eerste woord',
+                desc: 'Het eerste woord uit een tekst halen (safe)',
+                codeUI: 'def FindLabel(CITY):\n    parts = CITY.split(" ")\n    if len(parts) > 1:\n        return parts[0]\n    return CITY',
+                codeArcGIS: 'def FindLabel(!CITY!):\n    parts = !CITY!.split(" ")\n    if len(parts) > 1:\n        return parts[0]\n    return !CITY!',
+                resultHTML: 'Den'
+            }, {
+                id: 20,
+                cat: 'tekst',
+                title: 'Split — laatste woord',
+                desc: 'Het laatste woord uit een tekst halen (safe)',
+                codeUI: 'def FindLabel(CITY):\n    parts = CITY.split(" ")\n    return parts[-1]',
+                codeArcGIS: 'def FindLabel(!CITY!):\n    parts = !CITY!.split(" ")\n    return parts[-1]',
+                resultHTML: 'Helder'
+            }, {
+                id: 21,
+                cat: 'tekst',
+                title: 'Replace',
+                desc: 'Vervang een deel van de tekst',
+                codeUI: 'def FindLabel(NAME):\n    return NAME.replace("straat", "str.")',
+                codeArcGIS: 'def FindLabel(!NAME!):\n    return !NAME!.replace("straat", "str.")',
+                resultHTML: 'Damrakstr.'
+            }, {
+                id: 22,
+                cat: 'tekst',
+                title: 'Strip (witruimte)',
+                desc: 'Verwijder spaties aan begin en eind',
+                codeUI: 'def FindLabel(NAME):\n    return NAME.strip()',
+                codeArcGIS: 'def FindLabel(!NAME!):\n    return !NAME!.strip()',
+                resultHTML: 'Amsterdam'
+            }, {
+                id: 23,
+                cat: 'tekst',
+                title: 'Eerste 5 letters',
+                desc: 'Alleen de eerste 5 karakters',
+                codeUI: 'def FindLabel(NAME):\n    return NAME[:5]',
+                codeArcGIS: 'def FindLabel(!NAME!):\n    return !NAME![:5]',
+                resultHTML: 'Amste'
+            }, {
+                id: 24,
+                cat: 'tekst',
+                title: 'Laatste 5 letters',
+                desc: 'Alleen de laatste 5 karakters',
+                codeUI: 'def FindLabel(NAME):\n    return NAME[-5:]',
+                codeArcGIS: 'def FindLabel(!NAME!):\n    return !NAME![-5:]',
+                resultHTML: 'erdam'
+            }, {
+                id: 25,
+                cat: 'tekst',
+                title: 'Lengte van tekst',
+                desc: 'Het aantal karakters tellen',
+                codeUI: 'def FindLabel(NAME):\n    return str(len(NAME))',
+                codeArcGIS: 'def FindLabel(!NAME!):\n    return str(len(!NAME!))',
+                resultHTML: '9'
+            }, {
+                id: 26,
+                cat: 'tekst',
+                title: 'Samenvoegen met streepje',
+                desc: 'Velden samenvoegen met scheidingsteken',
+                codeUI: 'def FindLabel(A, B):\n    return " — ".join([A, B])',
+                codeArcGIS: 'def FindLabel(!A!, !B!):\n    return " — ".join([!A!, !B!])',
+                resultHTML: 'Amsterdam — Hoofdstad'
+            }, {
+                id: 27,
+                cat: 'getallen',
+                title: 'Afronden op 1 decimaal',
+                desc: 'Rond een getal af op 1 decimaal',
+                codeUI: 'def FindLabel(HEIGHT):\n    return str(round(float(HEIGHT), 1)) + " m"',
+                codeArcGIS: 'def FindLabel(!HEIGHT!):\n    return str(round(float(!HEIGHT!), 1)) + " m"',
+                resultHTML: '12.5 m'
+            }, {
+                id: 28,
+                cat: 'getallen',
+                title: 'Afronden op 2 decimalen',
+                desc: 'Rond een getal af op 2 decimalen',
+                codeUI: 'def FindLabel(HEIGHT):\n    return str(round(float(HEIGHT), 2)) + " m"',
+                codeArcGIS: 'def FindLabel(!HEIGHT!):\n    return str(round(float(!HEIGHT!), 2)) + " m"',
+                resultHTML: '12.50 m'
+            }, {
+                id: 29,
+                cat: 'getallen',
+                title: 'Percentage',
+                desc: 'Toon een waarde als percentage',
+                codeUI: 'def FindLabel(VALUE):\n    value = float(VALUE)\n    return str(round(value * 100, 1)) + " %"',
+                codeArcGIS: 'def FindLabel(!VALUE!):\n    value = float(!VALUE!)\n    return str(round(value * 100, 1)) + " %"',
+                resultHTML: '82.0 %'
+            }, {
+                id: 30,
+                cat: 'getallen',
+                title: 'Populatie afkorten (M/K)',
+                desc: 'Afkorten naar miljoenen of duizenden',
+                codeUI: 'def FindLabel(POP):\n    pop = float(POP)\n    if pop >= 1000000:\n        return str(round(pop/1000000, 1)) + " M"\n    elif pop >= 1000:\n        return str(round(pop/1000, 1)) + " K"\n    else:\n        return str(int(pop))',
+                codeArcGIS: 'def FindLabel(!POP!):\n    pop = float(!POP!)\n    if pop >= 1000000:\n        return str(round(pop/1000000, 1)) + " M"\n    elif pop >= 1000:\n        return str(round(pop/1000, 1)) + " K"\n    else:\n        return str(int(pop))',
+                resultHTML: '872.0 K'
+            }, {
+                id: 31,
+                cat: 'getallen',
+                title: 'Getal met komma\'s',
+                desc: 'Formatteren met duizendtallen-scheiding',
+                codeUI: 'def FindLabel(POP):\n    return "{:,.0f}".format(float(POP))',
+                codeArcGIS: 'def FindLabel(!POP!):\n    return "{:,.0f}".format(float(!POP!))',
+                resultHTML: '872,000'
+            }, {
+                id: 32,
+                cat: 'getallen',
+                title: 'Oppervlakte formatteren',
+                desc: 'Oppervlakte met eenheid',
+                codeUI: 'def FindLabel(AREA):\n    return str(round(float(AREA), 2)) + " m²"',
+                codeArcGIS: 'def FindLabel(!AREA!):\n    return str(round(float(!AREA!), 2)) + " m²"',
+                resultHTML: '219.30 m²'
+            }, {
+                id: 33,
+                cat: 'logica',
+                title: 'IF — Open/Dicht',
+                desc: 'Toon een icoon op basis van status',
+                codeUI: 'def FindLabel(STATUS):\n    if STATUS == "Open":\n        return "🟢 Open"\n    else:\n        return "🔴 Gesloten"',
+                codeArcGIS: 'def FindLabel(!STATUS!):\n    if !STATUS! == "Open":\n        return "🟢 Open"\n    else:\n        return "🔴 Gesloten"',
+                resultHTML: '🟢 Open'
+            }, {
+                id: 34,
+                cat: 'logica',
+                title: 'IF ELSE — Hoog/Laag',
+                desc: 'Voorwaardelijke tekst op basis van waarde',
+                codeUI: 'def FindLabel(VALUE):\n    value = float(VALUE)\n    if value > 100:\n        return "Hoog"\n    else:\n        return "Laag"',
+                codeArcGIS: 'def FindLabel(!VALUE!):\n    value = float(!VALUE!)\n    if value > 100:\n        return "Hoog"\n    else:\n        return "Laag"',
+                resultHTML: 'Hoog'
+            }, {
+                id: 35,
+                cat: 'logica',
+                title: 'IF ELIF ELSE — Temperatuur',
+                desc: 'Meerdere voorwaarden controleren',
+                codeUI: 'def FindLabel(TEMP):\n    temp = float(TEMP)\n    if temp < 0:\n        return "❄️ Koud"\n    elif temp < 20:\n        return "🌤 Normaal"\n    else:\n        return "☀️ Warm"',
+                codeArcGIS: 'def FindLabel(!TEMP!):\n    temp = float(!TEMP!)\n    if temp < 0:\n        return "❄️ Koud"\n    elif temp < 20:\n        return "🌤 Normaal"\n    else:\n        return "☀️ Warm"',
+                resultHTML: '🌤 Normaal'
+            }, {
+                id: 36,
+                cat: 'logica',
+                title: 'Kleur op basis van waarde',
+                desc: 'Dynamische kleur — rood bij grote stad',
+                codeUI: "def FindLabel(POP):\n    pop = float(POP)\n    if pop > 100000:\n        return \"<CLR RED='255' GREEN='0' BLUE='0'>\" + str(int(pop)) + \"</CLR>\"\n    else:\n        return \"<CLR RED='0' GREEN='150' BLUE='0'>\" + str(int(pop)) + \"</CLR>\"",
+                codeArcGIS: "def FindLabel(!POP!):\n    pop = float(!POP!)\n    if pop > 100000:\n        return \"<CLR RED='255' GREEN='0' BLUE='0'>\" + str(int(pop)) + \"</CLR>\"\n    else:\n        return \"<CLR RED='0' GREEN='150' BLUE='0'>\" + str(int(pop)) + \"</CLR>\"",
+                resultHTML: '<span class="result-red">872000</span>'
+            }, {
+                id: 37,
+                cat: 'logica',
+                title: 'NULL-safe label',
+                desc: 'Voorkom lege labels met een fallback',
+                codeUI: 'def FindLabel(NAME):\n    if NAME is None or NAME == "":\n        return "Onbekend"\n    return NAME',
+                codeArcGIS: 'def FindLabel(!NAME!):\n    if !NAME! is None or !NAME! == "":\n        return "Onbekend"\n    return !NAME!',
+                resultHTML: 'Amsterdam'
+            }, {
+                id: 38,
+                cat: 'logica',
+                title: 'Vet als waarde hoog is',
+                desc: 'Voorwaardelijke opmaak bij hoge score',
+                codeUI: 'def FindLabel(VALUE):\n    value = float(VALUE)\n    if value > 50:\n        return "<BOL>" + str(value) + "</BOL>"\n    return str(value)',
+                codeArcGIS: 'def FindLabel(!VALUE!):\n    value = float(!VALUE!)\n    if value > 50:\n        return "<BOL>" + str(value) + "</BOL>"\n    return str(value)',
+                resultHTML: '<span class="result-bold">87</span>'
+            }, {
+                id: 39,
+                cat: 'logica',
+                title: 'Try/Except safe number',
+                desc: 'Vang fouten op bij getalconversie',
+                codeUI: 'def FindLabel(VALUE):\n    try:\n        v = float(VALUE)\n        return str(round(v, 1))\n    except:\n        return "—"',
+                codeArcGIS: 'def FindLabel(!VALUE!):\n    try:\n        v = float(!VALUE!)\n        return str(round(v, 1))\n    except:\n        return "—"',
+                resultHTML: '12.5'
+            }, {
+                id: 40,
+                cat: 'symbolen',
+                title: 'Boom icoon',
+                desc: 'Voeg een boom-emoji toe',
+                codeUI: 'def FindLabel(SPECIES):\n    return "🌳 " + SPECIES',
+                codeArcGIS: 'def FindLabel(!SPECIES!):\n    return "🌳 " + !SPECIES!',
+                resultHTML: '🌳 Eik'
+            }, {
+                id: 41,
+                cat: 'symbolen',
+                title: 'Gebouw icoon',
+                desc: 'Voeg een gebouw-emoji toe',
+                codeUI: 'def FindLabel(ADDRESS):\n    return "🏢 " + ADDRESS',
+                codeArcGIS: 'def FindLabel(!ADDRESS!):\n    return "🏢 " + !ADDRESS!',
+                resultHTML: '🏢 Damrak 1'
+            }, {
+                id: 42,
+                cat: 'symbolen',
+                title: 'Waarschuwing icoon',
+                desc: 'Voeg een waarschuwings-emoji toe',
+                codeUI: 'def FindLabel(STATUS):\n    return "⚠ " + STATUS',
+                codeArcGIS: 'def FindLabel(!STATUS!):\n    return "⚠ " + !STATUS!',
+                resultHTML: '⚠ Inactief'
+            }, {
+                id: 43,
+                cat: 'symbolen',
+                title: 'Vinkje',
+                desc: 'Vinkje voor goedgekeurde items',
+                codeUI: 'def FindLabel(NAME):\n    return "✔ " + NAME',
+                codeArcGIS: 'def FindLabel(!NAME!):\n    return "✔ " + !NAME!',
+                resultHTML: '✔ Amsterdam'
+            }, {
+                id: 44,
+                cat: 'templates',
+                title: 'Adreslabel',
+                desc: 'Standaard adres met straat, nummer en plaats',
+                codeUI: 'def FindLabel(STREET, NUMBER, CITY):\n    return STREET + " " + NUMBER + "\\n" + CITY',
+                codeArcGIS: 'def FindLabel(!STREET!, !NUMBER!, !CITY!):\n    return !STREET! + " " + !NUMBER! + "\\n" + !CITY!',
+                resultHTML: 'Damrak 1<br>Amsterdam'
+            }, {
+                id: 45,
+                cat: 'templates',
+                title: 'Boomlabel',
+                desc: 'Boomsoort met hoogte — vetgedrukte naam',
+                codeUI: 'def FindLabel(SPECIES, HEIGHT):\n    return "<BOL>" + SPECIES + "</BOL>\\nHoogte: " + HEIGHT + " m"',
+                codeArcGIS: 'def FindLabel(!SPECIES!, !HEIGHT!):\n    return "<BOL>" + !SPECIES! + "</BOL>\\nHoogte: " + !HEIGHT! + " m"',
+                resultHTML: '<span class="result-bold">Eik</span><br>Hoogte: 12.5 m'
+            }, {
+                id: 46,
+                cat: 'templates',
+                title: 'Energielabel',
+                desc: 'Energielabel met kleurindicatie',
+                codeUI: 'def FindLabel(ENERGY):\n    if ENERGY == "A":\n        return "🟢 A"\n    elif ENERGY == "B":\n        return "🟡 B"\n    else:\n        return "🔴 " + ENERGY',
+                codeArcGIS: 'def FindLabel(!ENERGY!):\n    if !ENERGY! == "A":\n        return "🟢 A"\n    elif !ENERGY! == "B":\n        return "🟡 B"\n    else:\n        return "🔴 " + !ENERGY!',
+                resultHTML: '🟢 A'
+            }, {
+                id: 47,
+                cat: 'templates',
+                title: 'Coördinaten (X/Y)',
+                desc: 'Toon X- en Y-coördinaten onder elkaar',
+                codeUI: 'def FindLabel(X, Y):\n    return "X: " + str(X) + "\\nY: " + str(Y)',
+                codeArcGIS: 'def FindLabel(!X!, !Y!):\n    return "X: " + str(!X!) + "\\nY: " + str(!Y!)',
+                resultHTML: 'X: 121500<br>Y: 487200'
+            }, {
+                id: 48,
+                cat: 'templates',
+                title: 'Perceel label',
+                desc: 'Kadastraal perceel overzicht',
+                codeUI: 'def FindLabel(PERCEEL, AREA, OWNER):\n    return "Perceel: " + PERCEEL + "\\nOpp: " + AREA + " m²\\nEigenaar: " + OWNER',
+                codeArcGIS: 'def FindLabel(!PERCEEL!, !AREA!, !OWNER!):\n    return "Perceel: " + !PERCEEL! + "\\nOpp: " + !AREA! + " m²\\nEigenaar: " + !OWNER!',
+                resultHTML: 'Perceel: A123<br>Opp: 450 m²<br>Eigenaar: Jansen'
+            }, {
+                id: 49,
+                cat: 'templates',
+                title: 'Wegen label',
+                desc: 'Wegnaam met maximumsnelheid',
+                codeUI: 'def FindLabel(ROADNAME, SPEED):\n    return ROADNAME + "\\n" + SPEED + " km/u"',
+                codeArcGIS: 'def FindLabel(!ROADNAME!, !SPEED!):\n    return !ROADNAME! + "\\n" + !SPEED! + " km/u"',
+                resultHTML: 'A10<br>100 km/u'
+            }, {
+                id: 50,
+                cat: 'templates',
+                title: 'Watergang label',
+                desc: 'Watergang met breedte en emoji',
+                codeUI: 'def FindLabel(NAME, WIDTH):\n    return "💧 " + NAME + "\\nBreedte: " + WIDTH + " m"',
+                codeArcGIS: 'def FindLabel(!NAME!, !WIDTH!):\n    return "💧 " + !NAME! + "\\nBreedte: " + !WIDTH! + " m"',
+                resultHTML: '💧 Amstel<br>Breedte: 25 m'
+            }, {
+                id: 51,
+                cat: 'templates',
+                title: 'Kabels & leidingen',
+                desc: 'Kabeltype met voltage',
+                codeUI: 'def FindLabel(TYPE, VOLTAGE):\n    return "⚡ " + TYPE + "\\n" + VOLTAGE + " kV"',
+                codeArcGIS: 'def FindLabel(!TYPE!, !VOLTAGE!):\n    return "⚡ " + !TYPE! + "\\n" + !VOLTAGE! + " kV"',
+                resultHTML: '⚡ Hoogspanning<br>150 kV'
+            }, {
+                id: 52,
+                cat: 'templates',
+                title: 'Status label',
+                desc: 'Status met duidelijk icoon',
+                codeUI: 'def FindLabel(STATUS):\n    if STATUS == "actief":\n        return "✔ Actief"\n    elif STATUS == "inactief":\n        return "✖ Inactief"\n    else:\n        return "⚠ Onbekend"',
+                codeArcGIS: 'def FindLabel(!STATUS!):\n    if !STATUS! == "actief":\n        return "✔ Actief"\n    elif !STATUS! == "inactief":\n        return "✖ Inactief"\n    else:\n        return "⚠ Onbekend"',
+                resultHTML: '✔ Actief'
+            }, {
+                id: 53,
+                cat: 'templates',
+                title: 'Slimme stad label',
+                desc: 'POP + naam + classificatie',
+                codeUI: 'def FindLabel(NAME, POP):\n    pop = float(POP)\n    if pop > 100000:\n        level = "Grote stad"\n    else:\n        level = "Kleine stad"\n    return NAME + "\\n" + level',
+                codeArcGIS: 'def FindLabel(!NAME!, !POP!):\n    pop = float(!POP!)\n    if pop > 100000:\n        level = "Grote stad"\n    else:\n        level = "Kleine stad"\n    return !NAME! + "\\n" + level',
+                resultHTML: 'Amsterdam<br>Grote stad'
+            }, {
+                id: 54,
+                cat: 'templates',
+                title: 'Gebouw hoogte klasse',
+                desc: 'Classificeer gebouwen op hoogte',
+                codeUI: 'def FindLabel(NAME, HEIGHT):\n    h = float(HEIGHT)\n    if h > 50:\n        return NAME + "\\n🏢 Hoog"\n    elif h > 20:\n        return NAME + "\\n🏠 Middel"\n    else:\n        return NAME + "\\n🏡 Laag"',
+                codeArcGIS: 'def FindLabel(!NAME!, !HEIGHT!):\n    h = float(!HEIGHT!)\n    if h > 50:\n        return !NAME! + "\\n🏢 Hoog"\n    elif h > 20:\n        return !NAME! + "\\n🏠 Middel"\n    else:\n        return !NAME! + "\\n🏡 Laag"',
+                resultHTML: 'Amsterdam<br>🏢 Hoog'
+            }, {
+                id: 55,
+                cat: 'templates',
+                title: 'Score label met kleur',
+                desc: 'Kleurindicator op basis van score',
+                codeUI: 'def FindLabel(NAME, SCORE):\n    s = float(SCORE)\n    if s > 80:\n        return "🟢 " + NAME\n    elif s > 50:\n        return "🟡 " + NAME\n    else:\n        return "🔴 " + NAME',
+                codeArcGIS: 'def FindLabel(!NAME!, !SCORE!):\n    s = float(!SCORE!)\n    if s > 80:\n        return "🟢 " + !NAME!\n    elif s > 50:\n        return "🟡 " + !NAME!\n    else:\n        return "🔴 " + !NAME!',
+                resultHTML: '🟢 Amsterdam'
+            }];
+
+            // ========== RENDER ==========
+            const mainContent = document.getElementById('mainContent');
+
+            function getCode(ex) {
+                return currentMode === 'ui' ? ex.codeUI : ex.codeArcGIS;
+            }
+
+            function renderExamples(filterCat = 'all') {
+                mainContent.innerHTML = '';
+                const filtered = filterCat === 'all' ?
+                    examples :
+                    examples.filter(ex => ex.cat === filterCat);
+
+                const categories = {};
+                filtered.forEach(ex => {
+                    if (!categories[ex.cat]) categories[ex.cat] = [];
+                    categories[ex.cat].push(ex);
+                });
+
+                const catMeta = {
+                    'basis': { title: 'Basis Labels', desc: 'Eenvoudige veldcombinaties en teksten',
+                        num: 'I', ornament: '— ✦ —' },
+                    'opmaak': { title: 'Opmaak Tags', desc: 'ArcGIS Pro formatting tags voor stijl',
+                        num: 'II', ornament: '— ◈ —' },
+                    'tekst': { title: 'Tekst Functies', desc: 'Python string manipulatie voor labels',
+                        num: 'III', ornament: '— ❖ —' },
+                    'getallen': { title: 'Getallen', desc: 'Afronden, formatteren en eenheden', num: 'IV',
+                        ornament: '— ◇ —' },
+                    'logica': { title: 'Logica & Voorwaarden', desc: 'IF, ELSE en dynamische labels',
+                        num: 'V', ornament: '— ◆ —' },
+                    'symbolen': { title: 'Symbolen & Emoji\'s', desc: 'Visuele markeringen toevoegen',
+                        num: 'VI', ornament: '— ✧ —' },
+                    'templates': { title: 'Kant-en-klare Templates', desc: 'Complete labels voor GIS-projecten',
+                        num: 'VII', ornament: '— ⬩ —' }
+                };
+
+                for (const [cat, exs] of Object.entries(categories)) {
+                    const meta = catMeta[cat] || { title: cat, desc: '', num: '', ornament: '' };
+                    const sectionHeader = document.createElement('div');
+                    sectionHeader.className = 'section-header';
+                    sectionHeader.id = 'cat-' + cat;
+                    sectionHeader.innerHTML = `
+                        <div class="section-number">Hoofdstuk ${meta.num}</div>
+                        <h2>${meta.title}</h2>
+                        <p class="section-desc">${meta.desc}</p>
+                        <div class="ornament">${meta.ornament}</div>
+                    `;
+                    mainContent.appendChild(sectionHeader);
+
+                    const grid = document.createElement('div');
+                    grid.className = 'card-grid';
+
+                    exs.forEach((ex, idx) => {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        const code = getCode(ex);
+                        card.innerHTML = `
+                            <div class="card-header">
+                                <div class="card-num">${String(idx + 1).padStart(2, '0')}</div>
+                                <div class="card-info">
+                                    <h3>${ex.title}</h3>
+                                    <p class="card-desc">${ex.desc}</p>
+                                </div>
+                            </div>
+                            <div class="card-code">${highlightPython(code)}</div>
+                            <div class="card-result">
+                                <span class="result-label">Resultaat</span>
+                                <span class="result-value">${ex.resultHTML}</span>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn copy-btn" data-code="${escapeHTML(code)}">📋 Kopieer code</button>
+                                <button class="btn export-btn" data-code-ui="${escapeHTML(ex.codeUI)}" data-code-arcgis="${escapeHTML(ex.codeArcGIS)}">🔄 ArcGIS Export</button>
+                            </div>
+                        `;
+                        grid.appendChild(card);
+                    });
+                    mainContent.appendChild(grid);
+                }
+
+                // Bind kopieer knoppen
+                document.querySelectorAll('.copy-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const code = this.getAttribute('data-code');
+                        navigator.clipboard.writeText(unescapeHTML(code)).then(() => {
+                            this.textContent = '✓ Gekopieerd';
+                            this.classList.add('copied');
+                            setTimeout(() => {
+                                this.textContent = '📋 Kopieer code';
+                                this.classList.remove('copied');
+                            }, 1800);
+                        });
+                    });
+                });
+
+                // Bind export knoppen (altijd ArcGIS formaat kopiëren)
+                document.querySelectorAll('.export-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const codeArcGIS = this.getAttribute('data-code-arcgis');
+                        navigator.clipboard.writeText(unescapeHTML(codeArcGIS)).then(() => {
+                            this.textContent = '✓ ArcGIS code gekopieerd';
+                            this.style.background = '#3d6b4f';
+                            this.style.color = '#fff';
+                            this.style.borderColor = '#3d6b4f';
+                            setTimeout(() => {
+                                this.textContent = '🔄 ArcGIS Export';
+                                this.style.background = 'transparent';
+                                this.style.color = '#2c5f8a';
+                                this.style.borderColor = '#2c5f8a';
+                            }, 1800);
+                        });
+                    });
+                });
+            }
+
+            function highlightPython(code) {
+                return code
+                    .replace(/\b(def|return|if|elif|else|is|not|None|and|or|try|except|import|as|in)\b/g,
+                        '<span class="py-keyword">$1</span>')
+                    .replace(/(&lt;\/?[A-Z]+[^&]*&gt;)/g, '<span class="py-tag">$1</span>')
+                    .replace(/(&quot;[^&]*&quot;)/g, '<span class="py-string">$1</span>')
+                    .replace(/\b(str|int|float|round|len|abs|min|max|bool|hex|bin|oct)\b/g,
+                        '<span class="py-func">$1</span>')
+                    .replace(/(\.upper\(\)|\.lower\(\)|\.title\(\)|\.capitalize\(\)|\.strip\(\)|\.split\(|\.replace\(|\.join\(|\.startswith\(|\.endswith\(|\.find\(|\.count\(|\.zfill\(|\.center\(|\.ljust\(|\.rjust\(|\.swapcase\(\))/g,
+                        '<span class="py-func">$1</span>')
+                    .replace(/(!([A-Z_]+)!)/g, '<span class="py-field">$1</span>');
+            }
+
+            function escapeHTML(str) {
+                return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g,
+                    '&quot;').replace(/'/g, '&#039;');
+            }
+
+            function unescapeHTML(str) {
+                return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g,
+                    '"').replace(/&#039;/g, "'");
+            }
+
+            // ========== MODE TOGGLE ==========
+            document.getElementById('modeToggle').addEventListener('click', function(e) {
+                if (e.target.tagName === 'BUTTON') {
+                    document.querySelectorAll('#modeToggle button').forEach(b => b.classList.remove(
+                        'active-mode'));
+                    e.target.classList.add('active-mode');
+                    currentMode = e.target.getAttribute('data-mode');
+                    document.getElementById('modeBadge').textContent = currentMode === 'ui' ? 'UI' :
+                        'ArcGIS';
+                    renderExamples(currentCat);
+                }
+            });
+
+            // ========== CATEGORIE NAVIGATIE ==========
+            document.getElementById('categoryNav').addEventListener('click', function(e) {
+                if (e.target.classList.contains('cat-btn')) {
+                    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentCat = e.target.getAttribute('data-cat');
+                    renderExamples(currentCat);
+                    window.scrollTo({ top: 280, behavior: 'smooth' });
+                }
+            });
+
+            // ========== INIT ==========
+            renderExamples('all');
+        })();
+    </script>
+</body>
+</html>
