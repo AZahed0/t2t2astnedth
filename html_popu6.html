@@ -1,0 +1,769 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ArcGIS · popup bibliotheek · Uitgebreid</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f3efe7;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            color: #2e2c28;
+            line-height: 1.5;
+            padding: 2rem 1.5rem;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="1" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.04"/></svg>');
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .library {
+            max-width: 1400px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-card {
+            background: #fdfbf6;
+            border-radius: 6px 38px 6px 38px;
+            padding: 1.75rem 2rem;
+            margin-bottom: 2.5rem;
+            border: 1px solid rgba(178, 170, 148, 0.25);
+            box-shadow: 0 1px 4px rgba(62, 55, 40, 0.04);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .header-card:hover {
+            background: #faf7f0;
+            border-color: rgba(168, 158, 132, 0.35);
+            box-shadow: 0 4px 14px rgba(62, 55, 40, 0.05);
+        }
+
+        .title-block {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .circle-icon {
+            width: 52px;
+            height: 52px;
+            background: #e8e2d5;
+            border-radius: 6px 34px 6px 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            border: 1px solid #cdc4b2;
+            color: #5f5a4c;
+            flex-shrink: 0;
+        }
+
+        .title-text h1 {
+            font-weight: 400;
+            font-size: 1.9rem;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .stamp-badge {
+            border: 1px solid rgba(162, 150, 128, 0.4);
+            background: rgba(232, 224, 210, 0.5);
+            border-radius: 4px 20px 4px 20px;
+            padding: 0.15rem 0.9rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #635e51;
+            letter-spacing: 0.2px;
+        }
+
+        .sub-line {
+            color: #6b6557;
+            font-size: 0.9rem;
+            font-weight: 300;
+            margin-top: 0.2rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box input {
+            background: #eae4d8;
+            border: 1px solid #d6cebc;
+            border-radius: 6px 20px 6px 20px;
+            padding: 0.5rem 1rem 0.5rem 2.2rem;
+            font-size: 0.85rem;
+            color: #2e2c26;
+            outline: none;
+            width: 200px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .search-box input:focus {
+            background: #fdfbf6;
+            border-color: #a89e84;
+            width: 240px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .search-box span {
+            position: absolute;
+            left: 0.8rem;
+            font-size: 0.9rem;
+            color: #8b8574;
+            pointer-events: none;
+        }
+
+        .status-dot {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #eae4d8;
+            border-radius: 6px 34px 6px 34px;
+            padding: 0.5rem 1.4rem;
+            font-size: 0.8rem;
+            color: #5a5547;
+            border: 1px solid #d6cebc;
+            white-space: nowrap;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #8f9e8b;
+            border-radius: 50%;
+        }
+
+        .tabs-wrapper {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        .tabs-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 0.5rem 1.2rem;
+            border-radius: 4px 22px 4px 22px;
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: #5f5a4e;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(242, 237, 228, 0.6);
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            background: #e0d8c8;
+            border-color: rgba(158, 148, 128, 0.3);
+            color: #2e2c26;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .tab-btn:not(.active):hover {
+            background: rgba(228, 220, 206, 0.7);
+            border-color: rgba(178, 164, 142, 0.25);
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .component-card {
+            background: #fdfbf6;
+            border-radius: 6px 28px 6px 28px;
+            border: 1px solid rgba(178, 168, 146, 0.25);
+            padding: 1.4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 0 2px 6px rgba(62, 55, 40, 0.03);
+            transition: all 0.2s ease;
+        }
+
+        .component-card:hover {
+            background: #faf7f0;
+            border-color: rgba(158, 148, 128, 0.4);
+            box-shadow: 0 8px 24px rgba(62, 55, 40, 0.06);
+            transform: translateY(-2px);
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-badge {
+            background: #e2dacb;
+            color: #4f4a3e;
+            font-size: 0.65rem;
+            padding: 0.2rem 0.9rem;
+            border-radius: 4px 18px 4px 18px;
+            border: 1px solid rgba(168, 156, 132, 0.25);
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .component-id {
+            font-size: 0.7rem;
+            color: #8b8574;
+            font-family: monospace;
+        }
+
+        .component-title {
+            font-weight: 500;
+            font-size: 1.05rem;
+            color: #2e2c26;
+            letter-spacing: -0.2px;
+        }
+
+        .preview-window {
+            background: #faf7f1;
+            border-radius: 5px 18px 5px 18px;
+            border: 1px solid rgba(174, 164, 144, 0.2);
+            padding: 1.2rem;
+            min-height: 80px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            overflow: hidden;
+            background-image: radial-gradient(rgba(178, 170, 148, 0.2) 1px, transparent 1px);
+            background-size: 15px 15px;
+        }
+
+        .code-snippet {
+            background: #ede7dc;
+            border-radius: 4px 16px 4px 16px;
+            padding: 0.9rem 1rem;
+            font-family: 'Fira Code', 'SF Mono', 'Courier New', monospace;
+            font-size: 0.7rem;
+            line-height: 1.6;
+            color: #3e3b34;
+            border: 1px solid rgba(168, 158, 138, 0.2);
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-x: auto;
+            max-height: 140px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .copy-button {
+            width: 100%;
+            background: rgba(232, 224, 210, 0.5);
+            border: 1px solid rgba(158, 148, 128, 0.3);
+            padding: 0.6rem 1rem;
+            border-radius: 4px 20px 4px 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #4f4a3e;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.2px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .copy-button:hover {
+            background: #e0d8c8;
+            border-color: #a89e84;
+            color: #1a1916;
+        }
+
+        .footer-note {
+            margin-top: 3rem;
+            background: #fdfbf6;
+            border-radius: 6px 36px 6px 36px;
+            padding: 1.2rem 2rem;
+            border: 1px solid rgba(178, 168, 146, 0.2);
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #6b6557;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #2e2c26;
+            color: #fdfbf6;
+            padding: 0.8rem 2rem;
+            border-radius: 6px 30px 6px 30px;
+            border: 1px solid #1a1916;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            opacity: 0;
+            transform: translateY(2rem);
+            transition: opacity 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #8b8574;
+            background: rgba(253, 251, 246, 0.5);
+            border-radius: 6px 40px 6px 40px;
+            border: 1px dashed rgba(178, 168, 146, 0.4);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e8e2d5;
+            border-radius: 20px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c2b5a5;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="library">
+
+        <!-- ========== HEADER ========== -->
+        <div class="header-card">
+            <div class="title-block">
+                <div class="circle-icon">🗺️</div>
+                <div class="title-text">
+                    <h1>
+                        ArcGIS · popup bibliotheek
+                        <span class="stamp-badge">100+ componenten</span>
+                    </h1>
+                    <div class="sub-line">Gebruik Arcade & HTML om professionele dashboards en Digital Twins in je popups te bouwen.</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="search-box">
+                    <span>🔍</span>
+                    <input type="text" id="searchInput" placeholder="Zoek componenten...">
+                </div>
+                <div class="status-dot">
+                    <span class="dot"></span> HTML, Flexbox, SVG & Inline CSS
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== TABS ========== -->
+        <div class="tabs-wrapper" id="tabsContainer">
+            <button class="tab-btn active" data-cat="all">📌 alle</button>
+            <button class="tab-btn" data-cat="dashboards">📈 dashboards</button>
+            <button class="tab-btn" data-cat="charts">📊 charts</button>
+            <button class="tab-btn" data-cat="svg">📐 SVG & Iconen</button>
+            <button class="tab-btn" data-cat="grid">🔲 layout</button>
+            <button class="tab-btn" data-cat="infra">🛣️ Infra & GIS</button>
+            <button class="tab-btn" data-cat="gebouw">🏢 Gebouwen & BIM</button>
+            <button class="tab-btn" data-cat="interactief">🖱️ interactief</button>
+            <button class="tab-btn" data-cat="badges">🏷️ badges</button>
+            <button class="tab-btn" data-cat="cards">📦 cards</button>
+            <button class="tab-btn" data-cat="project">💼 project</button>
+            <button class="tab-btn" data-cat="bag">🏠 BAG</button>
+        </div>
+
+        <!-- ========== GRID ========== -->
+        <div class="examples-grid" id="examplesGrid">
+            <!-- Componenten worden hier door JavaScript ingeladen -->
+        </div>
+
+        <!-- ========== FOOTER ========== -->
+        <div class="footer-note">
+            <span>✦ Klik op "kopieer HTML" om de code direct in de ArcGIS Online Map Viewer te plakken (als Broncode / Source).</span>
+            <span>Update: 2026 · Uitgebreid met SCADA, BIM & Digital Twin functionaliteiten.</span>
+        </div>
+    </div>
+
+    <!-- ========== TOAST ========== -->
+    <div class="toast" id="toast">
+        <span>✓</span> <span id="toastMsg">HTML gekopieerd naar klembord</span>
+    </div>
+
+    <script>
+        (function() {
+            // ============================================================
+            //  VOLLEDIGE COMPONENTEN-DATASET 
+            // ============================================================
+            const allComponents = [
+
+                // ────────── DASHBOARDS & SCADA (Nieuw) ──────────
+                {
+                    id: 521, cat: 'dashboards', title: 'Hittestress Dashboard',
+                    code: '<div style="background:#FFF3E0; border:1px solid #FFCC80; border-radius:8px; padding:15px; color:#E65100;"><h3 style="margin:0 0 10px 0; border-bottom:1px solid #FFE0B2; padding-bottom:5px;">🌡️ Hittestress Analyse</h3><div style="display:flex; justify-content:space-between; text-align:center;"><div><b style="font-size:1.4em;">34°C</b><br><small>Max Temp</small></div><div><b style="font-size:1.4em; color:#D32F2F;">Hoog</b><br><small>Risico</small></div><div><b style="font-size:1.4em; color:#4CAF50;">12%</b><br><small>Schaduw</small></div></div></div>',
+                    preview: '<div style="background:#FFF3E0; border:1px solid #FFCC80; border-radius:8px; padding:15px; color:#E65100; width:100%;"><h3 style="margin:0 0 10px 0; border-bottom:1px solid #FFE0B2; padding-bottom:5px;">🌡️ Hittestress Analyse</h3><div style="display:flex; justify-content:space-between; text-align:center;"><div><b style="font-size:1.4em;">34°C</b><br><small>Max Temp</small></div><div><b style="font-size:1.4em; color:#D32F2F;">Hoog</b><br><small>Risico</small></div><div><b style="font-size:1.4em; color:#4CAF50;">12%</b><br><small>Schaduw</small></div></div></div>'
+                },
+                {
+                    id: 522, cat: 'dashboards', title: 'Overstroming Dashboard (Flood)',
+                    code: '<div style="background:#E3F2FD; border:1px solid #90CAF9; border-radius:8px; padding:15px; color:#1565C0;"><h3 style="margin:0 0 10px 0; border-bottom:1px solid #BBDEFB; padding-bottom:5px;">🌊 Overstromingsrisico</h3><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><div>Waterdiepte:<br><b style="font-size:1.2em;">1.24 m</b></div><div>Kans:<br><b style="font-size:1.2em; color:#D32F2F;">87%</b></div><div style="grid-column:1/-1;">Gevolgschade: <b>€ 14.500</b></div></div></div>',
+                    preview: '<div style="background:#E3F2FD; border:1px solid #90CAF9; border-radius:8px; padding:15px; color:#1565C0; width:100%;"><h3 style="margin:0 0 10px 0; border-bottom:1px solid #BBDEFB; padding-bottom:5px;">🌊 Overstromingsrisico</h3><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><div>Waterdiepte:<br><b style="font-size:1.2em;">1.24 m</b></div><div>Kans:<br><b style="font-size:1.2em; color:#D32F2F;">87%</b></div><div style="grid-column:1/-1;">Gevolgschade: <b>€ 14.500</b></div></div></div>'
+                },
+                {
+                    id: 523, cat: 'dashboards', title: 'Asset Management Dashboard',
+                    code: '<div style="background:#FAFAFA; border:1px solid #E0E0E0; border-radius:8px; padding:15px;"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b>⚙️ Pompstation 04</b> <span style="background:#4CAF50; color:white; padding:2px 8px; border-radius:12px; font-size:0.8em;">Online</span></div><div style="display:flex; flex-direction:column; gap:8px; font-size:0.9em;"><div style="display:flex; justify-content:space-between;"><span>Laatste inspectie:</span> <b>12-05-2025</b></div><div style="display:flex; justify-content:space-between;"><span>Restlevensduur:</span> <b style="color:#F57C00;">4 Jaar</b></div><div style="display:flex; justify-content:space-between;"><span>Conditiescore:</span> <b>3 (Matig)</b></div></div></div>',
+                    preview: '<div style="background:#FAFAFA; border:1px solid #E0E0E0; border-radius:8px; padding:15px; width:100%;"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b>⚙️ Pompstation 04</b> <span style="background:#4CAF50; color:white; padding:2px 8px; border-radius:12px; font-size:0.8em;">Online</span></div><div style="display:flex; flex-direction:column; gap:8px; font-size:0.9em;"><div style="display:flex; justify-content:space-between;"><span>Laatste inspectie:</span> <b>12-05-2025</b></div><div style="display:flex; justify-content:space-between;"><span>Restlevensduur:</span> <b style="color:#F57C00;">4 Jaar</b></div><div style="display:flex; justify-content:space-between;"><span>Conditiescore:</span> <b>3 (Matig)</b></div></div></div>'
+                },
+
+                // ────────── CHARTS & SVG (Nieuw) ──────────
+                {
+                    id: 314, cat: 'charts', title: 'Stacked Bar Chart (Gestapeld)',
+                    code: '<div style="display:flex; align-items:center; gap:10px;"><span>Oppervlakte:</span><div style="display:flex; width:100%; height:16px; border-radius:8px; overflow:hidden;"><div style="width:50%; background:#4CAF50;" title="Groen"></div><div style="width:30%; background:#9E9E9E;" title="Verhard"></div><div style="width:20%; background:#2196F3;" title="Water"></div></div></div><div style="display:flex; gap:10px; font-size:0.8em; margin-top:5px;"><span style="color:#4CAF50;">■ Groen</span> <span style="color:#9E9E9E;">■ Verhard</span> <span style="color:#2196F3;">■ Water</span></div>',
+                    preview: '<div style="width:100%;"><div style="display:flex; align-items:center; gap:10px;"><span>Oppervlakte:</span><div style="display:flex; width:100%; height:16px; border-radius:8px; overflow:hidden;"><div style="width:50%; background:#4CAF50;" title="Groen"></div><div style="width:30%; background:#9E9E9E;" title="Verhard"></div><div style="width:20%; background:#2196F3;" title="Water"></div></div></div><div style="display:flex; gap:10px; font-size:0.8em; margin-top:5px;"><span style="color:#4CAF50;">■ Groen</span> <span style="color:#9E9E9E;">■ Verhard</span> <span style="color:#2196F3;">■ Water</span></div></div>'
+                },
+                {
+                    id: 315, cat: 'svg', title: 'SVG Batterij Indicator (80%)',
+                    code: '<div style="display:flex; align-items:center; gap:8px;"><svg width="40" height="20" viewBox="0 0 40 20"><rect x="1" y="1" width="34" height="18" rx="3" fill="none" stroke="#555" stroke-width="2"/><rect x="35" y="6" width="3" height="8" rx="1" fill="#555"/><rect x="3" y="3" width="26" height="14" rx="1" fill="#4CAF50"/></svg><span style="font-weight:bold;">80%</span></div>',
+                    preview: '<div style="display:flex; align-items:center; gap:8px;"><svg width="40" height="20" viewBox="0 0 40 20"><rect x="1" y="1" width="34" height="18" rx="3" fill="none" stroke="#555" stroke-width="2"/><rect x="35" y="6" width="3" height="8" rx="1" fill="#555"/><rect x="3" y="3" width="26" height="14" rx="1" fill="#4CAF50"/></svg><span style="font-weight:bold;">80%</span></div>'
+                },
+                {
+                    id: 316, cat: 'svg', title: 'SVG Circular Progress (75%)',
+                    code: '<div style="position:relative; width:60px; height:60px;"><svg viewBox="0 0 36 36" width="60" height="60"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" stroke-width="4"/><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#2196F3" stroke-width="4" stroke-dasharray="75, 100" /></svg><div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:0.8em; font-weight:bold; color:#2196F3;">75%</div></div>',
+                    preview: '<div style="position:relative; width:60px; height:60px;"><svg viewBox="0 0 36 36" width="60" height="60"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" stroke-width="4"/><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#2196F3" stroke-width="4" stroke-dasharray="75, 100" /></svg><div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:0.8em; font-weight:bold; color:#2196F3;">75%</div></div>'
+                },
+                {
+                    id: 317, cat: 'svg', title: 'SVG Donut Chart (Meerdere waarden)',
+                    code: '<svg viewBox="0 0 36 36" width="80" height="80"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#4CAF50" stroke-width="6" stroke-dasharray="40, 100" /><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#FFC107" stroke-width="6" stroke-dasharray="30, 100" stroke-dashoffset="-40" /><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#F44336" stroke-width="6" stroke-dasharray="30, 100" stroke-dashoffset="-70" /></svg>',
+                    preview: '<svg viewBox="0 0 36 36" width="80" height="80"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#4CAF50" stroke-width="6" stroke-dasharray="40, 100" /><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#FFC107" stroke-width="6" stroke-dasharray="30, 100" stroke-dashoffset="-40" /><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#F44336" stroke-width="6" stroke-dasharray="30, 100" stroke-dashoffset="-70" /></svg>'
+                },
+
+                // ────────── LAYOUT & VISUALS (Nieuw) ──────────
+                {
+                    id: 505, cat: 'grid', title: 'Dashboard Header (Blauw)',
+                    code: '<table width="100%" cellpadding="10" style="background:#1976D2; color:white; border-radius:6px;"><tr><td><h2 style="margin:0; font-size:1.4em;">Gemaal de Cruquius</h2><span style="font-size:0.9em; opacity:0.9;">Regio Haarlemmermeer</span></td><td align="right"><div style="background:white; color:#1976D2; padding:4px 10px; border-radius:12px; font-size:0.8em; font-weight:bold;">ID: 1045</div></td></tr></table>',
+                    preview: '<table width="100%" cellpadding="10" style="background:#1976D2; color:white; border-radius:6px;"><tr><td><h2 style="margin:0; font-size:1.4em;">Gemaal de Cruquius</h2><span style="font-size:0.9em; opacity:0.9;">Regio Haarlemmermeer</span></td><td align="right"><div style="background:white; color:#1976D2; padding:4px 10px; border-radius:12px; font-size:0.8em; font-weight:bold;">ID: 1045</div></td></tr></table>'
+                },
+                {
+                    id: 506, cat: 'grid', title: 'Sidebar Info Panel (Flexbox)',
+                    code: '<div style="display:flex; border:1px solid #ddd; border-radius:6px; overflow:hidden;"><div style="background:#ECEFF1; padding:15px; width:35%; border-right:1px solid #ddd;"><b>Type</b><br>Kantoor<br><br><b>Bouwjaar</b><br>2018</div><div style="padding:15px; width:65%;"><h3>Hoofdkantoor Zuid</h3><p>Dit gebouw is onlangs gerenoveerd en voorzien van zonnepanelen.</p></div></div>',
+                    preview: '<div style="display:flex; border:1px solid #ddd; border-radius:6px; overflow:hidden; width:100%;"><div style="background:#ECEFF1; padding:15px; width:35%; border-right:1px solid #ddd; font-size:0.85em;"><b>Type</b><br>Kantoor<br><br><b>Bouwjaar</b><br>2018</div><div style="padding:15px; width:65%; font-size:0.85em;"><h3 style="margin:0 0 5px 0;">Hoofdkantoor</h3><p style="margin:0;">Dit gebouw is onlangs gerenoveerd.</p></div></div>'
+                },
+                {
+                    id: 507, cat: 'grid', title: 'Timeline (Horizontaal)',
+                    code: '<div style="display:flex; justify-content:space-between; position:relative; padding-top:10px;"><div style="position:absolute; top:16px; left:5%; right:5%; height:2px; background:#ddd; z-index:1;"></div><div style="text-align:center; z-index:2; background:white; padding:0 5px;"><div style="width:14px; height:14px; background:#4CAF50; border-radius:50%; margin:0 auto 5px;"></div><span style="font-size:0.75em; color:#666;">Fase 1<br>Klaar</span></div><div style="text-align:center; z-index:2; background:white; padding:0 5px;"><div style="width:14px; height:14px; background:#2196F3; border-radius:50%; margin:0 auto 5px;"></div><span style="font-size:0.75em; color:#666;">Fase 2<br>Actief</span></div><div style="text-align:center; z-index:2; background:white; padding:0 5px;"><div style="width:14px; height:14px; background:#ddd; border-radius:50%; margin:0 auto 5px;"></div><span style="font-size:0.75em; color:#666;">Fase 3<br>Plan</span></div></div>',
+                    preview: '<div style="display:flex; justify-content:space-between; position:relative; padding-top:10px; width:100%;"><div style="position:absolute; top:16px; left:5%; right:5%; height:2px; background:#ddd; z-index:1;"></div><div style="text-align:center; z-index:2; background:transparent; padding:0 5px;"><div style="width:14px; height:14px; background:#4CAF50; border-radius:50%; margin:0 auto 5px;"></div><span style="font-size:0.75em; color:#666;">Fase 1<br>Klaar</span></div><div style="text-align:center; z-index:2; background:transparent; padding:0 5px;"><div style="width:14px; height:14px; background:#2196F3; border-radius:50%; margin:0 auto 5px;"></div><span style="font-size:0.75em; color:#666;">Fase 2<br>Actief</span></div><div style="text-align:center; z-index:2; background:transparent; padding:0 5px;"><div style="width:14px; height:14px; background:#ddd; border-radius:50%; margin:0 auto 5px;"></div><span style="font-size:0.75em; color:#666;">Fase 3<br>Plan</span></div></div>'
+                },
+                {
+                    id: 509, cat: 'grid', title: 'Legenda / Color Scale (Kleurverloop)',
+                    code: '<div style="width:100%;"><div style="display:flex; justify-content:space-between; font-size:0.8em; margin-bottom:4px;"><span>0 (Laag)</span><span>100 (Hoog)</span></div><div style="height:12px; border-radius:6px; background:linear-gradient(to right, #4CAF50, #FFEB3B, #F44336);"></div></div>',
+                    preview: '<div style="width:100%;"><div style="display:flex; justify-content:space-between; font-size:0.8em; margin-bottom:4px;"><span>0 (Laag)</span><span>100 (Hoog)</span></div><div style="height:12px; border-radius:6px; background:linear-gradient(to right, #4CAF50, #FFEB3B, #F44336);"></div></div>'
+                },
+
+                // ────────── STATUS BADGES (Nieuw) ──────────
+                {
+                    id: 501, cat: 'badges', title: 'Online / Offline Badge (Pulse effect SVG)',
+                    code: '<div style="display:inline-flex; align-items:center; gap:6px; background:#E8F5E9; border:1px solid #81C784; padding:4px 12px; border-radius:15px; color:#2E7D32; font-weight:bold; font-size:0.85em;"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4CAF50"/></svg> Systeem Online</div>',
+                    preview: '<div style="display:inline-flex; align-items:center; gap:6px; background:#E8F5E9; border:1px solid #81C784; padding:4px 12px; border-radius:15px; color:#2E7D32; font-weight:bold; font-size:0.85em;"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4CAF50"/></svg> Systeem Online</div>'
+                },
+                {
+                    id: 502, cat: 'badges', title: 'Kritieke Waarschuwing Badge',
+                    code: '<div style="display:inline-block; padding:6px 14px; background:#B71C1C; color:white; border-radius:4px; font-weight:bold; font-size:0.85em; letter-spacing:1px; box-shadow:0 2px 4px rgba(0,0,0,0.2);">⚠ KRITIEK</div>',
+                    preview: '<div style="display:inline-block; padding:6px 14px; background:#B71C1C; color:white; border-radius:4px; font-weight:bold; font-size:0.85em; letter-spacing:1px; box-shadow:0 2px 4px rgba(0,0,0,0.2);">⚠ KRITIEK</div>'
+                },
+                {
+                    id: 503, cat: 'badges', title: 'Inspectie: Geslaagd',
+                    code: '<span style="border-bottom:2px solid #4CAF50; padding-bottom:2px; font-weight:bold; color:#2E7D32;">✔ Inspectie Gehaald</span>',
+                    preview: '<span style="border-bottom:2px solid #4CAF50; padding-bottom:2px; font-weight:bold; color:#2E7D32;">✔ Inspectie Gehaald</span>'
+                },
+                {
+                    id: 504, cat: 'badges', title: 'Inspectie: Gefaald',
+                    code: '<span style="border-bottom:2px solid #F44336; padding-bottom:2px; font-weight:bold; color:#C62828;">✖ Inspectie Gefaald</span>',
+                    preview: '<span style="border-bottom:2px solid #F44336; padding-bottom:2px; font-weight:bold; color:#C62828;">✖ Inspectie Gefaald</span>'
+                },
+
+                // ────────── GEBOUWEN & BIM (Nieuw) ──────────
+                {
+                    id: 510, cat: 'gebouw', title: 'BIM / 3D Model Info',
+                    code: '<div style="border:1px solid #ccc; border-radius:8px; overflow:hidden;"><div style="background:#37474F; color:white; padding:8px 12px; font-weight:bold;">🏢 BIM Object Data</div><div style="padding:12px; background:#F5F7F8;"><table style="width:100%; font-size:0.85em; text-align:left;"><tr><th style="padding-bottom:4px; color:#546E7A;">Materiaal</th><td style="padding-bottom:4px;">Gewapend Beton</td></tr><tr><th style="padding-bottom:4px; color:#546E7A;">Volume</th><td style="padding-bottom:4px;">450 m³</td></tr><tr><th style="padding-bottom:4px; color:#546E7A;">Verdieping</th><td style="padding-bottom:4px;">+2 (Dak)</td></tr></table></div></div>',
+                    preview: '<div style="border:1px solid #ccc; border-radius:8px; overflow:hidden; width:100%;"><div style="background:#37474F; color:white; padding:8px 12px; font-weight:bold;">🏢 BIM Object Data</div><div style="padding:12px; background:#F5F7F8;"><table style="width:100%; font-size:0.85em; text-align:left;"><tr><th style="padding-bottom:4px; color:#546E7A;">Materiaal</th><td style="padding-bottom:4px;">Gewapend Beton</td></tr><tr><th style="padding-bottom:4px; color:#546E7A;">Volume</th><td style="padding-bottom:4px;">450 m³</td></tr><tr><th style="padding-bottom:4px; color:#546E7A;">Verdieping</th><td style="padding-bottom:4px;">+2 (Dak)</td></tr></table></div></div>'
+                },
+                {
+                    id: 511, cat: 'gebouw', title: 'Digital Twin Object Card',
+                    code: '<div style="background:linear-gradient(135deg, #263238, #37474F); color:white; padding:15px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.3); font-family:monospace;"><div style="color:#00B0FF; margin-bottom:5px;">[DIGITAL_TWIN_NODE]</div><h3 style="margin:0 0 10px 0;">Transformator_09A</h3><div style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.2); padding-top:10px;"><span style="color:#81C784;">STATUS: OK</span><span>TEMP: 45°C</span></div></div>',
+                    preview: '<div style="background:linear-gradient(135deg, #263238, #37474F); color:white; padding:15px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.3); font-family:monospace; width:100%;"><div style="color:#00B0FF; margin-bottom:5px; font-size:0.8em;">[DIGITAL_TWIN_NODE]</div><h3 style="margin:0 0 10px 0;">Transformator_09A</h3><div style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.2); padding-top:10px; font-size:0.9em;"><span style="color:#81C784;">STATUS: OK</span><span>TEMP: 45°C</span></div></div>'
+                },
+
+                // ────────── INFRA, GIS & OBJECTEN (Nieuw) ──────────
+                {
+                    id: 516, cat: 'infra', title: 'Rioolbuis Info (Bruin)',
+                    code: '<div style="border-left:8px solid #5D4037; background:#EFEBE9; padding:10px 15px; border-radius:4px;"><h4 style="margin:0; color:#4E342E;">🛢️ VWA Riool</h4><span style="font-size:0.85em; color:#5D4037;">Diameter: 400mm | Materiaal: PVC</span></div>',
+                    preview: '<div style="border-left:8px solid #5D4037; background:#EFEBE9; padding:10px 15px; border-radius:4px; width:100%;"><h4 style="margin:0; color:#4E342E;">🛢️ VWA Riool</h4><span style="font-size:0.85em; color:#5D4037;">Diameter: 400mm | Materiaal: PVC</span></div>'
+                },
+                {
+                    id: 517, cat: 'infra', title: 'Windturbine Asset',
+                    code: '<div style="display:flex; align-items:center; gap:15px; border:1px solid #ddd; padding:10px; border-radius:8px;"><div style="font-size:2em;">🌬️</div><div><b style="font-size:1.1em;">Windturbine WT-04</b><br><span style="font-size:0.85em; color:#666;">Vermogen: 3.2 MW | Draaiend</span></div></div>',
+                    preview: '<div style="display:flex; align-items:center; gap:15px; border:1px solid #ddd; padding:10px; border-radius:8px; width:100%;"><div style="font-size:2em;">🌬️</div><div><b style="font-size:1.1em;">Windturbine WT-04</b><br><span style="font-size:0.85em; color:#666;">Vermogen: 3.2 MW | Draaiend</span></div></div>'
+                },
+                {
+                    id: 518, cat: 'infra', title: 'Zonnepanelen (Solar)',
+                    code: '<div style="background:#FFFDE7; border:1px solid #FBC02D; padding:10px; border-radius:6px; color:#F57F17;"><b>☀️ Zonnepark Layout</b><hr style="border:none; border-top:1px solid #FFF59D; margin:5px 0;"><span style="font-size:0.9em;">Capaciteit: 1500 kWh / dag</span></div>',
+                    preview: '<div style="background:#FFFDE7; border:1px solid #FBC02D; padding:10px; border-radius:6px; color:#F57F17; width:100%;"><b>☀️ Zonnepark Layout</b><hr style="border:none; border-top:1px solid #FFF59D; margin:5px 0;"><span style="font-size:0.9em;">Capaciteit: 1500 kWh / dag</span></div>'
+                },
+                {
+                    id: 519, cat: 'infra', title: 'Beveiligingscamera',
+                    code: '<div style="background:#263238; color:white; padding:8px 15px; border-radius:20px; display:inline-flex; align-items:center; gap:8px;"><span style="color:#FF5252;">● REC</span> 🎥 Cam-Zuidplein</div>',
+                    preview: '<div style="background:#263238; color:white; padding:8px 15px; border-radius:20px; display:inline-flex; align-items:center; gap:8px; font-size:0.9em;"><span style="color:#FF5252;">● REC</span> 🎥 Cam-Zuidplein</div>'
+                },
+                {
+                    id: 520, cat: 'infra', title: 'Brandkraan (Hydrant)',
+                    code: '<div style="border:2px solid #D32F2F; color:#D32F2F; font-weight:bold; padding:10px; text-align:center; border-radius:8px; max-width:150px;">🚒 Brandkraan<br><span style="font-size:0.8em; color:#333;">Capaciteit: Hoog</span></div>',
+                    preview: '<div style="border:2px solid #D32F2F; color:#D32F2F; font-weight:bold; padding:10px; text-align:center; border-radius:8px; width:100%;">🚒 Brandkraan<br><span style="font-size:0.8em; color:#333;">Capaciteit: Hoog</span></div>'
+                },
+
+                // ────────── BESTAANDE COMPONENTEN (Uit vorige selectie / document) ──────────
+
+                // GRID & LAYOUT
+                {
+                    id: 301, cat: 'grid', title: '2-Kolom Grid Layout',
+                    code: '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"><div style="background: #f0f0f0; padding: 10px; border-radius: 4px;"><b>Links</b><br>Data 1</div><div style="background: #e0e0e0; padding: 10px; border-radius: 4px;"><b>Rechts</b><br>Data 2</div></div>',
+                    preview: '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;"><div style="background: #f0f0f0; padding: 10px; border-radius: 4px;"><b>Links</b><br>Data 1</div><div style="background: #e0e0e0; padding: 10px; border-radius: 4px;"><b>Rechts</b><br>Data 2</div></div>'
+                },
+                {
+                    id: 303, cat: 'grid', title: '3-Kolom Statistieken Flex',
+                    code: '<div style="display: flex; justify-content: space-between; text-align: center; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee;"><div><b style="font-size: 1.2em; color: #1976D2;">42</b><br><small>Objecten</small></div><div><b style="font-size: 1.2em; color: #388E3C;">95%</b><br><small>Kwaliteit</small></div><div><b style="font-size: 1.2em; color: #D32F2F;">3</b><br><small>Defecten</small></div></div>',
+                    preview: '<div style="display: flex; justify-content: space-between; text-align: center; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee; width: 100%;"><div><b style="font-size: 1.2em; color: #1976D2;">42</b><br><small>Objecten</small></div><div><b style="font-size: 1.2em; color: #388E3C;">95%</b><br><small>Kwaliteit</small></div><div><b style="font-size: 1.2em; color: #D32F2F;">3</b><br><small>Defecten</small></div></div>'
+                },
+
+                // CHARTS 
+                {
+                    id: 310, cat: 'charts', title: 'Horizontale Bar Chart (HTML)',
+                    code: '<div style="display:flex; flex-direction:column; gap:8px;"><div style="display:flex; align-items:center; gap:10px;"><span style="width:60px; font-size:0.8em;">Bomen</span><div style="flex-grow:1; background:#eee; border-radius:10px; height:12px;"><div style="width:70%; background:#4CAF50; height:100%; border-radius:10px;"></div></div><span style="font-size:0.8em;">70</span></div><div style="display:flex; align-items:center; gap:10px;"><span style="width:60px; font-size:0.8em;">Struiken</span><div style="flex-grow:1; background:#eee; border-radius:10px; height:12px;"><div style="width:45%; background:#8BC34A; height:100%; border-radius:10px;"></div></div><span style="font-size:0.8em;">45</span></div></div>',
+                    preview: '<div style="display:flex; flex-direction:column; gap:8px; width:100%;"><div style="display:flex; align-items:center; gap:10px;"><span style="width:60px; font-size:0.8em;">Bomen</span><div style="flex-grow:1; background:#eee; border-radius:10px; height:12px;"><div style="width:70%; background:#4CAF50; height:100%; border-radius:10px;"></div></div><span style="font-size:0.8em;">70</span></div><div style="display:flex; align-items:center; gap:10px;"><span style="width:60px; font-size:0.8em;">Struiken</span><div style="flex-grow:1; background:#eee; border-radius:10px; height:12px;"><div style="width:45%; background:#8BC34A; height:100%; border-radius:10px;"></div></div><span style="font-size:0.8em;">45</span></div></div>'
+                },
+                {
+                    id: 312, cat: 'charts', title: 'Unicode Sparkline (Mini Histogram)',
+                    code: '<div style="font-family: monospace; font-size: 1.5em; color: #1976D2;">▅ ▆ ▇ █ ▅ ▃ ▂ ▄</div>',
+                    preview: '<div style="font-family: monospace; font-size: 1.5em; color: #1976D2;">▅ ▆ ▇ █ ▅ ▃ ▂ ▄</div>'
+                },
+
+                // INTERACTIEF
+                {
+                    id: 320, cat: 'interactief', title: 'Inklapbare Sectie (Details)',
+                    code: '<details style="background: #f9f9f9; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"><summary style="cursor: pointer; font-weight: bold; color: #1976D2;">Toon meer informatie</summary><div style="padding-top: 10px; font-size: 0.9em; border-top: 1px solid #eee; margin-top: 10px;">Hier staan de extra details die standaard verborgen zijn om de popup compact te houden.</div></details>',
+                    preview: '<details style="background: #f9f9f9; padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 100%;"><summary style="cursor: pointer; font-weight: bold; color: #1976D2;">Toon meer informatie</summary><div style="padding-top: 10px; font-size: 0.9em; border-top: 1px solid #eee; margin-top: 10px;">Hier staan de extra details die standaard verborgen zijn om de popup compact te houden.</div></details>'
+                },
+
+                // BADGES
+                {
+                    id: 1, cat: 'badges', title: 'Status badge: Actief (groen)',
+                    code: '<div style="display:inline-block;padding:6px 14px;background:#2E7D32;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">Actief</div>',
+                    preview: '<div style="display:inline-block;padding:6px 14px;background:#2E7D32;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">Actief</div>'
+                }, {
+                    id: 2, cat: 'badges', title: 'Status badge: Waarschuwing (oranje)',
+                    code: '<div style="display:inline-block;padding:6px 14px;background:#F57C00;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">⚠ Controle</div>',
+                    preview: '<div style="display:inline-block;padding:6px 14px;background:#F57C00;color:white;border-radius:20px;font-weight:600;font-size:0.85rem;">⚠ Controle</div>'
+                },
+
+                // CARDS
+                {
+                    id: 26, cat: 'cards', title: 'Eenvoudige card',
+                    code: '<div style="border:1px solid #ddd;padding:15px;border-radius:10px;background:#fafafa;"><b>Project</b><hr style="margin:8px 0; border:none; border-top:1px solid #ddd;">Herinrichting Binnenstad</div>',
+                    preview: '<div style="border:1px solid #ddd;padding:15px;border-radius:10px;background:#fafafa;width:100%;"><b>Project</b><hr style="margin:8px 0; border:none; border-top:1px solid #ddd;">Herinrichting Binnenstad</div>'
+                }, {
+                    id: 30, cat: 'cards', title: 'Card met status badge Flex',
+                    code: '<div style="padding:15px;background:white;border-radius:12px;border:1px solid #eee;"><div style="display:flex;justify-content:space-between; align-items:center;"><b>Project</b><span style="background:#4CAF50;color:white;padding:4px 12px;border-radius:12px;font-size:0.7rem;">Actief</span></div><hr style="margin:10px 0; border:none; border-top:1px solid #eee;">Herinrichting Centrum</div>',
+                    preview: '<div style="padding:15px;background:white;border-radius:12px;border:1px solid #eee;width:100%;"><div style="display:flex;justify-content:space-between; align-items:center;"><b>Project</b><span style="background:#4CAF50;color:white;padding:4px 12px;border-radius:12px;font-size:0.7rem;">Actief</span></div><hr style="margin:10px 0; border:none; border-top:1px solid #eee;">Herinrichting Centrum</div>'
+                },
+
+                // PROJECT
+                {
+                    id: 116, cat: 'project', title: 'Voortgangsbalk Compleet (75%)',
+                    code: '<div style="display:flex; align-items:center; gap:10px;"><span>Voortgang</span><div style="flex-grow:1; background:#eee; height:20px; border-radius:10px; overflow:hidden;"><div style="background:#4CAF50; height:100%; width:75%; display:flex; align-items:center; justify-content:center; color:white; font-size:0.75rem; font-weight:bold;">75%</div></div></div>',
+                    preview: '<div style="display:flex; align-items:center; gap:10px; width:100%;"><span>Voortgang</span><div style="flex-grow:1; background:#eee; height:20px; border-radius:10px; overflow:hidden;"><div style="background:#4CAF50; height:100%; width:75%; display:flex; align-items:center; justify-content:center; color:white; font-size:0.75rem; font-weight:bold;">75%</div></div></div>'
+                },
+
+                // BAG EN ENERGIE
+                {
+                    id: 400, cat: 'bag', title: 'Energielabel A++++ (Donkergroen)',
+                    code: '<div style="display:inline-flex; align-items:center; background:#1A854C; color:white; padding:4px 12px; border-radius:4px 15px 15px 4px; font-weight:bold; font-size:0.9em; box-shadow:1px 1px 3px rgba(0,0,0,0.2);">A++++</div>',
+                    preview: '<div style="display:inline-flex; align-items:center; background:#1A854C; color:white; padding:4px 12px; border-radius:4px 15px 15px 4px; font-weight:bold; font-size:0.9em; box-shadow:1px 1px 3px rgba(0,0,0,0.2);">A++++</div>'
+                },
+                {
+                    id: 221, cat: 'bag', title: 'BAG Paspoort Box',
+                    code: '<div style="background:#fdfdfd; padding:15px; border-radius:8px; border:1px solid #ccc; box-shadow:0 2px 5px rgba(0,0,0,0.05);"><b>🏠 Pand Info</b><hr style="border:none; border-top:1px solid #eee; margin:10px 0;">📍 Kerkstraat 15<br>🏗 Bouwjaar: <b>1986</b><br>⚡ Label: <b>A</b></div>',
+                    preview: '<div style="background:#fdfdfd; padding:15px; border-radius:8px; border:1px solid #ccc; box-shadow:0 2px 5px rgba(0,0,0,0.05); width:100%;"><b>🏠 Pand Info</b><hr style="border:none; border-top:1px solid #eee; margin:10px 0;">📍 Kerkstraat 15<br>🏗 Bouwjaar: <b>1986</b><br>⚡ Label: <b>A</b></div>'
+                }
+            ];
+
+            // ============================================================
+            //  RENDER & INTERACTIE LOGICA
+            // ============================================================
+            const grid = document.getElementById('examplesGrid');
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const searchInput = document.getElementById('searchInput');
+            let toastTimer;
+
+            // Toast melding tonen
+            function showToast(text) {
+                toastMsg.textContent = text;
+                toast.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+            }
+
+            // Cards renderen (inclusief zoeken)
+            function renderCards(filter = 'all', searchTerm = '') {
+                const searchLower = searchTerm.toLowerCase();
+                
+                const filtered = allComponents.filter(c => {
+                    const matchCat = filter === 'all' || c.cat === filter;
+                    const matchSearch = c.title.toLowerCase().includes(searchLower) || c.code.toLowerCase().includes(searchLower);
+                    return matchCat && matchSearch;
+                });
+
+                grid.innerHTML = '';
+
+                if (!filtered.length) {
+                    grid.innerHTML = `<div class="empty-state">
+                        <span style="font-size: 2em; display:block; margin-bottom: 10px;">🔍</span>
+                        Geen componenten gevonden voor deze zoekopdracht of categorie.<br>
+                        Probeer een andere term.
+                    </div>`;
+                    return;
+                }
+
+                filtered.forEach(c => {
+                    const card = document.createElement('div');
+                    card.className = 'component-card';
+                    card.innerHTML = `
+                        <div class="card-meta">
+                            <span class="category-badge">${c.cat}</span>
+                            <span class="component-id">#${c.id}</span>
+                        </div>
+                        <div class="component-title">${c.title}</div>
+                        <div class="preview-window">${c.preview || 'Geen preview beschikbaar'}</div>
+                        <div class="code-snippet">${c.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                        <button class="copy-button">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            Kopieer HTML
+                        </button>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                // Kopieer functionaliteit binden aan nieuwe knoppen
+                document.querySelectorAll('.copy-button').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const cardEl = e.target.closest('.component-card');
+                        const rawCode = cardEl.querySelector('.code-snippet').textContent;
+                        
+                        // Decodeer HTML entities naar werkende code
+                        const txt = document.createElement('textarea');
+                        txt.innerHTML = rawCode;
+                        const decoded = txt.value;
+                        
+                        // Fallback kopieermethode (iFrame proof)
+                        if (navigator.clipboard && window.isSecureContext) {
+                            navigator.clipboard.writeText(decoded).then(() => showToast('Gekopieerd! Plak in ArcGIS')).catch(fallbackCopy);
+                        } else {
+                            fallbackCopy();
+                        }
+
+                        function fallbackCopy() {
+                            const ta = document.createElement('textarea');
+                            ta.value = decoded;
+                            ta.style.position = 'fixed'; // Voorkom scrollen naar de bottom
+                            document.body.appendChild(ta);
+                            ta.focus();
+                            ta.select();
+                            try {
+                                document.execCommand('copy');
+                                showToast('Gekopieerd! Plak in ArcGIS');
+                            } catch (err) {
+                                showToast('Kopiëren mislukt');
+                            }
+                            document.body.removeChild(ta);
+                        }
+                    });
+                });
+            }
+
+            // Tab klik-event listeners
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const currentSearch = searchInput.value;
+                    renderCards(btn.dataset.cat, currentSearch);
+                });
+            });
+
+            // Zoekbalk event listener
+            searchInput.addEventListener('input', (e) => {
+                const activeTab = document.querySelector('.tab-btn.active').dataset.cat;
+                renderCards(activeTab, e.target.value);
+            });
+
+            // Initialisatie
+            renderCards('all');
+        })();
+    </script>
+</body>
+</html>
