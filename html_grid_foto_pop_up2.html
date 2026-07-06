@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArcGIS Popup Table Grid Designer Pro</title>
+    <style>
+        :root {
+            --bg: #f0f2f5; --surface: #fff; --text: #1a1a2e;
+            --border: #d0d5dd; --accent: #0079c1; --accent2: #00a884;
+            --danger: #e74c3c; --grid-line: rgba(0,121,193,0.3);
+            --cell-hover: rgba(0,121,193,0.06); --cell-active: rgba(0,121,193,0.15);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* TOOLBAR */
+        .toolbar {
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            padding: 4px 10px; display: flex; align-items: center; gap: 4px;
+            flex-wrap: wrap; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            min-height: 36px;
+        }
+        .toolbar h1 { font-size: 12px; color: var(--accent); margin-right: auto; white-space: nowrap; font-weight: 700; }
+        .toolbar .badge { font-size: 8px; background: var(--accent2); color: #fff; padding: 2px 6px; border-radius: 7px; font-weight: 600; }
+        button {
+            padding: 3px 8px; border: 1px solid var(--border); background: var(--surface);
+            cursor: pointer; border-radius: 3px; font-size: 9px;
+            transition: all 0.15s; white-space: nowrap; font-family: inherit; color: var(--text);
+        }
+        button:hover { background: #e8f4fd; border-color: var(--accent); }
+        button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+        button.success { background: var(--accent2); color: #fff; border-color: var(--accent2); font-weight: 600; }
+        button.danger { color: var(--danger); border-color: var(--danger); }
+        button.danger:hover { background: var(--danger); color: #fff; }
+        button.tiny { padding: 2px 5px; font-size: 8px; min-width: 18px; }
+        .sep { width: 1px; height: 14px; background: var(--border); margin: 0 2px; }
+        input[type="number"].small-input {
+            width: 42px; padding: 2px 3px; border: 1px solid var(--border);
+            border-radius: 3px; font-size: 9px; text-align: center;
+        }
+
+        /* MAIN */
+        .main { display: flex; flex: 1; overflow: hidden; }
+
+        /* LEFT PANEL */
+        .left-panel {
+            width: 190px; min-width: 190px; background: var(--surface);
+            border-right: 1px solid var(--border); overflow-y: auto; padding: 5px;
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .section { border: 1px solid var(--border); border-radius: 4px; padding: 5px; }
+        .section h3 { font-size: 8px; color: var(--accent); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+        .section label { font-size: 7px; color: #666; display: block; margin-top: 2px; margin-bottom: 1px; }
+        .section input[type="text"], .section input[type="number"], .section select, .section textarea {
+            width: 100%; padding: 2px 3px; border: 1px solid var(--border);
+            border-radius: 3px; font-size: 8px; font-family: inherit;
+        }
+        .section textarea { resize: vertical; min-height: 30px; }
+        .row { display: flex; gap: 2px; align-items: center; }
+        .row input[type="color"] { width: 22px; height: 18px; border: 1px solid var(--border); border-radius: 2px; cursor: pointer; padding: 0; }
+        .row input[type="number"] { width: 40px; }
+
+        .dim-list { max-height: 130px; overflow-y: auto; border: 1px solid var(--border); border-radius: 3px; margin-top: 2px; }
+        .dim-item {
+            display: flex; align-items: center; gap: 2px;
+            padding: 1px 3px; font-size: 8px; border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        .dim-item:hover { background: var(--cell-hover); }
+        .dim-item.active { background: var(--cell-active); font-weight: bold; }
+        .dim-item input { width: 38px; padding: 1px 2px; font-size: 7px; border: 1px solid var(--border); border-radius: 2px; text-align: center; }
+        .dim-item .dim-label-text { font-family: monospace; font-size: 7px; color: var(--accent); min-width: 30px; }
+
+        /* CANVAS */
+        .canvas-area {
+            flex: 1; overflow: auto; background: #d5d8dc;
+            padding: 16px; display: flex; align-items: flex-start; justify-content: center;
+        }
+        .design-wrapper {
+            position: relative; display: inline-block;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.18); border-radius: 2px; background: #fff;
+        }
+        .design-wrapper img {
+            display: block; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; object-fit: fill;
+            pointer-events: none; z-index: 1; opacity: 0.82;
+        }
+        .grid-table {
+            position: relative; z-index: 2; border-collapse: collapse;
+            border: 2px solid var(--accent);
+        }
+        .grid-table td {
+            border: 1px dashed var(--grid-line); padding: 0;
+            position: relative; cursor: pointer; min-width: 14px;
+            vertical-align: middle; transition: background 0.1s;
+        }
+        .grid-table td:hover { background: var(--cell-hover); }
+        .grid-table td.active {
+            background: var(--cell-active) !important;
+            outline: 2px solid var(--accent) !important; outline-offset: -2px; z-index: 10;
+        }
+        .grid-table td .cell-content {
+            min-height: 18px; padding: 2px 5px; font-size: 11px;
+            text-align: center; word-break: break-word; outline: none;
+            width: 100%; height: 100%; display: flex;
+            align-items: center; justify-content: center;
+            line-height: 1.2;
+        }
+        .grid-table td .cell-content:empty::before {
+            content: '···'; color: #ccc; font-size: 9px;
+        }
+        .grid-table td .dim-badge {
+            position: absolute; top: 1px; right: 1px;
+            font-size: 6px; font-family: monospace; pointer-events: none; z-index: 5;
+            background: rgba(0,0,0,0.7); color: #0f0; padding: 1px 2px;
+            border-radius: 2px; opacity: 0; transition: opacity 0.12s;
+        }
+        .grid-table td:hover .dim-badge { opacity: 1; }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            width: 180px; min-width: 180px; background: var(--surface);
+            border-left: 1px solid var(--border); overflow-y: auto; padding: 5px;
+            display: flex; flex-direction: column; gap: 4px;
+        }
+
+        /* MODAL */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.6);
+            z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: #fff; border-radius: 8px; padding: 14px;
+            max-width: 850px; width: 95%; max-height: 82vh;
+            overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        }
+        .modal h2 { margin-bottom: 5px; color: var(--accent); font-size: 15px; }
+        .modal .note {
+            background: #e8f8f5; border: 1px solid var(--accent2);
+            padding: 6px; border-radius: 5px; font-size: 9px;
+            margin-bottom: 6px; color: #00695c; line-height: 1.3;
+        }
+        .modal pre {
+            background: #1e1e1e; color: #d4d4d4; padding: 8px;
+            border-radius: 5px; font-size: 8px; overflow-x: auto;
+            white-space: pre-wrap; word-break: break-all;
+            max-height: 380px; overflow-y: auto; line-height: 1.2;
+        }
+        .modal .btn-row { display: flex; gap: 5px; margin-top: 6px; justify-content: flex-end; }
+
+        .toast {
+            position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+            background: #333; color: #fff; padding: 6px 16px; border-radius: 14px;
+            font-size: 10px; z-index: 2000; animation: toastAnim 0.25s ease;
+        }
+        @keyframes toastAnim {
+            from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        @media (max-width: 1000px) {
+            .main { flex-direction: column; }
+            .left-panel, .right-panel { width: 100%; min-width: 100%; max-height: 140px; flex-direction: row; flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <h1>📐 Grid Designer Pro</h1>
+        <span class="badge">ArcGIS</span>
+        <span class="sep"></span>
+        <button onclick="addRow()" class="tiny">➕ Row</button>
+        <button onclick="addColToRow()" class="tiny">➕ Col in Row</button>
+        <button onclick="deleteRow()" class="tiny danger">🗑 Row</button>
+        <button onclick="deleteColFromRow()" class="tiny danger">🗑 Col</button>
+        <span class="sep"></span>
+        <button onclick="mergeRight()" class="tiny">🔗 Merge→</button>
+        <button onclick="mergeDown()" class="tiny">🔗 Merge↓</button>
+        <button onclick="splitCell()" class="tiny">✂️ Split</button>
+        <span class="sep"></span>
+        <label style="font-size:8px">W:</label>
+        <input type="number" class="small-input" id="tableW" value="400" onchange="setTableWidth()">
+        <label style="font-size:8px">H:</label>
+        <input type="number" class="small-input" id="tableH" value="282" onchange="setTableHeight()">
+        <button onclick="distributeEvenly()" class="tiny">📏 Equal</button>
+        <span class="sep"></span>
+        <button class="primary" onclick="generateCode()">💻 Generate</button>
+        <button class="success" onclick="copyCode()">📋 Copy</button>
+        <span class="sep"></span>
+        <button onclick="saveProject()" class="tiny">💾</button>
+        <button onclick="loadProject()" class="tiny">📂</button>
+    </div>
+
+    <div class="main">
+        <!-- LEFT PANEL -->
+        <div class="left-panel">
+            <div class="section">
+                <h3>🖼️ Image (Fixed Size)</h3>
+                <input type="text" id="imageUrl" placeholder="Image URL..." onchange="loadImage()" style="font-size:8px">
+                <input type="file" accept="image/*" id="imageFile" onchange="loadImageFromFile()" style="font-size:8px;margin-top:2px">
+                <div class="row" style="margin-top:2px">
+                    <label style="margin:0">Opacity:</label>
+                    <input type="range" id="imgOpacity" min="0" max="100" value="82" oninput="updateImageOpacity()" style="flex:1">
+                </div>
+                <p style="font-size:7px;color:#888;margin-top:2px">Image size stays fixed when adding columns</p>
+            </div>
+            <div class="section">
+                <h3>📏 Row Heights (px)</h3>
+                <div class="dim-list" id="rowHeightsList"></div>
+                <button onclick="distributeRowsEvenly()" class="tiny" style="width:100%;margin-top:2px">📏 Equal Rows</button>
+            </div>
+        </div>
+
+        <!-- CANVAS -->
+        <div class="canvas-area" id="canvasArea">
+            <div class="design-wrapper" id="designWrapper">
+                <img id="bgImage" src="" alt="" style="display:none">
+                <table class="grid-table" id="gridTable"><tbody id="gridBody"></tbody></table>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="right-panel">
+            <div class="section">
+                <h3>📝 Cell Properties</h3>
+                <div id="noSelMsg" style="font-size:8px;color:#999">Click cell to edit</div>
+                <div id="cellProps" style="display:none">
+                    <label>Text:</label>
+                    <textarea id="cellText" rows="2" onchange="updateCellFromProps()"></textarea>
+                    <div class="row">
+                        <label style="margin:0">Align:</label>
+                        <select id="cellAlign" onchange="updateCellFromProps()">
+                            <option value="center">Center</option><option value="left">Left</option><option value="right">Right</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <label style="margin:0">Size:</label>
+                        <input type="number" id="cellFontSize" value="13" min="8" max="40" onchange="updateCellFromProps()">
+                    </div>
+                    <div class="row">
+                        <label style="margin:0">Color:</label>
+                        <input type="color" id="cellColor" value="#0a9396" onchange="updateCellFromProps()">
+                    </div>
+                    <div class="row">
+                        <label style="margin:0">Shadow:</label>
+                        <input type="color" id="cellShadow" value="#ffffff" onchange="updateCellFromProps()">
+                    </div>
+                    <div class="row" style="gap:2px;margin-top:2px">
+                        <button id="btnBold" onclick="toggleCellBold()" style="font-weight:bold;width:22px;padding:1px;font-size:8px">B</button>
+                        <button id="btnItalic" onclick="toggleCellItalic()" style="font-style:italic;width:22px;padding:1px;font-size:8px">I</button>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h3>📊 Cell Info</h3>
+                <div id="dimDisplay" style="font-size:7px;font-family:monospace;line-height:1.4;color:#555">Click a cell</div>
+            </div>
+            <div class="section">
+                <h3>📋 Summary</h3>
+                <div id="summaryDisplay" style="font-size:7px;font-family:monospace;line-height:1.3;color:#555">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2>💻 ArcGIS Online Popup Code</h2>
+            <div class="note">✅ Table grid met exacte afmetingen. Werkt 100% in ArcGIS Online.</div>
+            <pre id="codeOutput"></pre>
+            <div class="btn-row">
+                <button onclick="closeModal()">Close</button>
+                <button class="success" onclick="copyFromModal()">📋 Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" accept=".json" id="loadFile" style="display:none" onchange="handleLoad(event)">
+
+    <script>
+        // ==================== STATE ====================
+        // Each row has its own array of cells and column widths
+        let gridData = []; // [row][cellIndex] = cellData
+        let rowColWidths = []; // [row][cellIndex] = width in px for that cell in that row
+        let rowHeights = []; // [row] = height in px
+        let numRows = 5;
+        let tableWidth = 400;
+        let tableHeight = 282;
+        let selectedCell = null; // {row, cellIndex}
+        let imageSrc = '';
+        let imageLoaded = false;
+        let imageNaturalW = 1024;
+        let imageNaturalH = 722;
+
+        function createCellData() {
+            return {
+                text: '',
+                align: 'center',
+                fontSize: 13,
+                color: '#0a9396',
+                shadow: '#ffffff',
+                bold: true,
+                italic: false,
+                rowspan: 1,
+                colspan: 1,
+                merged: false
+            };
+        }
+
+        function initGridData() {
+            rowHeights = [];
+            const defaultRowH = Math.round(tableHeight / numRows);
+            for (let r = 0; r < numRows; r++) rowHeights.push(defaultRowH);
+
+            gridData = [];
+            rowColWidths = [];
+            for (let r = 0; r < numRows; r++) {
+                gridData[r] = [createCellData(), createCellData(), createCellData()];
+                const defaultColW = Math.round(tableWidth / 3);
+                rowColWidths[r] = [defaultColW, defaultColW, defaultColW];
+            }
+        }
+
+        function getRowColCount(row) {
+            return gridData[row].length;
+        }
+
+        function getTotalRowWidth(row) {
+            return rowColWidths[row].reduce((sum, w) => sum + w, 0);
+        }
+
+        // ==================== RENDER ====================
+        function renderAll() {
+            updateRowHeightsList();
+            renderGrid();
+            updateSummaryDisplay();
+            if (selectedCell) updateDimDisplay();
+        }
+
+        function renderGrid() {
+            const tbody = document.getElementById('gridBody');
+            tbody.innerHTML = '';
+
+            for (let r = 0; r < numRows; r++) {
+                const tr = document.createElement('tr');
+                const rowData = gridData[r];
+                const rowWidths = rowColWidths[r];
+
+                for (let ci = 0; ci < rowData.length; ci++) {
+                    const cd = rowData[ci];
+                    if (cd.merged && cd.colspan === 0 && cd.rowspan === 0) continue; // skip hidden merged cells
+
+                    const td = document.createElement('td');
+                    const cellW = rowWidths[ci];
+
+                    // Calculate height considering rowspan
+                    let cellH = rowHeights[r];
+                    if (cd.rowspan > 1) {
+                        for (let rr = r + 1; rr < r + cd.rowspan && rr < numRows; rr++) {
+                            cellH += rowHeights[rr];
+                        }
+                    }
+
+                    td.style.width = cellW + 'px';
+                    td.style.height = cellH + 'px';
+                    if (cd.rowspan > 1) td.setAttribute('rowspan', cd.rowspan);
+                    td.setAttribute('data-row', r);
+                    td.setAttribute('data-cell', ci);
+
+                    // Content
+                    const content = document.createElement('div');
+                    content.className = 'cell-content';
+                    content.contentEditable = true;
+                    content.textContent = cd.text;
+                    content.style.fontSize = cd.fontSize + 'px';
+                    content.style.color = cd.color;
+                    content.style.fontWeight = cd.bold ? 'bold' : 'normal';
+                    content.style.fontStyle = cd.italic ? 'italic' : 'normal';
+                    content.style.textAlign = cd.align;
+                    content.style.textShadow = `0 0 3px ${cd.shadow}`;
+                    content.addEventListener('input', function() { cd.text = content.textContent; });
+                    content.addEventListener('click', function(e) { e.stopPropagation();
+                        selectCell(r, ci); });
+                    td.appendChild(content);
+
+                    // Badge
+                    const badge = document.createElement('div');
+                    badge.className = 'dim-badge';
+                    badge.textContent = `${cellW}×${cellH}`;
+                    td.appendChild(badge);
+
+                    td.addEventListener('click', function(e) { selectCell(r, ci); });
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+
+            document.getElementById('designWrapper').style.width = tableWidth + 'px';
+            document.getElementById('designWrapper').style.height = tableHeight + 'px';
+            document.getElementById('gridTable').style.width = tableWidth + 'px';
+            document.getElementById('gridTable').style.height = tableHeight + 'px';
+        }
+
+        function selectCell(r, ci) {
+            selectedCell = { row: r, cellIndex: ci };
+            document.querySelectorAll('.grid-table td').forEach(td => td.classList.remove('active'));
+            const td = document.querySelector(`.grid-table td[data-row="${r}"][data-cell="${ci}"]`);
+            if (td) td.classList.add('active');
+            updateCellPropsPanel();
+            updateDimDisplay();
+            updateRowHeightsList();
+        }
+
+        // ==================== ROW HEIGHTS LIST ====================
+        function updateRowHeightsList() {
+            const list = document.getElementById('rowHeightsList');
+            list.innerHTML = '';
+            rowHeights.forEach((h, i) => {
+                const item = document.createElement('div');
+                item.className = 'dim-item';
+                if (selectedCell && selectedCell.row === i) item.classList.add('active');
+                const colsInRow = gridData[i].length;
+                item.innerHTML = `
+                    <span class="dim-label-text">R${i+1}:</span>
+                    <input type="number" value="${h}" min="8" max="2000" onchange="setRowHeight(${i}, this.value)" onclick="event.stopPropagation()">
+                    <span style="font-size:6px;color:#888">px (${colsInRow} cols)</span>
+                `;
+                item.addEventListener('click', function(e) {
+                    if (e.target.tagName !== 'INPUT') selectCell(i, 0);
+                });
+                list.appendChild(item);
+            });
+        }
+
+        function setRowHeight(index, value) {
+            rowHeights[index] = Math.max(8, parseInt(value) || 20);
+            tableHeight = rowHeights.reduce((s, h) => s + h, 0);
+            document.getElementById('tableH').value = tableHeight;
+            renderAll();
+        }
+
+        function distributeRowsEvenly() {
+            const even = Math.round(tableHeight / numRows);
+            for (let r = 0; r < numRows; r++) rowHeights[r] = even;
+            tableHeight = rowHeights.reduce((s, h) => s + h, 0);
+            document.getElementById('tableH').value = tableHeight;
+            renderAll();
+            showToast('📏 Rows equal');
+        }
+
+        function distributeEvenly() {
+            distributeRowsEvenly();
+            // Make all rows have same column distribution
+            const maxCols = Math.max(...gridData.map(r => r.length));
+            const defaultW = Math.round(tableWidth / maxCols);
+            for (let r = 0; r < numRows; r++) {
+                const cols = gridData[r].length;
+                for (let c = 0; c < cols; c++) {
+                    rowColWidths[r][c] = defaultW;
+                }
+            }
+            renderAll();
+            showToast('📏 All equal');
+        }
+
+        // ==================== CELL PROPERTIES ====================
+        function updateCellPropsPanel() {
+            if (!selectedCell) {
+                document.getElementById('noSelMsg').style.display = 'block';
+                document.getElementById('cellProps').style.display = 'none';
+                return;
+            }
+            document.getElementById('noSelMsg').style.display = 'none';
+            document.getElementById('cellProps').style.display = 'block';
+            const cd = gridData[selectedCell.row][selectedCell.cellIndex];
+            document.getElementById('cellText').value = cd.text;
+            document.getElementById('cellAlign').value = cd.align;
+            document.getElementById('cellFontSize').value = cd.fontSize;
+            document.getElementById('cellColor').value = cd.color;
+            document.getElementById('cellShadow').value = cd.shadow;
+            document.getElementById('btnBold').style.background = cd.bold ? '#0079c1' : '';
+            document.getElementById('btnBold').style.color = cd.bold ? '#fff' : '';
+            document.getElementById('btnItalic').style.background = cd.italic ? '#0079c1' : '';
+            document.getElementById('btnItalic').style.color = cd.italic ? '#fff' : '';
+        }
+
+        function updateCellFromProps() {
+            if (!selectedCell) return;
+            const cd = gridData[selectedCell.row][selectedCell.cellIndex];
+            cd.text = document.getElementById('cellText').value;
+            cd.align = document.getElementById('cellAlign').value;
+            cd.fontSize = parseInt(document.getElementById('cellFontSize').value) || 13;
+            cd.color = document.getElementById('cellColor').value;
+            cd.shadow = document.getElementById('cellShadow').value;
+            renderGrid();
+        }
+
+        function toggleCellBold() {
+            if (!selectedCell) return;
+            gridData[selectedCell.row][selectedCell.cellIndex].bold = !gridData[selectedCell.row][selectedCell.cellIndex]
+                .bold;
+            updateCellPropsPanel();
+            renderGrid();
+        }
+
+        function toggleCellItalic() {
+            if (!selectedCell) return;
+            gridData[selectedCell.row][selectedCell.cellIndex].italic = !gridData[selectedCell.row][selectedCell.cellIndex]
+                .italic;
+            updateCellPropsPanel();
+            renderGrid();
+        }
+
+        function updateDimDisplay() {
+            const display = document.getElementById('dimDisplay');
+            if (!selectedCell) { display.textContent = 'Click a cell'; return; }
+            const r = selectedCell.row;
+            const ci = selectedCell.cellIndex;
+            const cd = gridData[r][ci];
+            const cellW = rowColWidths[r][ci];
+            let cellH = rowHeights[r];
+            for (let rr = r + 1; rr < r + cd.rowspan && rr < numRows; rr++) cellH += rowHeights[rr];
+            display.innerHTML = `
+                <b>Cell [R${r},C${ci}]</b><br>
+                W:${cellW} × H:${cellH}px<br>
+                Rowspan:${cd.rowspan}<br>
+                ${cd.merged ? '🔗 Merged' : '⬜ Single'}
+            `;
+        }
+
+        function updateSummaryDisplay() {
+            const maxCols = Math.max(...gridData.map(r => r.length));
+            document.getElementById('summaryDisplay').innerHTML = `
+                Table: ${tableWidth}×${tableHeight}px<br>
+                Rows: ${numRows} | Max cols: ${maxCols}<br>
+                Row heights: ${rowHeights.join(',')}
+            `;
+        }
+
+        // ==================== ROW/COL OPERATIONS ====================
+        function addRow() {
+            const insertAt = selectedCell ? selectedCell.row + 1 : numRows;
+            const newH = Math.round(tableHeight / (numRows + 1));
+            rowHeights.splice(insertAt, 0, newH);
+            // Copy column structure from previous row or use default
+            const templateRow = insertAt > 0 ? gridData[insertAt - 1] : gridData[0] || [createCellData(), createCellData(),
+                createCellData()
+            ];
+            const newRowData = templateRow.map(cd => ({ ...cd, text: '', merged: false, rowspan: 1, colspan: 1 }));
+            const newRowWidths = templateRow.map((_, i) => rowColWidths[insertAt > 0 ? insertAt - 1 : 0] ? rowColWidths[
+                insertAt > 0 ? insertAt - 1 : 0][i] : Math.round(tableWidth / templateRow.length));
+
+            gridData.splice(insertAt, 0, newRowData);
+            rowColWidths.splice(insertAt, 0, newRowWidths);
+            numRows++;
+            tableHeight = rowHeights.reduce((s, h) => s + h, 0);
+            document.getElementById('tableH').value = tableHeight;
+            if (selectedCell && selectedCell.row >= insertAt) selectedCell.row++;
+            renderAll();
+            showToast('➕ Row ' + (insertAt + 1));
+        }
+
+        function addColToRow() {
+            if (!selectedCell) { showToast('Select a cell first'); return; }
+            const r = selectedCell.row;
+            const insertAt = selectedCell.cellIndex + 1;
+            const newW = Math.round(getTotalRowWidth(r) / (gridData[r].length + 1));
+
+            gridData[r].splice(insertAt, 0, createCellData());
+            rowColWidths[r].splice(insertAt, 0, newW);
+
+            // Table width stays same - redistribute row widths proportionally
+            const totalW = getTotalRowWidth(r);
+            if (totalW !== tableWidth) {
+                const scale = tableWidth / totalW;
+                for (let c = 0; c < rowColWidths[r].length; c++) {
+                    rowColWidths[r][c] = Math.round(rowColWidths[r][c] * scale);
+                }
+            }
+
+            if (selectedCell && selectedCell.cellIndex >= insertAt) selectedCell.cellIndex++;
+            renderAll();
+            showToast('➕ Col in row ' + (r + 1) + ' (total: ' + gridData[r].length + ' cols)');
+        }
+
+        function deleteRow() {
+            if (numRows <= 1) { showToast('Cannot delete last row'); return; }
+            const deleteAt = selectedCell ? selectedCell.row : numRows - 1;
+            rowHeights.splice(deleteAt, 1);
+            gridData.splice(deleteAt, 1);
+            rowColWidths.splice(deleteAt, 1);
+            numRows--;
+            tableHeight = rowHeights.reduce((s, h) => s + h, 0);
+            document.getElementById('tableH').value = tableHeight;
+            if (selectedCell && selectedCell.row >= numRows) selectedCell.row = numRows - 1;
+            renderAll();
+            showToast('🗑 Row ' + (deleteAt + 1));
+        }
+
+        function deleteColFromRow() {
+            if (!selectedCell) { showToast('Select a cell first'); return; }
+            const r = selectedCell.row;
+            if (gridData[r].length <= 1) { showToast('Row needs at least 1 column'); return; }
+            const deleteAt = selectedCell.cellIndex;
+
+            gridData[r].splice(deleteAt, 1);
+            rowColWidths[r].splice(deleteAt, 1);
+
+            // Redistribute to maintain table width
+            const totalW = getTotalRowWidth(r);
+            const scale = tableWidth / totalW;
+            for (let c = 0; c < rowColWidths[r].length; c++) {
+                rowColWidths[r][c] = Math.round(rowColWidths[r][c] * scale);
+            }
+
+            if (selectedCell.cellIndex >= gridData[r].length) selectedCell.cellIndex = gridData[r].length - 1;
+            renderAll();
+            showToast('🗑 Col from row ' + (r + 1));
+        }
+
+        function mergeRight() {
+            if (!selectedCell) return;
+            const r = selectedCell.row;
+            const ci = selectedCell.cellIndex;
+            if (ci + 1 >= gridData[r].length) { showToast('No cell to the right'); return; }
+            const cd = gridData[r][ci];
+            const nextCd = gridData[r][ci + 1];
+            if (nextCd.merged && nextCd.colspan === 0) { showToast('Already merged'); return; }
+
+            // Combine widths
+            rowColWidths[r][ci] += rowColWidths[r][ci + 1];
+            rowColWidths[r].splice(ci + 1, 1);
+
+            // Mark next cell as hidden
+            gridData[r][ci + 1] = { ...nextCd, merged: true, colspan: 0, rowspan: 0 };
+            cd.colspan = (cd.colspan || 1) + 1;
+            cd.merged = true;
+
+            renderAll();
+            showToast('🔗 Merged right');
+        }
+
+        function mergeDown() {
+            if (!selectedCell) return;
+            const r = selectedCell.row;
+            const ci = selectedCell.cellIndex;
+            if (r + 1 >= numRows) { showToast('No row below'); return; }
+            const cd = gridData[r][ci];
+            // Check if cell below exists at same index
+            if (ci >= gridData[r + 1].length) { showToast('Rows have different column counts'); return; }
+            const belowCd = gridData[r + 1][ci];
+            if (belowCd.merged && belowCd.rowspan === 0) { showToast('Already merged'); return; }
+
+            cd.rowspan = (cd.rowspan || 1) + 1;
+            cd.merged = true;
+            gridData[r + 1][ci] = { ...belowCd, merged: true, rowspan: 0, colspan: 0 };
+
+            // Add row heights
+            rowHeights[r] += rowHeights[r + 1];
+            rowHeights.splice(r + 1, 1);
+            gridData.splice(r + 1, 1);
+            rowColWidths.splice(r + 1, 1);
+            numRows--;
+            tableHeight = rowHeights.reduce((s, h) => s + h, 0);
+            document.getElementById('tableH').value = tableHeight;
+
+            renderAll();
+            showToast('🔗 Merged down');
+        }
+
+        function splitCell() {
+            if (!selectedCell) return;
+            const r = selectedCell.row;
+            const ci = selectedCell.cellIndex;
+            const cd = gridData[r][ci];
+            if (cd.colspan <= 1 && cd.rowspan <= 1) { showToast('Cell is not merged'); return;
+                cd.merged = false; return; }
+            cd.colspan = 1;
+            cd.rowspan = 1;
+            cd.merged = false;
+            // Note: full unmerge is complex - simplified version
+            renderAll();
+            showToast('✂️ Split');
+        }
+
+        // ==================== TABLE SIZE ====================
+        function setTableWidth() {
+            const newW = parseInt(document.getElementById('tableW').value) || 400;
+            const scale = newW / tableWidth;
+            for (let r = 0; r < numRows; r++) {
+                for (let c = 0; c < rowColWidths[r].length; c++) {
+                    rowColWidths[r][c] = Math.round(rowColWidths[r][c] * scale);
+                }
+            }
+            tableWidth = newW;
+            renderAll();
+        }
+
+        function setTableHeight() {
+            const newH = parseInt(document.getElementById('tableH').value) || 282;
+            const scale = newH / tableHeight;
+            for (let r = 0; r < numRows; r++) {
+                rowHeights[r] = Math.round(rowHeights[r] * scale);
+            }
+            tableHeight = newH;
+            renderAll();
+        }
+
+        // ==================== IMAGE (Fixed size) ====================
+        function loadImage() {
+            const url = document.getElementById('imageUrl').value.trim();
+            if (!url) return;
+            imageSrc = url;
+            const img = document.getElementById('bgImage');
+            img.src = url;
+            img.onload = function() {
+                img.style.display = 'block';
+                imageLoaded = true;
+                imageNaturalW = img.naturalWidth;
+                imageNaturalH = img.naturalHeight;
+                updateImageOpacity();
+                showToast('✅ Image: ' + imageNaturalW + '×' + imageNaturalH);
+            };
+        }
+
+        function loadImageFromFile() {
+            const file = document.getElementById('imageFile').files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imageSrc = e.target.result;
+                const img = document.getElementById('bgImage');
+                img.src = e.target.result;
+                img.onload = function() {
+                    img.style.display = 'block';
+                    imageLoaded = true;
+                    imageNaturalW = img.naturalWidth;
+                    imageNaturalH = img.naturalHeight;
+                    updateImageOpacity();
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateImageOpacity() {
+            document.getElementById('bgImage').style.opacity = parseInt(document.getElementById('imgOpacity').value) / 100;
+        }
+
+        // ==================== GENERATE CODE ====================
+        function generatePopupCode() {
+            if (!imageLoaded || !imageSrc) return '<!-- Please load an image first -->';
+
+            let code = '';
+            code += `<figure class="table" style="width:${tableWidth}px;">\n`;
+            code +=
+                `    <table style="background-image:url('${escapeAttr(imageSrc)}');background-repeat:no-repeat;background-size:${tableWidth}px ${tableHeight}px;border-collapse:collapse;margin:0 auto;" width="${tableWidth}" cellpadding="0" cellspacing="0" border="0">\n`;
+            code += `        <tbody>\n`;
+
+            for (let r = 0; r < numRows; r++) {
+                code += `            <tr>\n`;
+                const rowData = gridData[r];
+                const rowWidths = rowColWidths[r];
+
+                for (let ci = 0; ci < rowData.length; ci++) {
+                    const cd = rowData[ci];
+                    if (cd.merged && cd.colspan === 0 && cd.rowspan === 0) continue;
+
+                    const cellW = rowWidths[ci];
+                    let cellH = rowHeights[r];
+                    for (let rr = r + 1; rr < r + cd.rowspan && rr < numRows; rr++) cellH += rowHeights[rr];
+
+                    const fontParts = [];
+                    if (cd.bold) fontParts.push('bold');
+                    if (cd.italic) fontParts.push('italic');
+                    fontParts.push(cd.fontSize + 'px');
+                    fontParts.push('Arial,sans-serif');
+                    const fontStr = fontParts.join(' ');
+
+                    const styles = [`color:${cd.color}`, `font:${fontStr}`, `text-shadow:0 0 3px ${cd.shadow}`];
+                    if (cd.align !== 'left') styles.push(`text-align:${cd.align}`);
+
+                    let attrs = '';
+                    if (cd.colspan > 1) attrs += ` colspan="${cd.colspan}"`;
+                    if (cd.rowspan > 1) attrs += ` rowspan="${cd.rowspan}"`;
+                    attrs += ` width="${cellW}" height="${cellH}"`;
+                    if (cd.align !== 'left') attrs += ` align="${cd.align}"`;
+
+                    const content = cd.text || '&nbsp;';
+                    code +=
+                        `                <td style="${styles.join(';')}"${attrs}>\n                    ${escapeHtml(content)}\n                </td>\n`;
+                }
+                code += `            </tr>\n`;
+            }
+
+            code += `        </tbody>\n    </table>\n</figure>`;
+            return code;
+        }
+
+        function generateCode() {
+            document.getElementById('codeOutput').textContent = generatePopupCode();
+            document.getElementById('modalOverlay').classList.add('show');
+        }
+
+        function copyCode() {
+            navigator.clipboard.writeText(generatePopupCode()).then(() => showToast('📋 Copied!')).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = generatePopupCode();
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('📋 Copied!');
+            });
+        }
+
+        function copyFromModal() { copyCode();
+            closeModal(); }
+
+        function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+
+        // ==================== SAVE/LOAD ====================
+        function saveProject() {
+            const project = { gridData, rowColWidths, rowHeights, numRows, tableWidth, tableHeight, imageSrc,
+                imageLoaded, imageNaturalW, imageNaturalH, imageUrl: document.getElementById('imageUrl').value };
+            localStorage.setItem('gridDesignerV6', JSON.stringify(project));
+            const blob = new Blob([JSON.stringify(project)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'grid-project.json';
+            a.click();
+            showToast('💾 Saved');
+        }
+
+        function loadProject() { document.getElementById('loadFile').click(); }
+
+        function handleLoad(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const p = JSON.parse(e.target.result);
+                    gridData = p.gridData;
+                    rowColWidths = p.rowColWidths;
+                    rowHeights = p.rowHeights;
+                    numRows = p.numRows;
+                    tableWidth = p.tableWidth;
+                    tableHeight = p.tableHeight;
+                    imageSrc = p.imageSrc || '';
+                    imageLoaded = p.imageLoaded || false;
+                    imageNaturalW = p.imageNaturalW || 1024;
+                    imageNaturalH = p.imageNaturalH || 722;
+                    document.getElementById('tableW').value = tableWidth;
+                    document.getElementById('tableH').value = tableHeight;
+                    document.getElementById('imageUrl').value = p.imageUrl || '';
+                    if (imageSrc) { document.getElementById('bgImage').src = imageSrc;
+                        document.getElementById('bgImage').style.display = 'block'; }
+                    selectedCell = null;
+                    updateCellPropsPanel();
+                    renderAll();
+                    showToast('📂 Loaded');
+                } catch (err) { showToast('❌ Invalid file'); }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function autoLoad() {
+            const saved = localStorage.getItem('gridDesignerV6');
+            if (!saved) { initGridData();
+                renderAll(); return; }
+            try {
+                const p = JSON.parse(saved);
+                gridData = p.gridData;
+                rowColWidths = p.rowColWidths;
+                rowHeights = p.rowHeights;
+                numRows = p.numRows;
+                tableWidth = p.tableWidth;
+                tableHeight = p.tableHeight;
+                imageSrc = p.imageSrc || '';
+                imageLoaded = p.imageLoaded || false;
+                imageNaturalW = p.imageNaturalW || 1024;
+                imageNaturalH = p.imageNaturalH || 722;
+                document.getElementById('tableW').value = tableWidth;
+                document.getElementById('tableH').value = tableHeight;
+                document.getElementById('imageUrl').value = p.imageUrl || '';
+                if (imageSrc) { document.getElementById('bgImage').src = imageSrc;
+                    document.getElementById('bgImage').style.display = 'block'; }
+                renderAll();
+            } catch (e) { initGridData();
+                renderAll(); }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.contentEditable ===
+                'true') return;
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCell) {
+                gridData[selectedCell.row][selectedCell.cellIndex].text = '';
+                renderGrid();
+            }
+            if (e.key === 'ArrowRight' && selectedCell && selectedCell.cellIndex < gridData[selectedCell.row].length -
+                1) selectCell(selectedCell.row, selectedCell.cellIndex + 1);
+            if (e.key === 'ArrowLeft' && selectedCell && selectedCell.cellIndex > 0) selectCell(selectedCell.row,
+                selectedCell.cellIndex - 1);
+            if (e.key === 'ArrowDown' && selectedCell && selectedCell.row < numRows - 1) {
+                const nextRow = selectedCell.row + 1;
+                const ci = Math.min(selectedCell.cellIndex, gridData[nextRow].length - 1);
+                selectCell(nextRow, ci);
+            }
+            if (e.key === 'ArrowUp' && selectedCell && selectedCell.row > 0) {
+                const prevRow = selectedCell.row - 1;
+                const ci = Math.min(selectedCell.cellIndex, gridData[prevRow].length - 1);
+                selectCell(prevRow, ci);
+            }
+        });
+
+        document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this)
+                closeModal(); });
+
+        function escapeHtml(s) { if (!s) return '&nbsp;'; const d = document.createElement('div');
+            d.textContent = s; return d.innerHTML; }
+
+        function escapeAttr(s) { return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        function showToast(m) {
+            const ex = document.querySelector('.toast'); if (ex) ex.remove();
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = m;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 1700);
+        }
+
+        function init() { autoLoad(); }
+        init();
+    </script>
+</body>
+</html>
